@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Search, Filter, Package, Hammer, Truck } from 'lucide-react'
 import ArticleModal from '@/components/dashboard/ArticleModal'
+import ArticleImportModal from '@/components/dashboard/ArticleImportModal'
 
 export default async function ArticlesPage() {
     const supabase = await createClient()
@@ -19,7 +20,10 @@ export default async function ArticlesPage() {
                     <h1 className="text-2xl font-bold text-white">Bibliothèque de prix</h1>
                     <p className="text-gray-400">Gérez vos ouvrages, fournitures et main d'œuvre.</p>
                 </div>
-                <ArticleModal />
+                <div className="flex gap-3">
+                    <ArticleImportModal />
+                    <ArticleModal />
+                </div>
             </div>
 
             {/* Barre de recherche et filtres (Style Glass) */}

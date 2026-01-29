@@ -20,6 +20,12 @@ export default async function FacturesPage() {
         `)
         .order('date_emission', { ascending: false })
 
+    const { data: companySettings } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
+        .single()
+
     // Si erreur (table n'existe pas encore), on gère proprement
     if (error && error.code === '42P01') { // undefined_table
         return (
@@ -51,7 +57,7 @@ export default async function FacturesPage() {
                 </Link>
             </div>
 
-            <FactureList initialFactures={factures || []} />
+            <FactureList initialFactures={factures || []} companySettings={companySettings} />
         </div>
     )
 }

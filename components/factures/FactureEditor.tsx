@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Trash2, Save, Calculator, Loader2, FileCheck, Calendar, Wallet } from 'lucide-react'
+import { useState, useEffect, Fragment } from 'react'
+import { Plus, Trash2, Save, Calculator, Loader2, FileCheck, Calendar, Wallet, ChevronRight } from 'lucide-react'
 import ArticleSelector from '@/components/devis/ArticleSelector' // Reuse article selector
 import { saveFacture, deleteFactureItem } from '@/app/actions/factures'
 
@@ -13,6 +13,7 @@ type FactureItem = {
     unit_price: number
     tva: number
     article_id?: string
+    components?: { name: string, quantity: number, unit: string }[]
 }
 
 export default function FactureEditor({
@@ -35,6 +36,7 @@ export default function FactureEditor({
     const [dateEcheance, setDateEcheance] = useState(initialDateEcheance ? new Date(initialDateEcheance).toISOString().split('T')[0] : '')
     const [loading, setLoading] = useState(false)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
     // Sync from props
     useEffect(() => { setItems(initialItems) }, [initialItems])
@@ -72,6 +74,16 @@ export default function FactureEditor({
         }
     }
 
+    const toggleExpand = (id: string) => {
+        const newSet = new Set(expandedItems)
+        if (newSet.has(id)) {
+            newSet.delete(id)
+        } else {
+            newSet.add(id)
+        }
+        setExpandedItems(newSet)
+    }
+
     const handleSave = async (targetStatus?: string) => {
         setLoading(true)
         const finalStatus = targetStatus || status
@@ -102,16 +114,7 @@ export default function FactureEditor({
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
                 articles={articles}
-                devisId="" // Hack: ArticleSelector likely expects devisId but handles custom logic maybe? 
-            // Correction: ArticleSelector uses `addLineFromArticle` which is hardcoded for Devis. 
-            // We should probably update ArticleSelector to be generic OR make a Facture one.
-            // For now, let's keep it closed or make a generic one. 
-            // WAIT: ArticleSelector calls `addLineFromArticle` which is server action for DEVIS.
-            // WE NEED A FACTURE VERSION.
-            // For this step, I will disable the "Import" button functionality or assume we will fix ArticleSelector later.
-            // Let's pass a dummy DevisID and handle it? No, strict types.
-            // I will Comment out the button action or make a quick fix.
-            // Better: I will NOT use ArticleSelector yet, or creating a `addLineFactureFromArticle` later.
+                devisId=""
             />
 
             {/* --- METADATA HEADER (Status, Date) --- */}
@@ -164,15 +167,6 @@ export default function FactureEditor({
                     <Plus size={16} />
                     Ajouter une ligne
                 </button>
-                {/* 
-                <button
-                    onClick={() => setIsSelectorOpen(true)}
-                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                >
-                    <Calculator size={16} />
-                    Importer (Bibliothèque)
-                </button>
-                */}
 
                 <div className="flex-1" />
 
@@ -209,30 +203,64 @@ export default function FactureEditor({
                             </tr>
                         ) : (
                             items.map((item) => (
-                                <tr key={item.id} className="hover:bg-white/5 transition-colors group">
-                                    <td className="px-4 py-2">
-                                        <input
-                                            type="text"
-                                            value={item.description}
-                                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                            className="w-full bg-transparent p-1 outline-none focus:border-b focus:border-purple-500"
-                                        />
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <input type="text" value={item.unit} onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        <input type="number" value={item.unit_price} onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-400 focus:border-b focus:border-emerald-500" />
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-gray-500">{item.tva}%</td>
-                                    <td className="px-4 py-2 text-right font-bold text-white">{(item.quantity * item.unit_price).toFixed(2)} €</td>
-                                    <td className="px-4 py-2 text-center">
-                                        <button onClick={() => handleDeleteLine(item.id)} className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
-                                    </td>
-                                </tr>
+                                <Fragment key={item.id}>
+                                    <tr className="hover:bg-white/5 transition-colors group">
+                                        <td className="px-4 py-2">
+                                            <div className="flex items-center gap-2">
+                                                {item.components && item.components.length > 0 && (
+                                                    <button
+                                                        onClick={() => toggleExpand(item.id)}
+                                                        className="text-gray-500 hover:text-white transition-colors"
+                                                    >
+                                                        <ChevronRight
+                                                            size={16}
+                                                            className={`transition-transform duration-200 ${expandedItems.has(item.id) ? 'rotate-90' : ''}`}
+                                                        />
+                                                    </button>
+                                                )}
+                                                <input
+                                                    type="text"
+                                                    value={item.description}
+                                                    onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                                                    className="w-full bg-transparent p-1 outline-none focus:border-b focus:border-purple-500"
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            <input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            <input type="text" value={item.unit} onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
+                                        </td>
+                                        <td className="px-4 py-2 text-right">
+                                            <input type="number" value={item.unit_price} onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-400 focus:border-b focus:border-emerald-500" />
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-gray-500">{item.tva}%</td>
+                                        <td className="px-4 py-2 text-right font-bold text-white">{(item.quantity * item.unit_price).toFixed(2)} €</td>
+                                        <td className="px-4 py-2 text-center">
+                                            <button onClick={() => handleDeleteLine(item.id)} className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
+                                        </td>
+                                    </tr>
+                                    {/* EXPANDED ROW */}
+                                    {item.components && expandedItems.has(item.id) && (
+                                        <tr className="bg-white/[0.02] border-b border-white/5">
+                                            <td colSpan={7} className="px-4 py-3 pl-14">
+                                                <div className="text-xs uppercase text-gray-500 mb-2 font-semibold tracking-wider flex items-center gap-2">
+                                                    <span>📦 Composition de l'ouvrage</span>
+                                                    <span className="h-px flex-1 bg-white/5"></span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {item.components.map((comp, idx) => (
+                                                        <div key={idx} className="flex items-center gap-4 text-sm text-gray-400">
+                                                            <div className="w-16 text-right font-medium text-gray-500">{comp.quantity} {comp.unit}</div>
+                                                            <div className="text-gray-300">{comp.name}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
                             ))
                         )}
                     </tbody>

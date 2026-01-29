@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-export const generateFacturePDF = (facture: any, returnBase64 = false) => {
+export const generateFacturePDF = (facture: any, companySettings: any = null, returnBase64 = false) => {
     const doc = new jsPDF()
 
     // --- EN-TÊTE ---
@@ -18,16 +18,22 @@ export const generateFacturePDF = (facture: any, returnBase64 = false) => {
     doc.text(`Statut : ${status}`, 14, 35)
 
     // --- INFO ENTREPRISE (Gauche) ---
-    // À dynamiser plus tard avec les infos user/company
     doc.setFontSize(10)
     doc.setTextColor(0)
-    doc.text('Mon Entreprise', 14, 50)
-    doc.setFontSize(9)
-    doc.setTextColor(100)
-    doc.text('123 rue de la Paix', 14, 55)
-    doc.text('75000 Paris', 14, 59)
-    doc.text('SIRET: 123 456 789 00010', 14, 63)
-    doc.text('contact@monentreprise.com', 14, 67)
+    if (companySettings) {
+        doc.text(companySettings.name || 'Mon Entreprise', 14, 50)
+        doc.setFontSize(9)
+        doc.setTextColor(100)
+        doc.text(companySettings.address || '', 14, 55) // Multiline address might need splitTextToSize if too long, but let's keep simple
+        doc.text(`Tél: ${companySettings.phone || ''}`, 14, 63)
+        doc.text(`Email: ${companySettings.email || ''}`, 14, 67)
+        doc.text(`SIRET: ${companySettings.siret || ''}`, 14, 71)
+    } else {
+        doc.text('Mon Entreprise', 14, 50)
+        doc.setFontSize(9)
+        doc.setTextColor(100)
+        doc.text('Configurez vos infos dans Paramètres', 14, 55)
+    }
 
     // --- INFO CLIENT (Droite) ---
     const client = facture.chantiers?.clients
@@ -95,7 +101,9 @@ export const generateFacturePDF = (facture: any, returnBase64 = false) => {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(150)
-    doc.text("En cas de retard de paiement, une pénalité de 3 fois le taux d'intérêt légal sera appliquée.", 105, 280, { align: 'center' })
+    const footer = companySettings?.footer_text || "En cas de retard de paiement, une pénalité de 3 fois le taux d'intérêt légal sera appliquée."
+    const splitFooter = doc.splitTextToSize(footer, 180)
+    doc.text(splitFooter, 105, 280, { align: 'center' })
 
     // Retour Base64 ou Téléchargement
     if (returnBase64) {

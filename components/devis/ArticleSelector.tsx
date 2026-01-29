@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Search, Package, Hammer, Plus, Loader2 } from 'lucide-react'
-import { addLineFromArticle } from '@/app/actions/devis'
+import { X, Search, Package, Hammer, Plus } from 'lucide-react'
 
 // On définit le type Article pour TypeScript
 type Article = {
@@ -17,26 +16,23 @@ export default function ArticleSelector({
     isOpen,
     onClose,
     articles,
-    devisId
+    onSelect
 }: {
     isOpen: boolean
     onClose: () => void
     articles: Article[]
-    devisId: string
+    onSelect: (article: Article) => void
 }) {
     const [search, setSearch] = useState('')
-    const [loadingId, setLoadingId] = useState<string | null>(null)
 
     // Filtrer les articles en temps réel (Côté client pour la rapidité)
     const filteredArticles = articles.filter(a =>
         a.name.toLowerCase().includes(search.toLowerCase())
     )
 
-    const handleSelect = async (articleId: string) => {
-        setLoadingId(articleId) // Affiche le petit loader sur la ligne cliquée
-        await addLineFromArticle(devisId, articleId)
-        setLoadingId(null)
-        onClose() // Ferme le modal une fois ajouté
+    const handleSelect = (article: Article) => {
+        onSelect(article)
+        onClose()
     }
 
     if (!isOpen) return null
@@ -77,8 +73,7 @@ export default function ArticleSelector({
                             {filteredArticles.map((article) => (
                                 <button
                                     key={article.id}
-                                    onClick={() => handleSelect(article.id)}
-                                    disabled={!!loadingId}
+                                    onClick={() => handleSelect(article)}
                                     className="group flex w-full items-center justify-between rounded-lg p-3 text-left hover:bg-blue-600/10 hover:border-blue-500/20 border border-transparent transition-all"
                                 >
                                     <div className="flex items-center gap-3">
@@ -94,11 +89,7 @@ export default function ArticleSelector({
 
                                     <div className="flex items-center gap-4">
                                         <span className="font-bold text-emerald-400">{article.price_ht} €</span>
-                                        {loadingId === article.id ? (
-                                            <Loader2 className="animate-spin text-blue-500" size={18} />
-                                        ) : (
-                                            <Plus className="text-gray-600 group-hover:text-blue-400" size={18} />
-                                        )}
+                                        <Plus className="text-gray-600 group-hover:text-blue-400" size={18} />
                                     </div>
                                 </button>
                             ))}

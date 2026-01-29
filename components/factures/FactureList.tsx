@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { generateFacturePDF } from '@/utils/generatePdf'
 import { sendFactureEmail } from '@/app/actions/email'
 
-export default function FactureList({ initialFactures }: { initialFactures: any[] }) {
+export default function FactureList({ initialFactures, companySettings }: { initialFactures: any[], companySettings: any }) {
     const [searchTerm, setSearchTerm] = useState('')
     const [facturesList, setFacturesList] = useState(initialFactures)
     const router = useRouter()
@@ -100,7 +100,7 @@ export default function FactureList({ initialFactures }: { initialFactures: any[
                             {/* Lien vers le détail (à implémenter) */}
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => generateFacturePDF(facture)}
+                                    onClick={() => generateFacturePDF(facture, companySettings)}
                                     className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
                                     title="Télécharger PDF"
                                 >
@@ -122,7 +122,7 @@ export default function FactureList({ initialFactures }: { initialFactures: any[
                                         }
 
                                         // On génère le PDF en base64 pour l'envoi
-                                        const pdfBase64 = generateFacturePDF(facture, true)
+                                        const pdfBase64 = generateFacturePDF(facture, companySettings, true)
 
                                         // Feedback visuel (simple alert pour l'instant, toast idéalement)
                                         // @ts-ignore

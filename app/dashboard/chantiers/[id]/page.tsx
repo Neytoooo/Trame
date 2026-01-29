@@ -13,6 +13,28 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
+function getDevisStatusLabel(status: string) {
+    switch (status) {
+        case 'brouillon': return 'Brouillon'
+        case 'en_attente': return 'En préparation'
+        case 'en_attente_approbation': return 'Approbation'
+        case 'valide': return 'Validé'
+        case 'refuse': return 'Refusé'
+        default: return status?.replace(/_/g, ' ')
+    }
+}
+
+function getDevisStatusColor(status: string) {
+    switch (status) {
+        case 'brouillon': return 'border-gray-500/20 bg-gray-500/10 text-gray-400'
+        case 'en_attente': return 'border-blue-500/20 bg-blue-500/10 text-blue-400'
+        case 'en_attente_approbation': return 'border-green-500/20 bg-green-500/10 text-green-400'
+        case 'valide': return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+        case 'refuse': return 'border-red-500/20 bg-red-500/10 text-red-400'
+        default: return 'border-gray-500/20 bg-gray-500/10 text-gray-400'
+    }
+}
+
 // Cette fonction reçoit l'ID depuis l'URL (ex: /dashboard/chantiers/123-abc)
 export default async function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -145,14 +167,17 @@ export default async function ChantierDetailPage({ params }: { params: Promise<{
                                                 <FileText size={20} />
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-white">Devis #{devis.reference || 'PROVISOIRE'}</p>
-                                                <p className="text-xs text-gray-400">Créé le {new Date(devis.created_at).toLocaleDateString()}</p>
+                                                <p className="font-semibold text-white">{devis.name || 'Sans Titre'}</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {devis.reference ? `Réf: ${devis.reference} • ` : ''}
+                                                    {new Date(devis.created_at).toLocaleDateString()}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <span className="text-sm font-medium text-white">{devis.total_ttc ? `${devis.total_ttc} €` : '-- €'}</span>
-                                            <span className={`rounded-full px-2 py-1 text-xs font-medium border ${devis.status === 'valide' ? 'border-green-500/20 bg-green-500/10 text-green-400' : 'border-gray-500/20 bg-gray-500/10 text-gray-400'}`}>
-                                                {devis.status}
+                                            <span className={`rounded-full px-2 py-1 text-xs font-medium border ${getDevisStatusColor(devis.status)}`}>
+                                                {getDevisStatusLabel(devis.status)}
                                             </span>
                                         </div>
                                     </Link>

@@ -9,7 +9,9 @@ import {
     HardHat,
     FileText,
     FileCheck,
-    LogOut
+    LogOut,
+    Box,
+    Settings
 } from 'lucide-react'
 
 export default function Sidebar({ user }: { user: any }) {
@@ -32,6 +34,12 @@ export default function Sidebar({ user }: { user: any }) {
                     icon={<LayoutDashboard size={20} />}
                     label="Tableau de bord"
                     isActive={pathname === '/dashboard'}
+                />
+                <NavItem
+                    href="/dashboard/articles"
+                    icon={<Box size={20} />}
+                    label="Bibliothèque"
+                    isActive={pathname?.startsWith('/dashboard/articles')}
                 />
                 <NavItem
                     href="/dashboard/clients"
@@ -69,8 +77,11 @@ export default function Sidebar({ user }: { user: any }) {
                         <p className="truncate text-sm font-medium text-white">{user.email}</p>
                         <p className="text-xs text-gray-400">Admin</p>
                     </div>
+                    <Link href="/dashboard/settings" className="text-gray-400 hover:text-white transition-colors" title="Paramètres">
+                        <Settings size={18} />
+                    </Link>
                     <form action="/auth/signout" method="post">
-                        <button className="text-gray-400 hover:text-white transition-colors">
+                        <button className="text-gray-400 hover:text-white transition-colors" title="Déconnexion">
                             <LogOut size={18} />
                         </button>
                     </form>

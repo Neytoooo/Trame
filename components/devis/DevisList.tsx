@@ -19,9 +19,9 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'brouillon': return 'text-gray-400 bg-gray-500/10 border-gray-500/20'
-            case 'en_attente': return 'text-orange-400 bg-orange-500/10 border-orange-500/20'
-            case 'en_attente_approbation': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            case 'valide': return 'text-green-400 bg-green-500/10 border-green-500/20'
+            case 'en_attente': return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+            case 'en_attente_approbation': return 'text-green-400 bg-green-500/10 border-green-500/20'
+            case 'valide': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
             case 'refuse': return 'text-red-400 bg-red-500/10 border-red-500/20'
             default: return 'text-gray-400 bg-gray-500/10 border-gray-500/20'
         }
@@ -93,11 +93,11 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                             <div>
                                 <h3 className="font-bold text-white text-lg flex items-center gap-2">
                                     <FileText size={18} className="text-blue-400" />
-                                    {devis.reference || 'Sans Ref'}
+                                    {devis.name || 'Sans Titre'}
                                 </h3>
-                                {(devis.name) && (
-                                    <p className="text-sm text-gray-400 mt-1 line-clamp-1">{devis.name}</p>
-                                )}
+                                <p className="text-xs text-gray-500 mt-1 font-mono">
+                                    {devis.reference || 'Brouillon'}
+                                </p>
                             </div>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(devis.status || 'brouillon')}`}>
                                 {getStatusLabel(devis.status || 'brouillon')}

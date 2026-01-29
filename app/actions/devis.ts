@@ -102,7 +102,9 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             unit: item.unit,
             unit_price: item.unit_price,
             tva: item.tva,
-            article_id: item.article_id || null
+            article_id: item.article_id || null,
+            details: item.details || [],
+            item_type: item.item_type || 'item'
         }))
         // @ts-ignore - Supabase type inference might struggle with manual generic insert
         promises.push(supabase.from('devis_items').insert(itemsToInsert))
@@ -118,7 +120,9 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             unit: item.unit,
             unit_price: item.unit_price,
             tva: item.tva,
-            article_id: item.article_id || null // On garde le lien si dispo
+            article_id: item.article_id || null, // On garde le lien si dispo
+            details: item.details || [],
+            item_type: item.item_type || 'item'
         }))
         promises.push(supabase.from('devis_items').upsert(itemsToUpdate, { onConflict: 'id' }))
     }

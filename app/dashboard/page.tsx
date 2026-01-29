@@ -16,10 +16,6 @@ export default async function DashboardPage() {
                     <h1 className="text-3xl font-bold text-white">Bonjour, {displayName} 👋</h1>
                     <p className="mt-1 text-gray-400">Voici ce qui se passe sur vos chantiers aujourd'hui.</p>
                 </div>
-                <button className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-500 hover:scale-105 active:scale-95">
-                    <Plus size={18} />
-                    Nouveau Devis
-                </button>
             </div>
 
             {/* Grille des Stats (Style Glass) */}

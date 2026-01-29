@@ -31,6 +31,47 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
         .eq('devis_id', id)
         .order('position', { ascending: true })
 
+    // 2.5 Enrichissement avec les composants (Pour les Ouvrages)
+    let enrichedItems = items || []
+
+    if (items && items.length > 0) {
+        const parentIds = items.map(i => i.article_id).filter(Boolean)
+
+        if (parentIds.length > 0) {
+            // A. Récupérer les liaisons
+            const { data: liaisons } = await supabase
+                .from('article_composants')
+                .select('parent_article_id, child_article_id, quantity')
+                .in('parent_article_id', parentIds)
+
+            if (liaisons && liaisons.length > 0) {
+                // B. Récupérer les infos des enfants
+                const childIds = liaisons.map(l => l.child_article_id)
+                const { data: childArticles } = await supabase
+                    .from('articles')
+                    .select('id, name, unit')
+                    .in('id', childIds)
+
+                // C. Mapper le tout
+                enrichedItems = items.map(item => {
+                    const itemLiaisons = liaisons.filter(l => l.parent_article_id === item.article_id)
+                    if (itemLiaisons.length > 0) {
+                        const components = itemLiaisons.map(l => {
+                            const child = childArticles?.find(c => c.id === l.child_article_id)
+                            return {
+                                name: child?.name || 'Inconnu',
+                                quantity: l.quantity,
+                                unit: child?.unit || 'u'
+                            }
+                        })
+                        return { ...item, components }
+                    }
+                    return item
+                })
+            }
+        }
+    }
+
     // 3. NOUVEAU : Récupérer TOUS les articles de la bibliothèque pour le sélecteur
     const { data: allArticles } = await supabase
         .from('articles')
@@ -55,7 +96,7 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
 
             {/* L'ÉDITEUR INTERACTIF */}
             <DevisEditor
-                initialItems={items || []}
+                initialItems={enrichedItems}
                 devisId={devis.id}
                 articles={allArticles || []}
                 initialName={devis.name || ''}
