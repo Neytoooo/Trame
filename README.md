@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏗️ Trame - L'ERP Bâtiment Nouvelle Génération
 
-## Getting Started
+**Trame** est une application SaaS moderne conçue pour simplifier la gestion des artisans et PME du bâtiment. Elle se positionne comme une alternative rapide, esthétique et web-based aux logiciels traditionnels comme Sage Batigest.
 
-First, run the development server:
+![Trame Preview](https://via.placeholder.com/1200x600?text=Dashboard+Preview+Trame) **
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Fonctionnalités Principales
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* **⚡ Gestion de Chantiers** : Suivi des affaires, statuts (En étude, En cours, Livré).
+* **👥 CRM Clients** : Gestion des particuliers et professionnels avec annuaire centralisé.
+* **📝 Devis & Chiffrage** : Éditeur type "Excel" connecté à une bibliothèque de prix.
+* **🧱 Bibliothèque d'Ouvrages** : Base de données articles (Fournitures, Main d'œuvre) pour chiffrer vite.
+* **💶 Facturation** : Conversion automatique Devis -> Facture, gestion des acomptes et suivis de paiement.
+* **📄 Génération PDF** : Création automatique de documents professionnels.
+* **🎨 UI Moderne** : Interface "Glassmorphism" sombre, pensée pour être agréable et rapide.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Stack Technique
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* **Framework** : [Next.js 15](https://nextjs.org/) (App Router)
+* **Langage** : TypeScript
+* **Base de données & Auth** : [Supabase](https://supabase.com/) (PostgreSQL)
+* **Style** : [Tailwind CSS v4](https://tailwindcss.com/)
+* **Icônes** : Lucide React
+* **Emails** : [Resend](https://resend.com/)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Pré-requis (Comptes nécessaires)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Pour faire tourner ce projet en local, tu auras besoin de créer des comptes sur les services suivants (ils ont tous une offre gratuite) :
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 1. Supabase (Base de données & Auth)
+C'est le cœur du backend.
+* Crée un projet sur [supabase.com](https://supabase.com/).
+* Tu auras besoin de l'URL du projet et de la clé publique (`anon`).
+* Il faudra exécuter les scripts SQL (fournis dans le dossier `/sql` ou la documentation) pour créer les tables (`clients`, `chantiers`, `devis`, `articles`, etc.).
 
-## Deploy on Vercel
+### 2. Google Cloud Console (Authentification)
+Pour le bouton "Se connecter avec Google".
+* Crée un projet sur [console.cloud.google.com](https://console.cloud.google.com/).
+* Active l'API "Google OAuth".
+* Configure l'écran de consentement (Type: Externe).
+* Crée des identifiants OAuth 2.0.
+* **Important** : Ajoute l'URL de callback de Supabase dans les redirections autorisées :
+    `https://<TON_PROJET_ID>.supabase.co/auth/v1/callback`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Resend (Envoi d'emails)
+Pour envoyer les factures par email.
+* Crée un compte sur [resend.com](https://resend.com/).
+* Génère une API Key.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ⚙️ Installation
+
+1.  **Cloner le dépôt :**
+    ```bash
+    git clone [https://github.com/votre-pseudo/trame.git](https://github.com/votre-pseudo/trame.git)
+    cd trame
+    ```
+
+2.  **Installer les dépendances :**
+    ```bash
+    npm install
+    # ou
+    yarn install
+    ```
+
+3.  **Configurer les variables d'environnement :**
+    Dupliquez le fichier `.env.local.example` (s'il existe) ou créez un fichier `.env.local` à la racine et remplissez-le avec vos clés :
+
+    ```env
+    # SUPABASE (Récupérer dans Project Settings > API)
+    NEXT_PUBLIC_SUPABASE_URL=[https://votre-projet.supabase.co](https://votre-projet.supabase.co)
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=votre-cle-publique-longue
+
+    # RESEND (Pour les emails - Optionnel en dev si simulé)
+    RESEND_API_KEY=re_123456...
+    ```
+
+4.  **Initialiser la Base de Données :**
+    Allez dans l'interface SQL de Supabase et exécutez les scripts de création de tables (Profiles, Clients, Chantiers, Articles, Devis, Factures).
+
+5.  **Lancer le serveur de développement :**
+    ```bash
+    npm run dev
+    ```
+
+    Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+
+---
+
+## 📂 Structure du Projet
