@@ -53,42 +53,18 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
                 </span>
             </div>
 
-            {/* EN-TÊTE DU DEVIS (Style Facture Papier Moderne) */}
-            <div className="grid gap-6 md:grid-cols-2">
-
-                {/* Côté Gauche : Titre et Chantier */}
-                <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Devis #{devis.reference || 'PROVISOIRE'}</h1>
-                    <p className="flex items-center gap-2 text-gray-400">
-                        <FileText size={16} />
-                        Chantier : <span className="text-gray-300">{devis.chantiers.name}</span>
-                    </p>
-                </div>
-
-                {/* Côté Droit : Info Client (Card) */}
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                    <div className="flex items-start gap-3">
-                        <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
-                            <User size={16} />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-white">{client?.name}</p>
-                            <p className="text-sm text-gray-400">{client?.address_line1}</p>
-                            <p className="text-sm text-gray-400">{client?.zip_code} {client?.city}</p>
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 border-t border-white/5 pt-3 text-xs text-gray-500">
-                        <Calendar size={12} />
-                        Date d'émission : {new Date(devis.date_emission).toLocaleDateString('fr-FR')}
-                    </div>
-                </div>
-            </div>
-
             {/* L'ÉDITEUR INTERACTIF */}
             <DevisEditor
                 initialItems={items || []}
                 devisId={devis.id}
                 articles={allArticles || []}
+                initialName={devis.name || ''}
+                initialStatus={devis.status || 'brouillon'}
+                // Nouvelles props pour le Header intégré
+                reference={devis.reference}
+                dateEmission={devis.date_emission}
+                chantierName={devis.chantiers.name}
+                client={client}
             />
 
         </div>

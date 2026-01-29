@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Save, Calculator, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Save, Calculator, Loader2, FileText } from 'lucide-react'
 import ArticleSelector from './ArticleSelector'
 import { saveDevis, deleteDevisItem } from '@/app/actions/devis'
 
@@ -20,13 +20,26 @@ type DevisItem = {
 export default function DevisEditor({
     initialItems,
     devisId,
-    articles
+    articles,
+    initialName,
+    initialStatus,
+    reference,
+    dateEmission,
+    chantierName,
+    client
 }: {
     initialItems: DevisItem[],
     devisId: string,
-    articles: any[]
+    articles: any[],
+    initialName: string,
+    initialStatus: string,
+    reference?: string,
+    dateEmission?: string,
+    chantierName?: string,
+    client?: any
 }) {
     const [items, setItems] = useState<DevisItem[]>(initialItems)
+    const [name, setName] = useState(initialName)
     const [loading, setLoading] = useState(false)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
 
@@ -34,6 +47,11 @@ export default function DevisEditor({
     useEffect(() => {
         setItems(initialItems)
     }, [initialItems])
+
+    // Sync name when initialName prop updates
+    useEffect(() => {
+        setName(initialName)
+    }, [initialName])
 
     const handleItemChange = (id: string, field: keyof DevisItem, value: string | number) => {
         setItems(prev => prev.map(item =>
@@ -70,9 +88,12 @@ export default function DevisEditor({
         }
     }
 
-    const handleSave = async () => {
+    const handleSave = async (targetStatus?: string) => {
         setLoading(true)
-        const res = await saveDevis(devisId, items)
+        const res = await saveDevis(devisId, items, {
+            name,
+            status: targetStatus // Si undefined, le backend ne mettra pas à jour le status (ou on peut passer null/undefined)
+        })
         setLoading(false)
         if (res?.success) {
             // Success feedback (could be a toast)
@@ -97,6 +118,20 @@ export default function DevisEditor({
                 devisId={devisId}
             />
 
+            {/* CHAMP NOM DU DEVIS */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Nom du devis (Optionnel)
+                </label>
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex: Rénovation Cuisine M. Dupont"
+                    className="w-full bg-transparent text-xl font-bold text-white placeholder-gray-600 outline-none border-none p-0 focus:ring-0"
+                />
+            </div>
+
             {/* BARRE D'OUTILS (Boutons d'action) */}
             <div className="flex items-center gap-3">
                 <button
@@ -114,8 +149,53 @@ export default function DevisEditor({
                     Importer depuis la bibliothèque
                 </button>
                 <div className="flex-1" /> {/* Espace vide pour pousser le bouton Save à droite */}
+
+                {/* BOUTON BROUILLON */}
                 <button
-                    onClick={handleSave}
+                    onClick={() => handleSave('brouillon')}
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-xl border border-gray-600 bg-gray-800/50 px-4 py-2 text-sm font-semibold text-gray-300 hover:bg-gray-700/50 transition-all active:scale-95 disabled:opacity-50"
+                >
+                    {loading ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />}
+                    Brouillon
+                </button>
+
+                <button
+                    onClick={async () => {
+                        if (!confirm("Valider ce devis et créer la facture correspondante ?")) return
+                        setLoading(true)
+                        // 1. On sauvegarde d'abord le devis
+                        await handleSave('en_attente_approbation')
+
+                        // 2. On lance la conversion
+                        const { convertDevisToFacture } = await import('@/app/actions/factures')
+                        const res = await convertDevisToFacture(devisId)
+
+                        if (res?.success) {
+                            // On reste sur le devis ou on va à la facture ?
+                            // "il devrait s'afficher dans la page Factures" -> User implies checking result there.
+                            // Let's redirect or notify.
+                            alert("Devis approuvé et facture créée !")
+                            // router.push('/dashboard/factures') ? No let user choose.
+                        } else {
+                            alert("Erreur lors de la création de la facture")
+                        }
+                        setLoading(false)
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 shadow-lg shadow-green-500/20 transition-all active:scale-95 disabled:opacity-50"
+                >
+                    <FileText size={16} />
+                    Approbation
+                </button>
+
+                <button
+                    onClick={() => {
+                        // Si on est en brouillon, "Enregistrer" signifie passer à l'étape suivante (En attente)
+                        // Sinon, on garde le statut actuel
+                        const nextStatus = initialStatus === 'brouillon' ? 'en_attente' : undefined
+                        handleSave(nextStatus)
+                    }}
                     disabled={loading}
                     className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-400 hover:bg-green-500/20 transition-all active:scale-95 disabled:opacity-50"
                 >

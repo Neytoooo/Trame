@@ -1,0 +1,112 @@
+'use client'
+
+import { useState } from 'react'
+import { Plus, Search, User, Mail, Phone, MapPin, Building2, ExternalLink, Edit } from 'lucide-react'
+import NewClientModal from '@/components/dashboard/NewClientModal'
+
+type Client = {
+    id: string
+    name: string
+    type: 'particulier' | 'professionnel'
+    email?: string
+    billing_email?: string
+    phone_mobile?: string
+    city?: string
+}
+
+export default function ClientPageClient({ initialClients }: { initialClients: any[] }) {
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [editingClient, setEditingClient] = useState<any>(null)
+    const [search, setSearch] = useState('')
+
+    const filteredClients = initialClients.filter(client =>
+        client.name.toLowerCase().includes(search.toLowerCase()) ||
+        client.email?.toLowerCase().includes(search.toLowerCase())
+    )
+
+    return (
+        <>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Rechercher un client..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-white focus:border-blue-500 focus:outline-none md:w-64"
+                    />
+                </div>
+                <button
+                    onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
+                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
+                >
+                    <Plus size={18} />
+                    Nouveau Client
+                </button>
+            </div>
+
+            {/* Grid des clients */}
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredClients.map((client) => (
+                    <div
+                        key={client.id}
+                        className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 transition-all hover:bg-white/10 hover:border-white/20"
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                                    }`}>
+                                    {client.type === 'professionnel' ? <Building2 size={20} /> : <User size={20} />}
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">{client.name}</h3>
+                                    <span className="text-xs text-gray-500 capitalize">{client.type}</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
+                                className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
+                                title="Modifier"
+                            >
+                                <Edit size={16} />
+                            </button>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                            {client.email && (
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <Mail size={14} className="text-gray-600" />
+                                    <span className="truncate">{client.email}</span>
+                                </div>
+                            )}
+                            {client.phone_mobile && (
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <Phone size={14} className="text-gray-600" />
+                                    <span>{client.phone_mobile}</span>
+                                </div>
+                            )}
+                            {client.city && (
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <MapPin size={14} className="text-gray-600" />
+                                    <span>{client.city}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {filteredClients.length === 0 && (
+                <div className="mt-12 text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-gray-600">
+                        <User size={32} />
+                    </div>
+                    <p className="text-gray-400">Aucun client trouvé.</p>
+                </div>
+            )}
+
+            <NewClientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} clientToEdit={editingClient} />
+        </>
+    )
+}

@@ -69,29 +69,66 @@ export async function addLineFromArticle(devisId: string, articleId: string) {
     return { success: true }
 }
 
-export async function saveDevis(devisId: string, items: any[]) {
+export async function saveDevis(devisId: string, items: any[], devisData?: { name?: string, status?: string }) {
     const supabase = await createClient()
 
-    // 1. On prépare les données à sauvegarder
-    // On nettoie les items pour ne garder que ce qui correspond à la table
-    const itemsToSave = items.map(item => ({
-        id: item.id.length < 10 ? undefined : item.id, // Si ID temporaire (ex: "new_123"), on l'enlève pour laisser Postgres générer l'UUID
-        devis_id: devisId,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        unit_price: item.unit_price,
-        tva: item.tva,
-        article_id: item.article_id || null // On garde le lien si dispo
-    }))
+    // 0. Update devis metadata if provided
+    if (devisData) {
+        const { error: devisError } = await supabase
+            .from('devis')
+            .update(devisData)
+            .eq('id', devisId)
 
-    // 2. Upsert (Insert ou Update)
-    const { error } = await supabase
-        .from('devis_items')
-        .upsert(itemsToSave, { onConflict: 'id' })
+        if (devisError) {
+            console.error("Erreur update devis:", devisError)
+            // On continue quand même pour sauver les items, ou on return error ?
+            // Mieux vaut return error pour l'instant
+            return { error: "Erreur lors de la mise à jour des infos du devis" }
+        }
+    }
 
-    if (error) {
-        console.error("Erreur sauvegarde devis:", error)
+    // Séparer les nouveaux items des items existants
+    const newItems = items.filter(item => item.id.startsWith('new_'))
+    const existingItems = items.filter(item => !item.id.startsWith('new_'))
+
+    const promises = []
+
+    // 1. Insertion des nouveaux items (sans ID, Postgres le génère)
+    if (newItems.length > 0) {
+        const itemsToInsert = newItems.map(item => ({
+            devis_id: devisId,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unit_price: item.unit_price,
+            tva: item.tva,
+            article_id: item.article_id || null
+        }))
+        // @ts-ignore - Supabase type inference might struggle with manual generic insert
+        promises.push(supabase.from('devis_items').insert(itemsToInsert))
+    }
+
+    // 2. Mise à jour des items existants (avec ID)
+    if (existingItems.length > 0) {
+        const itemsToUpdate = existingItems.map(item => ({
+            id: item.id,
+            devis_id: devisId,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unit_price: item.unit_price,
+            tva: item.tva,
+            article_id: item.article_id || null // On garde le lien si dispo
+        }))
+        promises.push(supabase.from('devis_items').upsert(itemsToUpdate, { onConflict: 'id' }))
+    }
+
+    const results = await Promise.all(promises)
+
+    // Vérifier s'il y a des erreurs
+    const errors = results.filter(r => r.error).map(r => r.error)
+    if (errors.length > 0) {
+        console.error("Erreur sauvegarde devis:", errors)
         return { error: "Erreur lors de la sauvegarde" }
     }
 
@@ -102,5 +139,23 @@ export async function saveDevis(devisId: string, items: any[]) {
 export async function deleteDevisItem(itemId: string) {
     const supabase = await createClient()
     await supabase.from('devis_items').delete().eq('id', itemId)
+    return { success: true }
+}
+
+export async function deleteDevis(devisId: string) {
+    const supabase = await createClient()
+
+    // 1. Supprimer les lignes (si pas de cascade)
+    await supabase.from('devis_items').delete().eq('devis_id', devisId)
+
+    // 2. Supprimer le devis
+    const { error } = await supabase.from('devis').delete().eq('id', devisId)
+
+    if (error) {
+        console.error("Erreur suppression devis:", error)
+        return { error: "Impossible de supprimer le devis" }
+    }
+
+    revalidatePath('/dashboard/devis')
     return { success: true }
 }
