@@ -23,7 +23,10 @@ export default async function SettingsPage() {
                 <p className="text-gray-400">Ces informations apparaîtront sur vos devis et factures.</p>
             </div>
 
-            <form action={saveCompanySettings} className="space-y-6">
+            <form action={async (formData) => {
+                'use server'
+                await saveCompanySettings(formData)
+            }} className="space-y-6">
 
                 {/* Section Identité */}
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md space-y-6">

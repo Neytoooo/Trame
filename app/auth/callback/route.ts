@@ -33,11 +33,17 @@ export async function GET(request: Request) {
             }
         )
         const { error } = await supabase.auth.exchangeCodeForSession(code)
+
         if (!error) {
-            return NextResponse.redirect(`${origin}${next}`)
+            // On utilise NEXT_PUBLIC_SITE_URL pour être sûr de l'adresse
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+            return NextResponse.redirect(`${baseUrl}${next}`)
+        } else {
+            console.error('Erreur échange session:', error)
         }
     }
 
-    // Si erreur, on renvoie vers une page d'erreur
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    // Sécurité : redirection vers l'origine avec le chemin d'erreur
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+    return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`)
 }

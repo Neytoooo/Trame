@@ -35,7 +35,7 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
     let enrichedItems = items || []
 
     if (items && items.length > 0) {
-        const parentIds = items.map(i => i.article_id).filter(Boolean)
+        const parentIds = items.map((i: any) => i.article_id).filter(Boolean)
 
         if (parentIds.length > 0) {
             // A. Récupérer les liaisons
@@ -46,18 +46,18 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
 
             if (liaisons && liaisons.length > 0) {
                 // B. Récupérer les infos des enfants
-                const childIds = liaisons.map(l => l.child_article_id)
+                const childIds = liaisons.map((l: any) => l.child_article_id)
                 const { data: childArticles } = await supabase
                     .from('articles')
                     .select('id, name, unit')
                     .in('id', childIds)
 
                 // C. Mapper le tout
-                enrichedItems = items.map(item => {
-                    const itemLiaisons = liaisons.filter(l => l.parent_article_id === item.article_id)
+                enrichedItems = items.map((item: any) => {
+                    const itemLiaisons = liaisons.filter((l: any) => l.parent_article_id === item.article_id)
                     if (itemLiaisons.length > 0) {
-                        const components = itemLiaisons.map(l => {
-                            const child = childArticles?.find(c => c.id === l.child_article_id)
+                        const components = itemLiaisons.map((l: any) => {
+                            const child = childArticles?.find((c: any) => c.id === l.child_article_id)
                             return {
                                 name: child?.name || 'Inconnu',
                                 quantity: l.quantity,
@@ -142,6 +142,7 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
                 initialReference={facture.reference}
                 initialStatus={facture.status}
                 initialDateEcheance={facture.date_echeance}
+                initialType={facture.type || 'standard'} // Default to standard if null
             />
 
         </div>
