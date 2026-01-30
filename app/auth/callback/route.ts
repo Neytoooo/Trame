@@ -3,10 +3,9 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-    const { searchParams, origin } = new URL(request.url)
+    const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
-    // next = la page où l'on veut aller après le login (souvent /dashboard)
-    const next = searchParams.get('next') ?? '/'
+    const next = '/dashboard' // On force la destination pour le test
 
     if (code) {
         const cookieStore = await cookies()
@@ -15,35 +14,24 @@ export async function GET(request: Request) {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 cookies: {
-                    getAll() {
-                        return cookieStore.getAll()
-                    },
-                    setAll(cookiesToSet) {
-                        try {
-                            cookiesToSet.forEach(({ name, value, options }) =>
-                                cookieStore.set(name, value, options)
-                            )
-                        } catch {
-                            // The `setAll` method was called from a Server Component.
-                            // This can be ignored if you have middleware refreshing
-                            // user sessions.
-                        }
+                    getAll: () => cookieStore.getAll(),
+                    setAll: (cookiesToSet) => {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
                     },
                 },
             }
         )
+
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            // On utilise NEXT_PUBLIC_SITE_URL pour être sûr de l'adresse
-            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
-            return NextResponse.redirect(`${baseUrl}${next}`)
-        } else {
-            console.error('Erreur échange session:', error)
+            // Utilise l'URL de base de Vercel pour rediriger
+            return NextResponse.redirect(`${new URL(request.url).origin}${next}`)
         }
     }
 
-    // Sécurité : redirection vers l'origine avec le chemin d'erreur
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
-    return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`)
+    // Si ça échoue, on redirige vers l'accueil ou l'erreur
+    return NextResponse.redirect(`${new URL(request.url).origin}/auth/auth-code-error`)
 }
