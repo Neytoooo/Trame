@@ -2,7 +2,8 @@
 
 import { createClient } from '@/utils/supabase/client'
 import { useState } from 'react'
-import { Building2, CheckCircle2, ArrowRight, LayoutDashboard } from 'lucide-react'
+import Image from 'next/image'
+import { CheckCircle2, ArrowRight, LayoutDashboard } from 'lucide-react'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -46,10 +47,15 @@ export default function LoginPage() {
         <div className="relative hidden flex-col justify-between bg-white/5 p-10 md:flex">
           <div>
             <div className="mb-6 flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-                <Building2 size={24} />
+              <div className="relative h-12 w-12 mr-2">
+                <Image
+                  src="/trame-logo.png"
+                  alt="Trame Logo"
+                  fill
+                  className="object-contain"
+                />
               </div>
-              <span className="text-2xl font-bold text-white">Trame</span>
+              <span className="text-3xl font-bold text-white">Trame</span>
             </div>
             <h1 className="mt-8 text-4xl font-bold leading-tight text-white">
               Gérez vos chantiers <br />

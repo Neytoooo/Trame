@@ -12,6 +12,7 @@ import {
     ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
+import ChantierStatusSelect from '@/components/chantiers/ChantierStatusSelect'
 
 function getDevisStatusLabel(status: string) {
     switch (status) {
@@ -70,13 +71,9 @@ export default async function ChantierDetailPage({ params }: { params: Promise<{
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold text-white">{chantier.name}</h1>
-                            <span className={`rounded-full px-3 py-1 text-xs font-medium border ${chantier.status === 'en_cours' ? 'border-green-500/20 bg-green-500/10 text-green-400' :
-                                chantier.status === 'etude' ? 'border-blue-500/20 bg-blue-500/10 text-blue-400' :
-                                    'border-gray-500/20 bg-gray-500/10 text-gray-400'
-                                }`}>
-                                {chantier.status === 'en_cours' ? 'En cours' :
-                                    chantier.status === 'etude' ? 'En étude' : 'Terminé'}
-                            </span>
+                            <div className="inline-block relative z-10">
+                                <ChantierStatusSelect id={chantier.id} currentStatus={chantier.status} />
+                            </div>
                         </div>
                         <div className="mt-2 flex items-center gap-4 text-sm text-gray-400">
                             <span className="flex items-center gap-1"><MapPin size={14} /> {chantier.address_line1 || 'Adresse non renseignée'}</span>

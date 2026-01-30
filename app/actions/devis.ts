@@ -81,21 +81,19 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
 
         if (devisError) {
             console.error("Erreur update devis:", devisError)
-            // On continue quand même pour sauver les items, ou on return error ?
-            // Mieux vaut return error pour l'instant
             return { error: "Erreur lors de la mise à jour des infos du devis" }
         }
     }
 
     // Séparer les nouveaux items des items existants
-    const newItems = items.filter(item => item.id.startsWith('new_'))
-    const existingItems = items.filter(item => !item.id.startsWith('new_'))
+    const newItems = items.filter((item: any) => item.id.toString().startsWith('new_'))
+    const existingItems = items.filter((item: any) => !item.id.toString().startsWith('new_'))
 
     const promises = []
 
     // 1. Insertion des nouveaux items (sans ID, Postgres le génère)
     if (newItems.length > 0) {
-        const itemsToInsert = newItems.map(item => ({
+        const itemsToInsert = newItems.map((item: any) => ({
             devis_id: devisId,
             description: item.description,
             quantity: item.quantity,
@@ -106,13 +104,13 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             details: item.details || [],
             item_type: item.item_type || 'item'
         }))
-        // @ts-ignore - Supabase type inference might struggle with manual generic insert
+        // @ts-ignore
         promises.push(supabase.from('devis_items').insert(itemsToInsert))
     }
 
     // 2. Mise à jour des items existants (avec ID)
     if (existingItems.length > 0) {
-        const itemsToUpdate = existingItems.map(item => ({
+        const itemsToUpdate = existingItems.map((item: any) => ({
             id: item.id,
             devis_id: devisId,
             description: item.description,
@@ -120,7 +118,7 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             unit: item.unit,
             unit_price: item.unit_price,
             tva: item.tva,
-            article_id: item.article_id || null, // On garde le lien si dispo
+            article_id: item.article_id || null,
             details: item.details || [],
             item_type: item.item_type || 'item'
         }))
@@ -135,6 +133,37 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
         console.error("Erreur sauvegarde devis:", errors)
         return { error: "Erreur lors de la sauvegarde" }
     }
+
+    // --- RECALCUL DES TOTAUX ---
+    // On ré-assemble tous les items (nouveaux + anciens mis à jour) pour le calcul du total
+    // Pour être sûr, on refetch tout
+    const { data: allItems } = await supabase
+        .from('devis_items')
+        .select('*')
+        .eq('devis_id', devisId)
+
+    let totalHT = 0
+    let totalTTC = 0
+
+    if (allItems) {
+        allItems.forEach(item => {
+            const qty = Number(item.quantity) || 0
+            const price = Number(item.unit_price) || 0
+            const tva = Number(item.tva) || 0
+
+            const lineHT = qty * price
+            const lineTTC = lineHT * (1 + tva / 100)
+
+            totalHT += lineHT
+            totalTTC += lineTTC
+        })
+    }
+
+    // Mise à jour du devis avec les nouveaux totaux
+    await supabase.from('devis').update({
+        total_ht: Math.round(totalHT * 100) / 100,
+        total_ttc: Math.round(totalTTC * 100) / 100
+    }).eq('id', devisId)
 
     revalidatePath(`/dashboard/devis/${devisId}/edit`)
     return { success: true }

@@ -33,3 +33,23 @@ export async function createChantier(formData: FormData) {
     revalidatePath('/dashboard/chantiers')
     return { success: true }
 }
+
+export async function updateChantierStatus(id: string, status: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Non connecté" }
+
+    const { error } = await supabase
+        .from('chantiers')
+        .update({ status })
+        .eq('id', id)
+
+    if (error) {
+        console.error("Update status error:", error)
+        return { error: "Erreur update status" }
+    }
+
+    revalidatePath(`/dashboard/chantiers`)
+    revalidatePath(`/dashboard/chantiers/${id}`)
+    return { success: true }
+}

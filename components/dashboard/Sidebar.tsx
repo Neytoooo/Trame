@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
     LayoutDashboard,
@@ -21,10 +22,16 @@ export default function Sidebar({ user }: { user: any }) {
         <aside className="relative z-20 flex w-64 flex-col border-r border-white/10 bg-gray-900/50 backdrop-blur-xl">
             {/* Logo */}
             <div className="flex h-20 items-center px-6 border-b border-white/5">
-                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
-                    <span className="font-bold text-white">T</span>
-                </div>
                 <span className="text-xl font-bold text-white tracking-wide">Trame</span>
+                <div className="relative h-35 w-35 mr-3">
+                    <Image
+                        src="/trame-logo.png"
+                        alt="Trame Logo"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+
             </div>
 
             {/* Navigation */}
