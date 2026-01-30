@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, User, Mail, Phone, MapPin, Building2 } from 'lucide-react'
+import { X, Loader2, User, Mail, Phone, MapPin, Building2, CreditCard, FileText } from 'lucide-react'
 import { ClientData, createClientAction, updateClientAction } from '@/app/actions/clients'
 
 export default function NewClientModal({
@@ -22,7 +22,9 @@ export default function NewClientModal({
         phone_mobile: '',
         address_line1: '',
         city: '',
-        zip_code: ''
+        zip_code: '',
+        siret: '',
+        iban: ''
     })
 
     useEffect(() => {
@@ -36,7 +38,9 @@ export default function NewClientModal({
                     phone_mobile: clientToEdit.phone_mobile || '',
                     address_line1: clientToEdit.address_line1 || '',
                     city: clientToEdit.city || '',
-                    zip_code: clientToEdit.zip_code || ''
+                    zip_code: clientToEdit.zip_code || '',
+                    siret: clientToEdit.siret || '',
+                    iban: clientToEdit.iban || ''
                 })
             } else {
                 setFormData({
@@ -47,7 +51,9 @@ export default function NewClientModal({
                     phone_mobile: '',
                     address_line1: '',
                     city: '',
-                    zip_code: ''
+                    zip_code: '',
+                    siret: '',
+                    iban: ''
                 })
             }
         }
@@ -70,10 +76,13 @@ export default function NewClientModal({
                     name: '',
                     type: 'particulier',
                     email: '',
+                    billing_email: '',
                     phone_mobile: '',
                     address_line1: '',
                     city: '',
-                    zip_code: ''
+                    zip_code: '',
+                    siret: '',
+                    iban: ''
                 })
             }
         } catch (err) {
@@ -95,10 +104,10 @@ export default function NewClientModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-gray-900 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
 
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-gray-900/95 backdrop-blur-sm p-6">
                     <h2 className="text-xl font-bold text-white">{clientToEdit ? "Modifier Client" : "Nouveau Client"}</h2>
                     <button
                         onClick={onClose}
@@ -108,7 +117,7 @@ export default function NewClientModal({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6">
+                <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div className="grid gap-6 md:grid-cols-2">
 
                         {/* Nom & Type */}
@@ -158,6 +167,25 @@ export default function NewClientModal({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Info Pro (SIRET) - Only if Pro */}
+                        {formData.type === 'professionnel' && (
+                            <div className="md:col-span-2">
+                                <label className="mb-1 block text-sm font-medium text-gray-400">Numéro de SIRET</label>
+                                <div className="relative">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                        <FileText size={18} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={formData.siret}
+                                        onChange={(e) => setFormData({ ...formData, siret: e.target.value })}
+                                        placeholder="123 456 789 00012"
+                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Coordonnées */}
                         <div className="space-y-4">
@@ -210,6 +238,23 @@ export default function NewClientModal({
                                     />
                                 </div>
                             </div>
+
+                            {/* IBAN */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-400">IBAN</label>
+                                <div className="relative">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                        <CreditCard size={18} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={formData.iban}
+                                        onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
+                                        placeholder="FR76 ...."
+                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Adresse */}
@@ -254,7 +299,7 @@ export default function NewClientModal({
 
                     </div>
 
-                    <div className="mt-8 flex justify-end gap-3">
+                    <div className="flex justify-end gap-3 pt-6 border-t border-white/10">
                         <button
                             type="button"
                             onClick={onClose}

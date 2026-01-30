@@ -98,8 +98,18 @@ export async function saveFacture(factureId: string, items: any[], factureData?:
         .eq('facture_id', factureId)
 
     if (allItems) {
-        const totalHT = allItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
-        const totalTTC = allItems.reduce((acc, item) => acc + (item.quantity * item.unit_price * (1 + (item.tva || 0) / 100)), 0)
+        // Logique standard ou Situation (avec progress_percentage)
+        const totalHT = allItems.reduce((acc, item) => {
+            const progress = item.progress_percentage !== undefined ? item.progress_percentage : 100
+            const amount = item.quantity * item.unit_price * (progress / 100)
+            return acc + amount
+        }, 0)
+
+        const totalTTC = allItems.reduce((acc, item) => {
+            const progress = item.progress_percentage !== undefined ? item.progress_percentage : 100
+            const amount = item.quantity * item.unit_price * (progress / 100)
+            return acc + (amount * (1 + (item.tva || 0) / 100))
+        }, 0)
 
         await supabase.from('factures').update({
             total_ht: totalHT,
@@ -206,4 +216,164 @@ export async function convertDevisToFacture(devisId: string) {
 
     // On retourne l'ID pour rediriger
     return { success: true, factureId: facture.id }
+}
+
+export async function createAcompte(devisId: string, percentage: number) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Non connecté" }
+
+    // 1. Get Devis
+    const { data: devis } = await supabase.from('devis').select('*').eq('id', devisId).single()
+    if (!devis) return { error: "Devis introuvable" }
+
+    // 2. Create Facture Acompte
+    const ref = `AC-${Date.now().toString().slice(-6)}` // Simple ref gen
+    const { data: facture, error } = await supabase.from('factures').insert({
+        chantier_id: devis.chantier_id,
+        devis_id: devisId,
+        status: 'en_attente',
+        type: 'acompte',
+        reference: ref,
+        created_by: user.id
+    }).select().single()
+
+    if (error) return { error: "Erreur création acompte" }
+
+    // 3. Create Item
+    const amount = (devis.total_ttc || 0) * (percentage / 100)
+    // Note: Acomptes are often treated as "Non soumis à TVA" on the deposit itself until actual invoice, 
+    // BUT typically we show the amount TTC. 
+    // To keep simple: 1 item, Qty 1, Price = Amount TTC, TVA = 0 (or simply handle as HT for logic).
+    // Better usually: HT amount line with correct Taxes.
+    // Let's go simple: 1 line "Acompte X%", Qty 1, Price = Total HT * %, TVA = Same avg or just 20%.
+
+    // Let's use logic: Total HT * %
+    const amountHT = (devis.total_ht || 0) * (percentage / 100)
+
+    await supabase.from('factures_items').insert({
+        facture_id: facture.id,
+        description: `Acompte de ${percentage}% sur le devis ${devis.reference || ''}`,
+        quantity: 1,
+        unit: 'forfait',
+        unit_price: amountHT,
+        tva: 20, // Default 20 for now, or fetch from devis items avg?
+        progress_percentage: 100 // Fully billed line
+    })
+
+    // Update totals
+    await supabase.from('factures').update({
+        total_ht: amountHT,
+        total_ttc: (devis.total_ttc || 0) * (percentage / 100)
+    }).eq('id', facture.id)
+
+    revalidatePath('/dashboard/factures')
+    return { success: true, factureId: facture.id }
+}
+
+export async function createSituation(devisId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Non connecté" }
+
+    // 1. Get Devis & Items
+    const { data: devis } = await supabase.from('devis').select('*, devis_items(*)').eq('id', devisId).single()
+    if (!devis) return { error: "Devis introuvable" }
+
+    // 2. Check previous situations to increment index
+    const { count } = await supabase.from('factures')
+        .select('*', { count: 'exact', head: true })
+        .eq('devis_id', devisId)
+        .eq('type', 'situation')
+
+    const nextIndex = (count || 0) + 1
+    const ref = `S${nextIndex}-${devis.reference || 'DEVIS'}`
+
+    // 3. Create Facture Situation
+    const { data: facture, error } = await supabase.from('factures').insert({
+        chantier_id: devis.chantier_id,
+        devis_id: devisId,
+        status: 'en_attente',
+        type: 'situation',
+        situation_index: nextIndex,
+        reference: ref,
+        created_by: user.id
+    }).select().single()
+
+    if (error) return { error: "Erreur création situation" }
+
+    // 4. Copy Items with 0% progress initially (or 100% if user prefers pre-fill, let's do 0 for "what have we done this month?")
+    // Actually, usually situations are cumulative. "Total realized: 50%".
+    // For V1 user asked: "Facturer l'avancement ligne par ligne".
+    // Let's init at 0% progress for this invoice.
+    if (devis.devis_items) {
+        const itemsToInsert = devis.devis_items.map((item: any) => ({
+            facture_id: facture.id,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unit_price: item.unit_price,
+            tva: item.tva,
+            article_id: item.article_id,
+            progress_percentage: 0 // Init at 0
+        }))
+        await supabase.from('factures_items').insert(itemsToInsert)
+    }
+
+    // Update totals (starts at 0)
+    await supabase.from('factures').update({ total_ht: 0, total_ttc: 0 }).eq('id', facture.id)
+
+    revalidatePath('/dashboard/factures')
+    return { success: true, factureId: facture.id }
+}
+
+export async function deleteFacture(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('factures')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
+
+    if (error) {
+        console.error('Erreur lors de la suppression (soft) de la facture:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/factures')
+    return { success: true }
+}
+
+export async function restoreFacture(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('factures')
+        .update({ deleted_at: null })
+        .eq('id', id)
+
+    if (error) {
+        console.error('Erreur lors de la restauration de la facture:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/factures')
+    return { success: true }
+}
+
+export async function deleteFacturePermanently(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('factures')
+        .delete()
+        .eq('id', id)
+
+    if (error) {
+        console.error('Erreur lors de la suppression définitive de la facture:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/factures')
+    return { success: true }
 }

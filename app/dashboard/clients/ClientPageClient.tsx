@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, User, Mail, Phone, MapPin, Building2, ExternalLink, Edit } from 'lucide-react'
+import { Plus, Search, User, Mail, Phone, MapPin, Building2, Edit, Trash2, Upload, FileSpreadsheet } from 'lucide-react'
 import NewClientModal from '@/components/dashboard/NewClientModal'
+import ClientImportModal from '@/components/dashboard/ClientImportModal' // Import Modal
+import { deleteClientAction } from '@/app/actions/clients'
 
 type Client = {
     id: string
@@ -12,17 +14,33 @@ type Client = {
     billing_email?: string
     phone_mobile?: string
     city?: string
+    siret?: string
+    iban?: string
 }
 
 export default function ClientPageClient({ initialClients }: { initialClients: any[] }) {
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false) // State for Import Modal
     const [editingClient, setEditingClient] = useState<any>(null)
     const [search, setSearch] = useState('')
+    const [isProcessing, setIsProcessing] = useState<string | null>(null)
 
     const filteredClients = initialClients.filter(client =>
         client.name.toLowerCase().includes(search.toLowerCase()) ||
         client.email?.toLowerCase().includes(search.toLowerCase())
     )
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer ${name} ?\n\nATTENTION :\n- Ses DEVIS seront SUPPRIMÉS DÉFINITIVEMENT.\n- Ses FACTURES seront ARCHIVÉES dans la corbeille.`)) return
+
+        setIsProcessing(id)
+        const res = await deleteClientAction(id)
+
+        if (!res?.success) {
+            alert(res?.error || "Une erreur est survenue lors de la suppression")
+        }
+        setIsProcessing(null)
+    }
 
     return (
         <>
@@ -37,13 +55,22 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                         className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-white focus:border-blue-500 focus:outline-none md:w-64"
                     />
                 </div>
-                <button
-                    onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
-                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
-                >
-                    <Plus size={18} />
-                    Nouveau Client
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                    >
+                        <FileSpreadsheet size={16} />
+                        Importer (Excel)
+                    </button>
+                    <button
+                        onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
+                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
+                    >
+                        <Plus size={18} />
+                        Nouveau Client
+                    </button>
+                </div>
             </div>
 
             {/* Grid des clients */}
@@ -64,13 +91,24 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                     <span className="text-xs text-gray-500 capitalize">{client.type}</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
-                                className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
-                                title="Modifier"
-                            >
-                                <Edit size={16} />
-                            </button>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button
+                                    onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
+                                    className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-blue-400 transition-all"
+                                    title="Modifier"
+                                >
+                                    <Edit size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(client.id, client.name)}
+                                    disabled={isProcessing === client.id}
+                                    className="rounded-lg p-2 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                    title="Supprimer"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="mt-4 space-y-2">
@@ -78,6 +116,9 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                 <div className="flex items-center gap-2 text-sm text-gray-400">
                                     <Mail size={14} className="text-gray-600" />
                                     <span className="truncate">{client.email}</span>
+                                    {client.billing_email && client.billing_email !== client.email && (
+                                        <span className="text-xs text-gray-600">(Fac: {client.billing_email})</span>
+                                    )}
                                 </div>
                             )}
                             {client.phone_mobile && (
@@ -107,6 +148,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
             )}
 
             <NewClientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} clientToEdit={editingClient} />
+            <ClientImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
         </>
     )
 }

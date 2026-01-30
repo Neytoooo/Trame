@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, Fragment } from 'react'
-import { Plus, Trash2, Save, Calculator, Loader2, FileText, ChevronRight, Layout, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Save, Calculator, Loader2, FileText, ChevronRight, Layout, GripVertical, Wallet, Calendar } from 'lucide-react'
 import ArticleSelector from './ArticleSelector'
 import CalculatorPopover from './CalculatorPopover'
 import { saveDevis, deleteDevisItem } from '@/app/actions/devis'
@@ -240,6 +240,49 @@ export default function DevisEditor({
                     {loading ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />}
                     Brouillon
                 </button>
+
+                <button
+                    onClick={async () => {
+                        const p = prompt("Pourcentage de l'acompte (ex: 30) ?")
+                        if (!p || isNaN(Number(p))) return
+                        setLoading(true)
+                        const { createAcompte } = await import('@/app/actions/factures')
+                        const res = await createAcompte(devisId, Number(p))
+                        if (res?.success) {
+                            window.location.href = `/dashboard/factures/${res.factureId}/edit`
+                        } else {
+                            alert(res?.error || "Erreur")
+                            setLoading(false)
+                        }
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-xl bg-orange-600/20 border border-orange-500/30 px-4 py-2 text-sm font-semibold text-orange-400 hover:bg-orange-600/30 transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                >
+                    <Wallet size={16} />
+                    Acompte
+                </button>
+
+                <button
+                    onClick={async () => {
+                        if (!confirm("Créer une situation de travaux pour ce devis ?")) return
+                        setLoading(true)
+                        const { createSituation } = await import('@/app/actions/factures')
+                        const res = await createSituation(devisId)
+                        if (res?.success) {
+                            window.location.href = `/dashboard/factures/${res.factureId}/edit`
+                        } else {
+                            alert(res?.error || "Erreur")
+                            setLoading(false)
+                        }
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-xl bg-blue-600/20 border border-blue-500/30 px-4 py-2 text-sm font-semibold text-blue-400 hover:bg-blue-600/30 transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                >
+                    <Calendar size={16} />
+                    Situation
+                </button>
+
+                <div className="w-px bg-white/10 h-8 mx-1" />
 
                 <button
                     onClick={async () => {

@@ -1,35 +1,9 @@
--- 1. Updates for 'devis_items' table (Métré & Sections)
-ALTER TABLE devis_items 
-ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '[]'::jsonb,
-ADD COLUMN IF NOT EXISTS item_type TEXT DEFAULT 'item' CHECK (item_type IN ('item', 'section'));
+-- 4. Updates for 'factures' table (Acomptes & Situations)
+ALTER TABLE factures
+ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'standard' CHECK (type IN ('standard', 'acompte', 'situation', 'solde')),
+ADD COLUMN IF NOT EXISTS situation_index INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS devis_id UUID REFERENCES devis(id);
 
--- 2. Create 'company_settings' table
-CREATE TABLE IF NOT EXISTS company_settings (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT,
-    address TEXT,
-    siret TEXT,
-    email TEXT,
-    phone TEXT,
-    logo_url TEXT,
-    footer_text TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id)
-);
-
--- 3. RLS Policies for company_settings
-ALTER TABLE company_settings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their own settings" 
-ON company_settings FOR SELECT 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own settings" 
-ON company_settings FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own settings" 
-ON company_settings FOR UPDATE 
-USING (auth.uid() = user_id);
+-- 5. Updates for 'factures_items' table (Progress)
+ALTER TABLE factures_items
+ADD COLUMN IF NOT EXISTS progress_percentage NUMERIC DEFAULT 100;

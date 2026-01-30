@@ -14,6 +14,7 @@ type FactureItem = {
     tva: number
     article_id?: string
     components?: { name: string, quantity: number, unit: string }[]
+    progress_percentage?: number
 }
 
 export default function FactureEditor({
@@ -22,14 +23,18 @@ export default function FactureEditor({
     articles,
     initialReference,
     initialStatus,
-    initialDateEcheance
+    initialDateEcheance,
+    initialType,
+    initialSituationIndex
 }: {
     initialItems: FactureItem[],
     factureId: string,
     articles: any[],
     initialReference: string,
     initialStatus: string,
-    initialDateEcheance?: string
+    initialDateEcheance?: string,
+    initialType: string,
+    initialSituationIndex?: number
 }) {
     const [items, setItems] = useState<FactureItem[]>(initialItems)
     const [status, setStatus] = useState(initialStatus)
@@ -42,6 +47,20 @@ export default function FactureEditor({
     useEffect(() => { setItems(initialItems) }, [initialItems])
     useEffect(() => { setStatus(initialStatus) }, [initialStatus])
 
+    const handleSelectArticle = (article: any) => {
+        const newItem: FactureItem = {
+            id: `new_${Date.now()}`,
+            description: article.name,
+            quantity: 1,
+            unit: article.unit || 'u',
+            unit_price: article.unit_price || 0,
+            tva: article.tva || 20,
+            article_id: article.id,
+            components: article.components
+        }
+        setItems(prev => [...prev, newItem])
+        setIsSelectorOpen(false)
+    }
 
     const handleItemChange = (id: string, field: keyof FactureItem, value: string | number) => {
         setItems(prev => prev.map(item =>
@@ -104,9 +123,19 @@ export default function FactureEditor({
     }
 
     // Totaux
-    const totalHT = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0)
-    const totalTVA = items.reduce((sum, item) => sum + (item.quantity * item.unit_price * (item.tva / 100)), 0)
+    const totalHT = items.reduce((sum, item) => {
+        const progress = initialType === 'situation' ? (item.progress_percentage ?? 0) : 100
+        return sum + (item.quantity * item.unit_price * (progress / 100))
+    }, 0)
+
+    const totalTVA = items.reduce((sum, item) => {
+        const progress = initialType === 'situation' ? (item.progress_percentage ?? 0) : 100
+        return sum + (item.quantity * item.unit_price * (progress / 100) * (item.tva / 100))
+    }, 0)
+
     const totalTTC = totalHT + totalTVA
+
+
 
     return (
         <div className="space-y-6">
@@ -114,7 +143,7 @@ export default function FactureEditor({
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
                 articles={articles}
-                devisId=""
+                onSelect={handleSelectArticle}
             />
 
             {/* --- METADATA HEADER (Status, Date) --- */}
@@ -189,6 +218,7 @@ export default function FactureEditor({
                             <th className="px-4 py-3 font-medium w-24">Qté</th>
                             <th className="px-4 py-3 font-medium w-24">Unité</th>
                             <th className="px-4 py-3 font-medium w-32 text-right">PU HT</th>
+                            {initialType === 'situation' && <th className="px-4 py-3 font-medium w-24 text-center">Avanc. %</th>}
                             <th className="px-4 py-3 font-medium w-20 text-right">TVA</th>
                             <th className="px-4 py-3 font-medium w-32 text-right">Total HT</th>
                             <th className="px-4 py-3 w-10"></th>
@@ -235,8 +265,24 @@ export default function FactureEditor({
                                         <td className="px-4 py-2 text-right">
                                             <input type="number" value={item.unit_price} onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-400 focus:border-b focus:border-emerald-500" />
                                         </td>
+                                        {initialType === 'situation' && (
+                                            <td className="px-4 py-2">
+                                                <div className='flex items-center justify-center'>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={item.progress_percentage ?? 0}
+                                                        onChange={(e) => handleItemChange(item.id, 'progress_percentage', parseFloat(e.target.value) || 0)}
+                                                        className="w-16 bg-white/10 rounded-lg p-1 outline-none text-center font-bold text-orange-400 focus:ring-2 focus:ring-orange-500"
+                                                    />
+                                                </div>
+                                            </td>
+                                        )}
                                         <td className="px-4 py-2 text-right text-gray-500">{item.tva}%</td>
-                                        <td className="px-4 py-2 text-right font-bold text-white">{(item.quantity * item.unit_price).toFixed(2)} €</td>
+                                        <td className="px-4 py-2 text-right font-bold text-white">
+                                            {((item.quantity * item.unit_price) * ((initialType === 'situation' ? (item.progress_percentage ?? 0) : 100) / 100)).toFixed(2)} €
+                                        </td>
                                         <td className="px-4 py-2 text-center">
                                             <button onClick={() => handleDeleteLine(item.id)} className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
                                         </td>
@@ -266,17 +312,17 @@ export default function FactureEditor({
                     </tbody>
                     <tfoot className="bg-black/20 font-medium">
                         <tr>
-                            <td colSpan={5} className="px-4 py-3 text-right text-gray-400">Total HT</td>
+                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-3 text-right text-gray-400">Total HT</td>
                             <td className="px-4 py-3 text-right text-white text-lg">{totalHT.toFixed(2)} €</td>
                             <td></td>
                         </tr>
                         <tr>
-                            <td colSpan={5} className="px-4 py-1 text-right text-gray-500 text-xs">TVA</td>
+                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-1 text-right text-gray-500 text-xs">TVA</td>
                             <td className="px-4 py-1 text-right text-gray-400 text-xs">{totalTVA.toFixed(2)} €</td>
                             <td></td>
                         </tr>
                         <tr>
-                            <td colSpan={5} className="px-4 py-4 text-right text-white font-bold">Net à payer TTC</td>
+                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-4 text-right text-white font-bold">Net à payer TTC</td>
                             <td className="px-4 py-4 text-right text-purple-400 font-bold text-xl">{totalTTC.toFixed(2)} €</td>
                             <td></td>
                         </tr>
