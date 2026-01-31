@@ -4,19 +4,22 @@ import { createClient } from '@/utils/supabase/client'
 import { useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, ArrowRight, LayoutDashboard } from 'lucide-react'
+import { getURL } from '@/utils/getURL'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   // Connexion Google
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${getURL()}auth/callback?next=/dashboard`,
         queryParams: { prompt: 'select_account' }
       },
     })
@@ -27,10 +30,16 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // On ajoutera la logique Email après, testons le design d'abord
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert(error.message)
-    setLoading(false)
+
+    if (error) {
+      alert(error.message)
+      setLoading(false)
+    } else {
+      router.refresh()
+      router.push('/dashboard')
+    }
   }
 
   return (
@@ -46,8 +55,8 @@ export default function LoginPage() {
         {/* COLONNE GAUCHE : Marketing (Visuel) */}
         <div className="relative hidden flex-col justify-between bg-white/5 p-10 md:flex">
           <div>
-            <div className="mb-6 flex items-center gap-2">
-              <div className="relative h-12 w-12 mr-2">
+            <div className="mb-6 flex items-center gap-4">
+              <div className="relative h-32 w-32 mr-2">
                 <Image
                   src="/trame-logo.png"
                   alt="Trame Logo"
@@ -55,7 +64,7 @@ export default function LoginPage() {
                   className="object-contain"
                 />
               </div>
-              <span className="text-3xl font-bold text-white">Trame</span>
+              <span className="text-5xl font-bold text-white">Trame</span>
             </div>
             <h1 className="mt-8 text-4xl font-bold leading-tight text-white">
               Gérez vos chantiers <br />
