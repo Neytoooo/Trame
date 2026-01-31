@@ -26,13 +26,14 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            // On force la redirection vers le dashboard en utilisant l'origine actuelle
-            return NextResponse.redirect(`${origin}/dashboard`)
+            // Redirection relative et sécurisée vers le dashboard
+            // Cela garde le même domaine et protocole (http/https) que la requête actuelle
+            return NextResponse.redirect(new URL('/dashboard', request.url))
         }
 
         console.error("Erreur d'échange :", error.message)
     }
 
-    // Si on arrive ici, c'est qu'il y a eu un problème
-    return NextResponse.redirect(`${origin}/?error=auth_failed`)
+    // Erreur ou pas de code -> Redirection erreur relative
+    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
 }
