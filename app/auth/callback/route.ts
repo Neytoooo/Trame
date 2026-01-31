@@ -3,9 +3,8 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url)
+    const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    const next = '/dashboard' // On force la destination pour le test
 
     if (code) {
         const cookieStore = await cookies()
@@ -27,11 +26,13 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            // Utilise l'URL de base de Vercel pour rediriger
-            return NextResponse.redirect(`${new URL(request.url).origin}${next}`)
+            // On force la redirection vers le dashboard en utilisant l'origine actuelle
+            return NextResponse.redirect(`${origin}/dashboard`)
         }
+
+        console.error("Erreur d'échange :", error.message)
     }
 
-    // Si ça échoue, on redirige vers l'accueil ou l'erreur
-    return NextResponse.redirect(`${new URL(request.url).origin}/auth/auth-code-error`)
+    // Si on arrive ici, c'est qu'il y a eu un problème
+    return NextResponse.redirect(`${origin}/?error=auth_failed`)
 }

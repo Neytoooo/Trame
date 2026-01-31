@@ -16,16 +16,14 @@ export default function LoginPage() {
 
   // Connexion Google
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${getURL()}auth/callback?next=/dashboard`,
-        queryParams: { prompt: 'select_account' }
+        // On force le passage par le callback qui, lui, doit pointer vers /dashboard
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
-    if (error) console.error('Erreur Google:', error.message)
   }
-
   // Connexion Email (Pour l'instant on prépare juste le visuel)
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
