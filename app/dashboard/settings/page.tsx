@@ -47,6 +47,22 @@ export default async function SettingsPage() {
                             />
                         </div>
                         <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-400">Logo de l'entreprise</label>
+                            <div className="flex items-center gap-4">
+                                {settings?.logo_url && (
+                                    <div className="h-16 w-16 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-1">
+                                        <img src={settings.logo_url} alt="Logo" className="h-full w-full object-contain" />
+                                    </div>
+                                )}
+                                <input
+                                    name="logo"
+                                    type="file"
+                                    accept="image/png, image/jpeg"
+                                    className="w-full text-sm text-gray-400 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
                                 <Hash size={14} /> SIRET
                             </label>

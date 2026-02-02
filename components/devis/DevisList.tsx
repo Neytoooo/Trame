@@ -4,17 +4,54 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { FileText, Plus, Search, MoreVertical, Edit, User, MapPin, Calendar, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import FilterBar from '@/components/dashboard/FilterBar'
 
 export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
     const [searchTerm, setSearchTerm] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [dateFilter, setDateFilter] = useState('all')
     const [devisList, setDevisList] = useState(initialDevis)
     const router = useRouter()
 
-    const filteredDevis = devisList.filter(devis =>
-        devis.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        devis.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        devis.chantiers?.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const isWithinDateRange = (dateString: string, range: string) => {
+        if (range === 'all') return true
+        const date = new Date(dateString)
+        const now = new Date()
+
+        if (range === 'this_month') {
+            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        }
+        if (range === 'last_month') {
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear()
+        }
+        if (range === 'last_3_months') {
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+            return date >= threeMonthsAgo
+        }
+        if (range === 'this_year') {
+            return date.getFullYear() === now.getFullYear()
+        }
+        return true
+    }
+
+    const filteredDevis = devisList.filter(devis => {
+        // 1. Search Term
+        const matchesSearch =
+            devis.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            devis.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            devis.chantiers?.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        if (!matchesSearch) return false
+
+        // 2. Status Filter
+        if (statusFilter !== 'all' && devis.status !== statusFilter) return false
+
+        // 3. Date Filter
+        if (!isWithinDateRange(devis.created_at, dateFilter)) return false
+
+        return true
+    })
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -69,19 +106,22 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
 
     return (
         <div className="space-y-6">
-            {/* Toolbar */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Rechercher un devis (ref, nom, client)..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 py-2 text-white placeholder-gray-500 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
-                    />
-                </div>
-            </div>
+            <FilterBar
+                placeholder="Rechercher un devis..."
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                statusValue={statusFilter}
+                onStatusChange={setStatusFilter}
+                dateRangeValue={dateFilter}
+                onDateRangeChange={setDateFilter}
+                statusOptions={[
+                    { label: 'Brouillon', value: 'brouillon' },
+                    { label: 'En préparation', value: 'en_attente' },
+                    { label: 'Approbation', value: 'en_attente_approbation' },
+                    { label: 'Validé', value: 'valide' },
+                    { label: 'Refusé', value: 'refuse' },
+                ]}
+            />
 
             {/* Grid display for quotes */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -95,9 +135,11 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                     <FileText size={18} className="text-blue-400" />
                                     {devis.name || 'Sans Titre'}
                                 </h3>
-                                <p className="text-xs text-gray-500 mt-1 font-mono">
-                                    {devis.reference || 'Brouillon'}
-                                </p>
+                                {devis.reference && (
+                                    <p className="text-xs text-gray-500 mt-1 font-mono">
+                                        {devis.reference}
+                                    </p>
+                                )}
                             </div>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(devis.status || 'brouillon')}`}>
                                 {getStatusLabel(devis.status || 'brouillon')}
@@ -159,7 +201,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
 
                 {filteredDevis.length === 0 && (
                     <div className="col-span-full py-12 text-center text-gray-500">
-                        Aucun devis trouvé.
+                        Aucun devis trouvé avec ces filtres.
                     </div>
                 )}
             </div>

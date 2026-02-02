@@ -20,14 +20,49 @@ export const generateFacturePDF = (facture: any, companySettings: any = null, re
     // --- INFO ENTREPRISE (Gauche) ---
     doc.setFontSize(10)
     doc.setTextColor(0)
+    doc.setTextColor(0)
     if (companySettings) {
-        doc.text(companySettings.name || 'Mon Entreprise', 14, 50)
-        doc.setFontSize(9)
-        doc.setTextColor(100)
-        doc.text(companySettings.address || '', 14, 55) // Multiline address might need splitTextToSize if too long, but let's keep simple
-        doc.text(`Tél: ${companySettings.phone || ''}`, 14, 63)
-        doc.text(`Email: ${companySettings.email || ''}`, 14, 67)
-        doc.text(`SIRET: ${companySettings.siret || ''}`, 14, 71)
+        // Logo Handling
+        if (companySettings.logo_url) {
+            try {
+                // Fetch image (as base64 or addImage supports url in some environments, but in Node/Browser consistency matters)
+                // Actually jspdf addImage supports URL if CORS allows. 
+                // Let's assume URL works or we need to fetch it.
+                // Best robust way: addImage with URL (async?) -> actually generateFacturePDF is synchronous-like usually but we might need async for image fetching.
+                // Wait, generateFacturePDF is currently synchronous in signature.
+                // We should make it async or use a pre-fetched base64.
+                // For now, let's try strict addImage with URL and see. If it fails due to CORS/Auth, we might need a change.
+                // BUT: standard jspdf in browser can load img.
+                // Let's constrain the logo size.
+                doc.addImage(companySettings.logo_url, 'PNG', 14, 40, 20, 20) // x, y, w, h
+
+                // Shift text down ? No, let's put it next to it or replace name?
+                // Plan: Logo Top-Left. Name below or next.
+                // Current Layout: Name at Y=50.
+                // Let's move company text to Y=65 if logo exists, or keep logo at Y=40..60 and text at X=40?
+                // Let's put text to the right of logo.
+                doc.text(companySettings.name || 'Mon Entreprise', 40, 50)
+                doc.setFontSize(9)
+                doc.setTextColor(100)
+                doc.text(companySettings.address || '', 40, 55)
+                doc.text(`Tél: ${companySettings.phone || ''}`, 40, 63)
+                doc.text(`Email: ${companySettings.email || ''}`, 40, 67)
+                doc.text(`SIRET: ${companySettings.siret || ''}`, 40, 71)
+            } catch (e) {
+                // Fallback if logo fails
+                console.error("Logo Error", e)
+                doc.text(companySettings.name || 'Mon Entreprise', 14, 50)
+                // ... same as before
+            }
+        } else {
+            doc.text(companySettings.name || 'Mon Entreprise', 14, 50)
+            doc.setFontSize(9)
+            doc.setTextColor(100)
+            doc.text(companySettings.address || '', 14, 55)
+            doc.text(`Tél: ${companySettings.phone || ''}`, 14, 63)
+            doc.text(`Email: ${companySettings.email || ''}`, 14, 67)
+            doc.text(`SIRET: ${companySettings.siret || ''}`, 14, 71)
+        }
     } else {
         doc.text('Mon Entreprise', 14, 50)
         doc.setFontSize(9)

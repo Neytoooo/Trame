@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, Search, User, Mail, Phone, MapPin, Building2, Edit, Trash2, Upload, FileSpreadsheet } from 'lucide-react'
 import NewClientModal from '@/components/dashboard/NewClientModal'
 import ClientImportModal from '@/components/dashboard/ClientImportModal' // Import Modal
+import ImportHelpButton from '@/components/dashboard/ImportHelpButton' // Helpers Import
 import { deleteClientAction } from '@/app/actions/clients'
 
 type Client = {
@@ -63,6 +64,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                         <FileSpreadsheet size={16} />
                         Importer (Excel)
                     </button>
+                    <ImportHelpButton type="client" />
                     <button
                         onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
                         className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"

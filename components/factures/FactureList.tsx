@@ -7,24 +7,60 @@ import { useRouter } from 'next/navigation'
 import { generateFacturePDF } from '@/utils/generatePdf'
 import { sendFactureEmail } from '@/app/actions/email'
 import { deleteFacture, deleteFacturePermanently, restoreFacture } from '@/app/actions/factures'
+import FilterBar from '@/components/dashboard/FilterBar'
 
 export default function FactureList({ initialFactures, companySettings }: { initialFactures: any[], companySettings: any }) {
     const [searchTerm, setSearchTerm] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [dateFilter, setDateFilter] = useState('all')
     const [facturesList, setFacturesList] = useState(initialFactures)
     const [showHistory, setShowHistory] = useState(false)
     const [isProcessing, setIsProcessing] = useState<string | null>(null) // ID being processed
     const router = useRouter()
 
-    const filteredFactures = facturesList.filter(facture =>
-        // 1. Filter by History Mode (Deleted vs Active)
-        (showHistory ? !!facture.deleted_at : !facture.deleted_at) &&
-        // 2. Filter by Search Term
-        (
+    // Helper for date filtering
+    const isWithinDateRange = (dateString: string, range: string) => {
+        if (range === 'all') return true
+        const date = new Date(dateString)
+        const now = new Date()
+
+        if (range === 'this_month') {
+            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        }
+        if (range === 'last_month') {
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear()
+        }
+        if (range === 'last_3_months') {
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+            return date >= threeMonthsAgo
+        }
+        if (range === 'this_year') {
+            return date.getFullYear() === now.getFullYear()
+        }
+        return true
+    }
+
+    const filteredFactures = facturesList.filter(facture => {
+        // 1. History Mode
+        if ((showHistory && !facture.deleted_at) || (!showHistory && facture.deleted_at)) return false
+
+        // 2. Search Term
+        const matchesSearch =
             facture.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             facture.chantiers?.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (facture.chantiers?.clients === null && "client supprimé".includes(searchTerm.toLowerCase()))
-        )
-    )
+
+        if (!matchesSearch) return false
+
+        // 3. Status Filter
+        if (statusFilter !== 'all' && facture.status !== statusFilter) return false
+
+        // 4. Date Filter
+        if (!isWithinDateRange(facture.date_emission, dateFilter)) return false
+
+        return true
+    })
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -56,7 +92,6 @@ export default function FactureList({ initialFactures, companySettings }: { init
         }
 
         if (res.success) {
-            // Optimistic update
             if (permanent) {
                 setFacturesList(prev => prev.filter(f => f.id !== id))
             } else {
@@ -72,7 +107,6 @@ export default function FactureList({ initialFactures, companySettings }: { init
         setIsProcessing(id)
         const res = await restoreFacture(id)
         if (res.success) {
-            // Optimistic update
             setFacturesList(prev => prev.map(f => f.id === id ? { ...f, deleted_at: null } : f))
         } else {
             alert("Erreur : " + res.error)
@@ -82,32 +116,34 @@ export default function FactureList({ initialFactures, companySettings }: { init
 
     return (
         <div className="space-y-6">
-            {/* Toolbar */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Rechercher une facture (ref, client)..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 py-2 text-white placeholder-gray-500 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
-                    />
-                </div>
-
-                {/* Toggle History */}
-                <button
-                    onClick={() => setShowHistory(!showHistory)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${showHistory ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+            <div className="flex flex-col gap-4">
+                <FilterBar
+                    placeholder="Rechercher une facture..."
+                    searchValue={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    statusValue={statusFilter}
+                    onStatusChange={setStatusFilter}
+                    dateRangeValue={dateFilter}
+                    onDateRangeChange={setDateFilter}
+                    statusOptions={[
+                        { label: 'En Attente', value: 'en_attente' },
+                        { label: 'Payée', value: 'payee' },
+                        { label: 'En Retard', value: 'retard' }
+                    ]}
                 >
-                    <Trash2 size={18} />
-                    {showHistory ? 'Masquer la corbeille' : 'Voir la corbeille'}
-                </button>
+                    <button
+                        onClick={() => setShowHistory(!showHistory)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${showHistory ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                    >
+                        <Trash2 size={18} />
+                        {showHistory ? 'Masquer' : 'Corbeille'}
+                    </button>
+                </FilterBar>
             </div>
 
             {/* Banner Corbeille */}
             {showHistory && (
-                <div className="flex items-center gap-2 rounded-xl bg-orange-500/10 border border-orange-500/20 p-4 text-orange-400 mb-4">
+                <div className="flex items-center gap-2 rounded-xl bg-orange-500/10 border border-orange-500/20 p-4 text-orange-400">
                     <AlertTriangle size={20} />
                     <p>Vous visualisez les factures supprimées. Elles seront effacées définitivement après 30 jours.</p>
                 </div>
@@ -233,7 +269,7 @@ export default function FactureList({ initialFactures, companySettings }: { init
 
                 {filteredFactures.length === 0 && (
                     <div className="col-span-full py-12 text-center text-gray-500">
-                        {showHistory ? "La corbeille est vide." : "Aucune facture trouvée."}
+                        {showHistory ? "La corbeille est vide." : "Aucune facture trouvée avec ces filtres."}
                     </div>
                 )}
             </div>

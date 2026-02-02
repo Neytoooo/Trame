@@ -1,9 +1,9 @@
 'use client'
 
 import { createClient } from '@/utils/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, ArrowRight, LayoutDashboard } from 'lucide-react'
+import { CheckCircle2, ArrowRight, LayoutDashboard, AlertCircle } from 'lucide-react'
 import { getURL } from '@/utils/getURL'
 import { useRouter } from 'next/navigation'
 
@@ -13,21 +13,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  // Détecter les erreurs d'authentification dans l'URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      if (error === 'auth_failed') {
+        setAuthError("Échec de l'authentification. Veuillez réessayer.")
+      } else if (error === 'no_code') {
+        setAuthError("Erreur de redirection. Vérifiez vos URLs dans Supabase.")
+      }
+    }
+  }, [])
 
   // Connexion Google
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
+    setAuthError(null)
+    console.log('🚀 Tentative de connexion Google...')
+    console.log('📍 URL actuelle:', window.location.origin)
+
+    const redirectUrl = `${window.location.origin}/auth/callback`
+    console.log('🔗 Redirect URL configurée:', redirectUrl)
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // On force le passage par le callback qui, lui, doit pointer vers /dashboard
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     })
+
+    if (error) {
+      console.error('❌ Erreur lors de signInWithOAuth:', error)
+      setAuthError(`Erreur OAuth: ${error.message}`)
+    } else {
+      console.log('✅ Redirection OAuth initiée', data)
+    }
   }
-  // Connexion Email (Pour l'instant on prépare juste le visuel)
+
+  // Connexion Email
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setAuthError(null)
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
@@ -102,6 +131,14 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-gray-900">Bon retour parmi nous</h2>
             <p className="text-sm text-gray-500">Connectez-vous pour accéder à votre espace.</p>
           </div>
+
+          {/* Message d'erreur d'authentification */}
+          {authError && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-700">{authError}</p>
+            </div>
+          )}
 
           {/* Bouton Google */}
           <button
