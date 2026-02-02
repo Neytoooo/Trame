@@ -42,10 +42,12 @@ export default async function ChantiersPage() {
                         <div className="mb-4 flex justify-between items-start">
                             <span className={`rounded-full px-3 py-1 text-xs font-medium border ${chantier.status === 'en_cours' ? 'border-green-500/20 bg-green-500/10 text-green-400' :
                                     chantier.status === 'etude' ? 'border-blue-500/20 bg-blue-500/10 text-blue-400' :
-                                        'border-gray-500/20 bg-gray-500/10 text-gray-400'
+                                        chantier.status === 'annule' ? 'border-red-500/20 bg-red-500/10 text-red-400' :
+                                            'border-gray-500/20 bg-gray-500/10 text-gray-400'
                                 }`}>
                                 {chantier.status === 'en_cours' ? 'En cours' :
-                                    chantier.status === 'etude' ? 'En étude' : 'Terminé'}
+                                    chantier.status === 'etude' ? 'En étude' :
+                                        chantier.status === 'annule' ? 'Annulé' : 'Terminé'}
                             </span>
                             <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                 <ArrowRight size={16} />

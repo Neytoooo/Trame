@@ -54,8 +54,35 @@ export default async function ChantierDetailPage({ params }: { params: Promise<{
         .eq('chantier_id', id)
         .order('created_at', { ascending: false })
 
+    // 3. On récupère les factures associées au chantier
+    const { data: facturesList } = await supabase
+        .from('factures')
+        .select('*')
+        .eq('chantier_id', id)
+        .order('created_at', { ascending: false })
+
     if (error || !chantier) {
         return notFound() // Affiche une page 404 si l'ID n'existe pas
+    }
+
+    function getFactureStatusLabel(status: string) {
+        switch (status) {
+            case 'brouillon': return 'Brouillon'
+            case 'en_attente': return 'En attente'
+            case 'payee': return 'Payée'
+            case 'retard': return 'En retard'
+            default: return status
+        }
+    }
+
+    function getFactureStatusColor(status: string) {
+        switch (status) {
+            case 'brouillon': return 'border-gray-500/20 bg-gray-500/10 text-gray-400'
+            case 'en_attente': return 'border-orange-500/20 bg-orange-500/10 text-orange-400'
+            case 'payee': return 'border-green-500/20 bg-green-500/10 text-green-400'
+            case 'retard': return 'border-red-500/20 bg-red-500/10 text-red-400'
+            default: return 'border-gray-500/20 bg-gray-500/10 text-gray-400'
+        }
     }
 
     return (
@@ -115,7 +142,7 @@ export default async function ChantierDetailPage({ params }: { params: Promise<{
                                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-gray-400">
                                             <Mail size={16} />
                                         </div>
-                                        {chantier.clients.email || ' d\'email'}
+                                        {chantier.clients.email || 'Pas d\'email'}
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-gray-300">
                                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-gray-400">
@@ -186,15 +213,55 @@ export default async function ChantierDetailPage({ params }: { params: Promise<{
                                     <FileText size={24} />
                                 </div>
                                 <p className="text-gray-400">Aucun devis créé pour ce chantier.</p>
-                                {/* Bouton déplacé dans le header, mais on peut le garder ici aussi si on veut. */}
                             </div>
                         )}
                     </div>
 
-                    {/* Section Factures (Future) */}
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md opacity-50">
-                        <h2 className="text-lg font-semibold text-white mb-2">Factures</h2>
-                        <p className="text-sm text-gray-500">Disponible une fois le devis validé.</p>
+                    {/* Section Factures */}
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                                <FileText size={20} className="text-green-400" />
+                                Factures
+                            </h2>
+                        </div>
+
+                        {facturesList && facturesList.length > 0 ? (
+                            <div className="space-y-3">
+                                {facturesList.map((facture) => (
+                                    <Link
+                                        key={facture.id}
+                                        href={`/dashboard/factures/${facture.id}/edit`}
+                                        className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 hover:border-white/20"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20 text-green-400">
+                                                <FileText size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-white">{facture.numero || 'Brouillon'}</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(facture.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm font-medium text-white">{facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-- €'}</span>
+                                            <span className={`rounded-full px-2 py-1 text-xs font-medium border ${getFactureStatusColor(facture.status)}`}>
+                                                {getFactureStatusLabel(facture.status)}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-black/20 py-10 text-center">
+                                <div className="mb-3 rounded-full bg-white/5 p-3 text-gray-500">
+                                    <FileText size={24} />
+                                </div>
+                                <p className="text-gray-400">Aucune facture créée pour ce chantier.</p>
+                            </div>
+                        )}
                     </div>
 
                 </div>
