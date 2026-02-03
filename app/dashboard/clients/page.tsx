@@ -18,8 +18,8 @@ export default async function ClientsPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Clients</h1>
-                    <p className="text-gray-400">Gérez votre base de contacts</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Clients</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Gérez votre base de contacts</p>
                 </div>
             </div>
 

@@ -50,13 +50,13 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
         <>
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
                     <input
                         type="text"
                         placeholder="Rechercher un client..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-white focus:border-blue-500 focus:outline-none md:w-64"
+                        className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-gray-900 focus:border-blue-500 focus:outline-none md:w-64 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -82,9 +82,9 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
             {/* Grid / List via viewMode */}
             {viewMode === 'list' ? (
                 // TABLE VIEW
-                <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
-                    <table className="w-full text-left text-sm text-gray-400">
-                        <thead className="bg-white/5 text-xs uppercase text-gray-300">
+                <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md">
+                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300">
                             <tr>
                                 <th className="px-6 py-4 font-medium">Nom</th>
                                 <th className="px-6 py-4 font-medium">Type</th>
@@ -93,12 +93,12 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                 <th className="px-6 py-4 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                             {filteredClients.map((client) => (
-                                <tr key={client.id} className="transition-colors hover:bg-white/5">
-                                    <td className="px-6 py-4 font-medium text-white">
+                                <tr key={client.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                         <div className="flex items-center gap-3">
-                                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${client.type === 'professionnel' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${client.type === 'professionnel' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'}`}>
                                                 {client.type === 'professionnel' ? <Building2 size={16} /> : <User size={16} />}
                                             </div>
                                             {client.name}
@@ -126,7 +126,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
-                                                className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-blue-400 transition-all"
+                                                className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 transition-all dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-blue-400"
                                                 title="Modifier"
                                             >
                                                 <Edit size={16} />
@@ -134,7 +134,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                             <button
                                                 onClick={() => handleDelete(client.id, client.name)}
                                                 disabled={isProcessing === client.id}
-                                                className="rounded-lg p-2 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                                className="rounded-lg p-2 text-red-600 hover:bg-red-50 transition-all dark:text-gray-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                                                 title="Supprimer"
                                             >
                                                 <Trash2 size={16} />
@@ -152,16 +152,16 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                     {filteredClients.map((client) => (
                         <div
                             key={client.id}
-                            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 transition-all hover:bg-white/10 hover:border-white/20"
+                            className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10 dark:hover:shadow-black/20"
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
                                         }`}>
                                         {client.type === 'professionnel' ? <Building2 size={20} /> : <User size={20} />}
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">{client.name}</h3>
+                                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors dark:text-white dark:group-hover:text-blue-400">{client.name}</h3>
                                         <span className="text-xs text-gray-500 capitalize">{client.type}</span>
                                     </div>
                                 </div>
@@ -169,7 +169,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                     <button
                                         onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
-                                        className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-blue-400 transition-all"
+                                        className="rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all dark:hover:bg-white/10 dark:hover:text-blue-400"
                                         title="Modifier"
                                     >
                                         <Edit size={16} />
@@ -177,7 +177,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                                     <button
                                         onClick={() => handleDelete(client.id, client.name)}
                                         disabled={isProcessing === client.id}
-                                        className="rounded-lg p-2 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                        className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all dark:hover:bg-red-500/10 dark:hover:text-red-400"
                                         title="Supprimer"
                                     >
                                         <Trash2 size={16} />
@@ -187,23 +187,23 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
 
                             <div className="mt-4 space-y-2">
                                 {client.email && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                                        <Mail size={14} className="text-gray-600" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <Mail size={14} className="text-gray-400 dark:text-gray-600" />
                                         <span className="truncate">{client.email}</span>
                                         {client.billing_email && client.billing_email !== client.email && (
-                                            <span className="text-xs text-gray-600">(Fac: {client.billing_email})</span>
+                                            <span className="text-xs text-gray-500">(Fac: {client.billing_email})</span>
                                         )}
                                     </div>
                                 )}
                                 {client.phone_mobile && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                                        <Phone size={14} className="text-gray-600" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <Phone size={14} className="text-gray-400 dark:text-gray-600" />
                                         <span>{client.phone_mobile}</span>
                                     </div>
                                 )}
                                 {client.city && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                                        <MapPin size={14} className="text-gray-600" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <MapPin size={14} className="text-gray-400 dark:text-gray-600" />
                                         <span>{client.city}</span>
                                     </div>
                                 )}
@@ -218,7 +218,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-gray-600">
                         <User size={32} />
                     </div>
-                    <p className="text-gray-400">Aucun client trouvé.</p>
+                    <p className="text-gray-500 dark:text-gray-400">Aucun client trouvé.</p>
                 </div>
             )}
 

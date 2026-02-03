@@ -30,9 +30,11 @@ type DraggableNodeProps = {
     isSource: boolean
     onLinkClick: () => void
     onEditData: () => void
+    isProcessing?: boolean
+    isNext?: boolean
 }
 
-export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, onToggle, onConnectStart, onConnectEnd, onRename, isDeleteMode, onDelete, isLinkMode, isSource, onLinkClick, onEditData }: DraggableNodeProps) {
+export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, onToggle, onConnectStart, onConnectEnd, onRename, isDeleteMode, onDelete, isLinkMode, isSource, onLinkClick, onEditData, isProcessing, isNext }: DraggableNodeProps) {
     const startPos = useRef({ x: 0, y: 0 })
     const isDragging = useRef(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -70,12 +72,17 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
             shadow: 'shadow-blue-500/40 animate-pulse'
         }
 
-        if (node.status === 'done') return {
-            bg: 'bg-green-500',
-            border: 'border-green-400',
-            text: 'text-white',
-            shadow: 'shadow-green-500/30'
-        }
+        // Keep color "Done" ? Or keep original color and use Badge?
+        // User asked for "green check bubble".
+        // Usually it's nice if the node also lights up.
+        // Let's keep the node "lighting up" to green if needed, OR keep the request strict: "petite coche vert une bulle qui apparait".
+        // If we only show the bubble, the node should probably keep its type color?
+        // Let's try to KEEP the type color but maybe add a green glow?
+        // Actually line 73 in original code overrides style to green if done.
+        // Let's REMOVE this override so the node keeps its type identity (Quote, Invoice etc.)
+        // and relies on the badge for status.
+
+        // if (node.status === 'done') return { ... }  <-- REMOVED
 
         switch (node.action_type) {
             case 'quote': return { bg: 'bg-[#1A1A1A]', border: 'border-blue-500', text: 'text-blue-500', shadow: 'shadow-blue-500/20' }
@@ -101,7 +108,7 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
 
     const getIcon = () => {
         if (isDeleteMode) return <Trash2 size={24} />
-        if (node.status === 'done') return <Check size={32} />
+        // if (node.status === 'done') return <Check size={32} /> <-- REMOVED
 
         switch (node.action_type) {
             case 'quote': return <FileText size={24} />
@@ -184,6 +191,29 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
                 }}
             >
                 {getIcon()}
+
+                {/* Status Badge (Bottom Right) */}
+                {(node.status === 'done' || isProcessing || isNext) && (
+                    <div className="absolute -bottom-1 -right-1 z-20">
+                        {isProcessing || isNext ? (
+                            <div className="flex items-center justify-center w-8 h-8">
+                                <div className="w-5 h-5 rounded-full bg-orange-500 animate-[pulse-orange_1.5s_infinite_ease-in-out]">
+                                    <style jsx global>{`
+                                        @keyframes pulse-orange {
+                                            0% { box-shadow: 0 0 0 0 #f97316; }
+                                            100% { box-shadow: 0 0 0 14px #f9731600; }
+                                        }
+                                    `}</style>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-green-500 text-white p-1 rounded-full shadow-lg border-2 border-[#0A0A0A] flex items-center justify-center w-6 h-6 animate-in zoom-in spin-in-90 duration-300">
+                                <Check size={14} strokeWidth={3} />
+                            </div>
+                        )}
+                    </div>
+                )}
+
 
                 {/* Settings Button (Visible on Hover if not in special modes) */}
                 {!isDeleteMode && !isLinkMode && (

@@ -27,44 +27,6 @@ export async function createEmptyDevis(chantierId: string) {
         return { error: "Impossible de créer le devis" }
     }
 
-    // 2. AUTOMATION : Check for "Quote" step in the graph and validate it
-    const { data: nodes } = await supabase
-        .from('chantier_nodes')
-        .select('*')
-        .eq('chantier_id', chantierId)
-        .eq('action_type', 'quote') // Look for 'Create Quote' nodes
-        .eq('status', 'pending')
-
-    if (nodes && nodes.length > 0) {
-        const targetNode = nodes[0] // Take the first pending quote node
-
-        // Check if "Lancement" is done (Safety check, optional)
-        const { data: playNode } = await supabase
-            .from('chantier_nodes')
-            .select('*')
-            .eq('chantier_id', chantierId)
-            .eq('action_type', 'play')
-            .single()
-
-        // Only validate if Lancement is done OR if there is no Lancement node (flexibility)
-        if (!playNode || playNode.status === 'done') {
-            console.log(`🤖 Auto-validating Quote Node ${targetNode.id}`)
-
-            // Mark as done
-            await supabase.from('chantier_nodes').update({ status: 'done' }).eq('id', targetNode.id)
-
-            // Trigger successors
-            // We import dynamically or top-level. Since this is a server action calling another server action...
-            // It's better to verify import.
-            try {
-                const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
-                await triggerNodeAutomation(targetNode.id, chantierId)
-            } catch (err) {
-                console.error("Automation Trigger Error:", err)
-            }
-        }
-    }
-
     // 3. Rediriger l'utilisateur vers l'éditeur de ce devis
     revalidatePath(`/dashboard/chantiers/${chantierId}`)
     redirect(`/dashboard/devis/${data.id}/edit`)
@@ -122,8 +84,8 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             return { error: "Erreur lors de la mise à jour des infos du devis" }
         }
 
-        // AUTOMATION: If status changed (e.g. to 'en_attente' or 'validate'), trigger graph step
-        if (devisData.status && devisData.status !== 'brouillon') {
+        // AUTOMATION: If status changed to 'en_attente_approbation', trigger graph step
+        if (devisData.status === 'en_attente_approbation') {
             // Fetch chantier_id from devis
             const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
 
@@ -160,6 +122,46 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
                             const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
                             // We don't await this to keep UI responsive? Or maybe we do to ensure log? 
                             // Let's await it but catch errors safely.
+                            await triggerNodeAutomation(targetNode.id, chantierId)
+                        } catch (e) {
+                            console.error("Auto-Trigger Failed:", e)
+                        }
+                    }
+                }
+            }
+        }
+
+        // AUTOMATION 2: Validate "Material Selection" (client_choice) if Quote has items (Draft or otherwise)
+        if (items && items.length > 0) {
+            // Re-fetch chantier_id if needed (or optimized to single fetch above? For now keep safe independent fetch)
+            const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
+
+            if (devis) {
+                const chantierId = devis.chantier_id
+                const { data: nodes } = await supabase
+                    .from('chantier_nodes')
+                    .select('*')
+                    .eq('chantier_id', chantierId)
+                    .eq('action_type', 'client_choice') // Look for 'Choix Matériaux'
+                    .eq('status', 'pending')
+                    .limit(1)
+
+                if (nodes && nodes.length > 0) {
+                    const targetNode = nodes[0]
+                    // Verify "Lancement"
+                    const { data: playNode } = await supabase
+                        .from('chantier_nodes')
+                        .select('status')
+                        .eq('chantier_id', chantierId)
+                        .eq('action_type', 'play')
+                        .single()
+
+                    if (!playNode || playNode.status === 'done') {
+                        console.log(`🤖 Auto-validating Material Choice Node ${targetNode.id} (Quote has items)`)
+                        await supabase.from('chantier_nodes').update({ status: 'done' }).eq('id', targetNode.id)
+
+                        try {
+                            const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
                             await triggerNodeAutomation(targetNode.id, chantierId)
                         } catch (e) {
                             console.error("Auto-Trigger Failed:", e)

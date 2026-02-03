@@ -15,12 +15,12 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="relative flex min-h-screen overflow-hidden bg-gray-900 text-gray-100">
+        <div className="relative flex h-screen overflow-hidden bg-slate-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
 
             {/* --- FOND ANIMÉ (Global pour tout le dashboard) --- */}
-            <div className="fixed -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600 opacity-20 blur-[100px] animate-pulse" />
-            <div className="fixed top-1/2 right-0 h-96 w-96 rounded-full bg-purple-600 opacity-10 blur-[100px] animate-pulse delay-1000" />
-            <div className="fixed bottom-0 left-1/3 h-64 w-64 rounded-full bg-emerald-500 opacity-10 blur-[100px]" />
+            <div className="hidden dark:block fixed -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600 opacity-20 blur-[100px] animate-pulse" />
+            <div className="hidden dark:block fixed top-1/2 right-0 h-96 w-96 rounded-full bg-purple-600 opacity-10 blur-[100px] animate-pulse delay-1000" />
+            <div className="hidden dark:block fixed bottom-0 left-1/3 h-64 w-64 rounded-full bg-emerald-500 opacity-10 blur-[100px]" />
 
             {/* --- SIDEBAR --- */}
             <Sidebar user={user} />

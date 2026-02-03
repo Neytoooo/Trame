@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Receipt, HardHat, Mail, Calendar, MessageSquare, Layout, Check, Clock, Play, CircleDashed, Camera, ClipboardCheck, Package, MapPin, Palette, Sparkles, Settings, Plus } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { triggerNodeAutomation } from '@/app/actions/triggerNodeAutomation'
+import { Badge } from '@/components/ui/Badge'
 
 type Node = {
     id: string
@@ -38,21 +39,21 @@ const getIcon = (type: string) => {
     }
 }
 
-const getTagStyle = (type: string) => {
+const getBadgeVariant = (type: string) => {
     switch (type) {
-        case 'quote': return 'text-blue-300 bg-blue-500/20 border-blue-500/30'
-        case 'invoice': return 'text-green-300 bg-green-500/20 border-green-500/30'
-        case 'setup': return 'text-orange-300 bg-orange-500/20 border-orange-500/30'
-        case 'email': return 'text-purple-300 bg-purple-500/20 border-purple-500/30'
-        case 'calendar': return 'text-yellow-300 bg-yellow-500/20 border-yellow-500/30'
-        case 'play': return 'text-green-400 bg-green-500/20 border-green-500/30'
-        case 'site_visit': return 'text-lime-300 bg-lime-500/20 border-lime-500/30'
-        case 'client_choice': return 'text-pink-300 bg-pink-500/20 border-pink-500/30'
-        case 'cleaning': return 'text-cyan-300 bg-cyan-500/20 border-cyan-500/30'
-        case 'material_order': return 'text-indigo-300 bg-indigo-500/20 border-indigo-500/30'
-        case 'reception_report': return 'text-teal-300 bg-teal-500/20 border-teal-500/30'
-        case 'photo_report': return 'text-rose-300 bg-rose-500/20 border-rose-500/30'
-        default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30'
+        case 'quote': return 'info'
+        case 'invoice': return 'success'
+        case 'setup': return 'orange'
+        case 'email': return 'purple'
+        case 'calendar': return 'warning'
+        case 'play': return 'success'
+        case 'site_visit': return 'lime'
+        case 'client_choice': return 'pink'
+        case 'cleaning': return 'cyan'
+        case 'material_order': return 'indigo'
+        case 'reception_report': return 'teal'
+        case 'photo_report': return 'rose'
+        default: return 'gray'
     }
 }
 
@@ -112,10 +113,10 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                 >
                                     {/* Action Type Tag */}
                                     <div className="flex items-start justify-between">
-                                        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider ${getTagStyle(node.action_type)}`}>
+                                        <Badge variant={getBadgeVariant(node.action_type) as any} className="uppercase tracking-wider text-[10px]">
                                             {getIcon(node.action_type)}
                                             {node.action_type?.replace(/_/g, ' ')}
-                                        </div>
+                                        </Badge>
                                         {/* Hover Check Action */}
                                         <div className="w-5 h-5 rounded-full border border-white/10 flex items-center justify-center text-transparent group-hover:text-green-400 group-hover:border-green-500/50 transition-all bg-black/20">
                                             <Check size={12} strokeWidth={3} />
@@ -178,10 +179,10 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                     onClick={() => moveNodeToPending(node)}
                                 >
                                     <div className="flex items-start justify-between">
-                                        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider text-gray-500 border-gray-700 bg-gray-800/50`}>
+                                        <Badge variant="gray" className="uppercase tracking-wider text-[10px] opacity-70">
                                             {getIcon(node.action_type)}
                                             {node.action_type?.replace(/_/g, ' ')}
-                                        </div>
+                                        </Badge>
                                         <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center">
                                             <Check size={12} strokeWidth={3} />
                                         </div>

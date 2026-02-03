@@ -130,6 +130,65 @@ END:VCALENDAR`
                 }
             }
 
+            // MATERIAL ORDER ACTION
+            if (node.action_type === 'material_order') {
+                console.log("📦 Processing Material Order...")
+
+                // 1. Find the Relevant Quote (Not Draft)
+                const { data: quotes } = await supabase
+                    .from('devis')
+                    .select('*, devis_items(*, articles(id, name, stock))')
+                    .eq('chantier_id', chantierId)
+                    .neq('status', 'brouillon')
+                    .order('created_at', { ascending: false }) // Get latest
+                    .limit(1)
+
+                const quote = quotes?.[0]
+
+                if (quote && quote.devis_items && quote.devis_items.length > 0) {
+                    let orderReport: string[] = []
+
+                    for (const item of quote.devis_items) {
+                        if (item.article_id && item.articles) {
+                            const currentStock = item.articles.stock || 0
+                            const requiredQty = item.quantity
+
+                            if (currentStock < requiredQty) {
+                                const missing = requiredQty - currentStock
+                                // Simulate Order & Refill
+                                const newStock = currentStock + missing // Or just set to requiredQty? "Ajouter au stock" implies adding. 
+                                // Actually, if I have 5, need 10. Missing 5. I order 5. New stock = 10? 
+                                // Then I use them for the project. 
+                                // Usually we reserve them. 
+                                // User said: "aller commander et ajouter au stock".
+                                // So let's add the missing amount to the stock so it becomes sufficient.
+                                const targetStock = currentStock + missing
+
+                                await supabase
+                                    .from('articles')
+                                    .update({ stock: targetStock })
+                                    .eq('id', item.article_id)
+
+                                orderReport.push(`Commandé ${missing}x ${item.articles.name}`)
+                            }
+                        }
+                    }
+
+                    if (orderReport.length > 0) {
+                        message = `Commande auto : ${orderReport.join(', ')}`
+                        actionDone = true
+                    } else {
+                        message = "Stock suffisant (Toutes les fournitures sont disponibles)"
+                        actionDone = true
+                    }
+                } else {
+                    message = "Aucun devis validé pour vérifier le stock."
+                    actionDone = true // We validate the step even if nothing happens, to not block the flow? Or maybe false? 
+                    // User flow implies this step handles ordering. If nothing to order, it's done.
+                }
+            }
+
+
             if (actionDone) {
                 totalMessages.push(message)
                 // Mark as Done

@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Link as LinkIcon, Terminal } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import DraggableNode, { Node } from './DraggableNode'
 import GraphEdge, { Edge } from './GraphEdge'
 import NodeSelectionModal from './NodeSelectionModal'
 import NodeDataModal from './NodeDataModal'
 import LogsModal from './LogsModal'
+import GraphOverlay from './GraphOverlay'
+import GraphToolbar from './GraphToolbar'
+import GraphBackground from './GraphBackground'
 
 export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     const supabase = createClient()
@@ -52,6 +54,57 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
             setLoading(false)
         }
         fetchData()
+    }, [chantierId, supabase])
+
+    // Subscription Realtime
+    useEffect(() => {
+        const channel = supabase
+            .channel(`realtime_chantier_${chantierId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'chantier_nodes',
+                    filter: `chantier_id=eq.${chantierId}`
+                },
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        setNodes((prev) => {
+                            if (prev.find(n => n.id === payload.new.id)) return prev
+                            return [...prev, payload.new as Node]
+                        })
+                    } else if (payload.eventType === 'UPDATE') {
+                        setNodes((prev) => prev.map((n) => (n.id === payload.new.id ? (payload.new as Node) : n)))
+                    } else if (payload.eventType === 'DELETE') {
+                        setNodes((prev) => prev.filter((n) => n.id !== payload.old.id))
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'chantier_edges',
+                    filter: `chantier_id=eq.${chantierId}`
+                },
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        setEdges((prev) => {
+                            if (prev.find(e => e.id === payload.new.id)) return prev
+                            return [...prev, payload.new as Edge]
+                        })
+                    } else if (payload.eventType === 'DELETE') {
+                        setEdges((prev) => prev.filter((e) => e.id !== payload.old.id))
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
     }, [chantierId, supabase])
 
     // Update Node Position (State Only - Realtime)
@@ -120,20 +173,58 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
         await supabase.from('chantier_nodes').update({ label: newLabel }).eq('id', id)
     }
 
+    const [processingNodeId, setProcessingNodeId] = useState<string | null>(null)
+
     // Toggle Status
     const toggleStatus = async (id: string, currentStatus: string) => {
-        // Find Play Node
-        const playNode = nodes.find(n => n.action_type === 'play')
-        const targetNode = nodes.find(n => n.id === id)
+        if (processingNodeId) return // Prevent double clicks
 
-        // Block if Play Node exists, is not done, and we are trying to validate another node
-        if (playNode && playNode.status !== 'done' && targetNode?.action_type !== 'play') {
+        const targetNode = nodes.find(n => n.id === id)
+        if (!targetNode) return
+
+        // 1. Check "Play" Node Dependency (Global Lock)
+        const playNode = nodes.find(n => n.action_type === 'play')
+
+        // If we are toggling the Play node OFF -> Reset EVERYTHING
+        if (targetNode.action_type === 'play' && currentStatus === 'done') {
+            if (!confirm("⚠️ Désactiver le lancement va réinitialiser toutes les étapes. Continuer ?")) return
+
+            setProcessingNodeId(id)
+            setNodes(prev => prev.map(n => ({ ...n, status: 'pending' }))) // Reset all locally
+
+            // DB Reset all
+            await supabase.from('chantier_nodes').update({ status: 'pending' }).eq('chantier_id', chantierId)
+
+            setProcessingNodeId(null)
+            return
+        }
+
+        // If we are trying to validate a normal node, check if Play is active
+        if (playNode && playNode.status !== 'done' && targetNode.action_type !== 'play') {
             alert("⚠️ Veuillez lancer le chantier (étape 'Lancement') avant de valider d'autres étapes.")
             return
         }
 
+        // 2. Sequential Validation Check (Dependencies)
+        // Find all incoming edges to this node
+        const incomingEdges = edges.filter(e => e.target === id)
+        const parentIds = incomingEdges.map(e => e.source)
+
+        // Check if all parents are done
+        const parentsNotDone = nodes.filter(n => parentIds.includes(n.id) && n.status !== 'done')
+
+        if (parentsNotDone.length > 0 && currentStatus === 'pending') {
+            alert("⚠️ Vous devez valider l'étape précédente avant de passer à celle-ci.")
+            return
+        }
+
+        // 3. Proceed with Toggle
+        setProcessingNodeId(id)
         const newStatus = currentStatus === 'pending' ? 'done' : 'pending'
+
+        // Optimistic Update
         setNodes(prev => prev.map(n => n.id === id ? { ...n, status: newStatus as any } : n))
+
         await supabase.from('chantier_nodes').update({ status: newStatus }).eq('id', id)
 
         // Trigger Automation if validated
@@ -141,11 +232,15 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
             const { triggerNodeAutomation } = await import('@/app/actions/triggerNodeAutomation')
             triggerNodeAutomation(id, chantierId).then(res => {
                 if (res.success && res.message !== "Aucune suite" && res.message !== "Fin de chaîne.") {
-                    window.location.reload()
+                    // window.location.reload() // Avoid full reload if possible, but keep for safety if complex
+                    // For now, let's just alert. Automation might update data that requires fetching?
+                    // Ideally we'd re-fetch nodes if automation changed them, but 'triggerNodeAutomation' mostly does emails/docs.
                     alert("✅ " + res.message)
                 }
             })
         }
+
+        setProcessingNodeId(null)
     }
 
     // Connect Logic (Original Drag)
@@ -297,81 +392,22 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     return (
         <div className="relative h-[80vh] w-full bg-[#0A0A0A] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
             {/* Grid Background - Moves with Pan */}
-            <div
-                className="absolute inset-0 opacity-20 pointer-events-none transition-transform duration-75 ease-out"
-                style={{
-                    backgroundImage: 'radial-gradient(circle, #333 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: `${viewPos.x}px ${viewPos.y}px`
-                }}
-            />
+            <GraphBackground viewPos={viewPos} />
 
             {/* UI Overlay (Fixed) */}
             <div className="absolute top-6 left-6 z-50 flex items-center gap-4 pointer-events-none">
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3 pointer-events-auto">
-                    <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Avancement</span>
-                    <div className="h-2 w-24 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="text-white font-bold">{progress}%</span>
-                </div>
+                <GraphOverlay progress={progress} />
 
                 {/* Actions Toolbar */}
-                <div className="flex items-center gap-2 pointer-events-auto">
-                    <button
-                        onClick={toggleDeleteMode}
-                        className={`
-                            flex items-center justify-center p-3 rounded-xl transition-all shadow-lg active:scale-95
-                            ${isDeleteMode
-                                ? 'bg-red-500 text-white shadow-red-500/20 rotate-12'
-                                : 'bg-white/10 hover:bg-white/20 text-white shadow-black/20'
-                            }
-                        `}
-                        title={isDeleteMode ? "Quitter le mode suppression" : "Mode suppression"}
-                    >
-                        <Trash2 size={20} />
-                    </button>
-
-                    <button
-                        onClick={toggleLinkMode}
-                        className={`
-                            flex items-center justify-center p-3 rounded-xl transition-all shadow-lg active:scale-95
-                            ${isLinkMode
-                                ? 'bg-blue-500 text-white shadow-blue-500/20'
-                                : 'bg-white/10 hover:bg-white/20 text-white shadow-black/20'
-                            }
-                        `}
-                        title={isLinkMode ? "Quitter le mode lien" : "Mode lien manuel"}
-                    >
-                        <LinkIcon size={20} />
-                    </button>
-
-                    <button
-                        onClick={handleAddClick}
-                        disabled={isDeleteMode || isLinkMode}
-                        className={`
-                            flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all active:scale-95
-                            ${isDeleteMode || isLinkMode ? 'opacity-50 cursor-not-allowed grayscale' : ''}
-                        `}
-                    >
-                        <Plus size={18} />
-                        Ajouter une étape
-                    </button>
-
-                    <button
-                        className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-all ml-2"
-                    >
-                        Recentrer
-                    </button>
-
-                    <button
-                        onClick={() => setIsLogsOpen(true)}
-                        className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 px-3 py-2 rounded-xl ml-2 transition-all active:scale-95"
-                        title="Voir les logs d'automatisation"
-                    >
-                        <Terminal size={20} />
-                    </button>
-                </div>
+                <GraphToolbar
+                    isDeleteMode={isDeleteMode}
+                    toggleDeleteMode={toggleDeleteMode}
+                    isLinkMode={isLinkMode}
+                    toggleLinkMode={toggleLinkMode}
+                    onAddClick={handleAddClick}
+                    onCenterClick={() => setViewPos({ x: 0, y: 0 })}
+                    onLogsClick={() => setIsLogsOpen(true)}
+                />
             </div>
 
             {/* Mode Indicators */}
@@ -455,25 +491,46 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                     </svg>
 
                     {/* Nodes */}
-                    {nodes.map((node) => (
-                        <DraggableNode
-                            key={node.id}
-                            node={node}
-                            containerRef={null as any}
-                            onDrag={(x, y) => handleNodeDrag(node.id, x, y)}
-                            onDragEnd={(x, y) => handleNodeDragEnd(node.id, x, y)}
-                            onToggle={() => toggleStatus(node.id, node.status)}
-                            onConnectStart={(e) => startConnection(node.id, e)}
-                            onConnectEnd={() => endConnection(node.id)}
-                            onRename={(newLabel) => updateNodeLabel(node.id, newLabel)}
-                            isDeleteMode={isDeleteMode}
-                            onDelete={() => deleteNode(node.id)}
-                            isLinkMode={isLinkMode}
-                            isSource={linkSourceId === node.id}
-                            onLinkClick={() => handleNodeLinkClick(node.id)}
-                            onEditData={() => handleEditData(node)}
-                        />
-                    ))}
+                    {nodes.map((node) => {
+                        // Calculate if this node is the "Next" one to be validated
+                        const incomingEdges = edges.filter(e => e.target === node.id)
+                        const parentIds = incomingEdges.map(e => e.source)
+                        const parents = nodes.filter(n => parentIds.includes(n.id))
+                        const allParentsDone = parents.every(p => p.status === 'done')
+
+                        const playNode = nodes.find(n => n.action_type === 'play')
+                        const isPlayDone = playNode ? playNode.status === 'done' : false
+                        const isPlayNode = node.action_type === 'play'
+
+                        // Condition for "Next":
+                        // 1. It must be Pending
+                        // 2. All parents must be Done (Sequential)
+                        // 3. If it's NOT the Play node, the Play node must be Done (Global Lock)
+                        // 4. (Implicit) If it IS the Play node, it depends only on parents (usually none)
+                        const isNext = node.status === 'pending' && allParentsDone && (isPlayNode || isPlayDone)
+
+                        return (
+                            <DraggableNode
+                                key={node.id}
+                                node={node}
+                                containerRef={null as any}
+                                onDrag={(x, y) => handleNodeDrag(node.id, x, y)}
+                                onDragEnd={(x, y) => handleNodeDragEnd(node.id, x, y)}
+                                onToggle={() => toggleStatus(node.id, node.status)}
+                                onConnectStart={(e) => startConnection(node.id, e)}
+                                onConnectEnd={() => endConnection(node.id)}
+                                onRename={(newLabel) => updateNodeLabel(node.id, newLabel)}
+                                isDeleteMode={isDeleteMode}
+                                onDelete={() => deleteNode(node.id)}
+                                isLinkMode={isLinkMode}
+                                isSource={linkSourceId === node.id}
+                                onLinkClick={() => handleNodeLinkClick(node.id)}
+                                onEditData={() => handleEditData(node)}
+                                isProcessing={processingNodeId === node.id}
+                                isNext={isNext}
+                            />
+                        )
+                    })}
                 </div>
 
             </div>

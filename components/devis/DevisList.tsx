@@ -58,12 +58,12 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'brouillon': return 'text-gray-400 bg-gray-500/10 border-gray-500/20'
-            case 'en_attente': return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
-            case 'en_attente_approbation': return 'text-green-400 bg-green-500/10 border-green-500/20'
-            case 'valide': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            case 'refuse': return 'text-red-400 bg-red-500/10 border-red-500/20'
-            default: return 'text-gray-400 bg-gray-500/10 border-gray-500/20'
+            case 'brouillon': return 'text-gray-500 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-500/10 dark:border-gray-500/20'
+            case 'en_attente': return 'text-blue-600 bg-blue-100 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20'
+            case 'en_attente_approbation': return 'text-green-600 bg-green-100 border-green-200 dark:text-green-400 dark:bg-green-500/10 dark:border-green-500/20'
+            case 'valide': return 'text-emerald-600 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20'
+            case 'refuse': return 'text-red-600 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20'
+            default: return 'text-gray-500 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-500/10 dark:border-gray-500/20'
         }
     }
 
@@ -131,9 +131,9 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
             {/* Grid / List via viewMode */}
             {viewMode === 'list' ? (
                 // TABLE VIEW
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
-                    <table className="w-full text-left text-sm text-gray-400">
-                        <thead className="bg-white/5 text-xs uppercase text-gray-300">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md">
+                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300">
                             <tr>
                                 <th className="px-6 py-4 font-medium">Référence & Nom</th>
                                 <th className="px-6 py-4 font-medium">Client</th>
@@ -144,19 +144,19 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                 <th className="px-6 py-4 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                             {filteredDevis.map((devis) => (
-                                <tr key={devis.id} className="transition-colors hover:bg-white/5">
-                                    <td className="px-6 py-4 font-medium text-white">
+                                <tr key={devis.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                         <div className="flex items-center gap-2">
-                                            <FileText size={16} className="text-blue-400" />
+                                            <FileText size={16} className="text-blue-600 dark:text-blue-400" />
                                             <div>
                                                 <p className="font-semibold">{devis.name || 'Sans Titre'}</p>
-                                                <p className="text-xs text-gray-500 font-mono">{devis.reference}</p>
+                                                <p className="text-xs text-gray-500 font-mono dark:text-gray-500">{devis.reference}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-white hover:text-blue-400 transition-colors">
+                                    <td className="px-6 py-4 text-gray-900 hover:text-blue-600 transition-colors dark:text-white dark:hover:text-blue-400">
                                         {devis.chantiers?.clients?.name || 'Inconnu'}
                                     </td>
                                     <td className="px-6 py-4">
@@ -165,7 +165,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                     <td className="px-6 py-4">
                                         {new Date(devis.created_at).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-bold text-white">
+                                    <td className="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
                                         {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -178,7 +178,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                             {devis.status !== 'brouillon' && (
                                                 <button
                                                     onClick={() => handleConvertToFacture(devis.id)}
-                                                    className="p-2 rounded-lg text-pink-400 hover:bg-pink-600/10 transition-all border border-transparent hover:border-pink-600/20"
+                                                    className="p-2 rounded-lg text-pink-600 hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100 dark:text-pink-400 dark:hover:bg-pink-600/10 dark:hover:border-pink-600/20"
                                                     title="Transformer en facture"
                                                 >
                                                     <FileText size={16} className="rotate-180" />
@@ -186,14 +186,14 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                             )}
                                             <Link
                                                 href={`/dashboard/devis/${devis.id}/edit`}
-                                                className="p-2 rounded-lg text-blue-400 hover:bg-blue-600/10 transition-all border border-transparent hover:border-blue-600/20"
+                                                className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 dark:text-blue-400 dark:hover:bg-blue-600/10 dark:hover:border-blue-600/20"
                                                 title="Ouvrir"
                                             >
                                                 <Edit size={16} />
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(devis.id)}
-                                                className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                                                className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 dark:text-red-500 dark:hover:bg-red-500/10 dark:hover:border-red-500/20"
                                                 title="Supprimer"
                                             >
                                                 <Trash2 size={16} />
@@ -209,13 +209,13 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                 // GRID VIEW
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredDevis.map((devis) => (
-                        <div key={devis.id} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1">
+                        <div key={devis.id} className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md hover:-translate-y-1 dark:border-white/10 dark:bg-[#1e293b] dark:hover:border-white/20 dark:hover:bg-[#334155] dark:hover:shadow-black/20">
 
                             {/* Header Card */}
                             <div className="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                        <FileText size={18} className="text-blue-400" />
+                                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2 dark:text-white">
+                                        <FileText size={18} className="text-blue-600 dark:text-blue-400" />
                                         {devis.name || 'Sans Titre'}
                                     </h3>
                                     {devis.reference && (
@@ -231,12 +231,12 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
 
                             {/* Info Client & Chantier */}
                             <div className="space-y-3 mb-6">
-                                <div className="flex items-center gap-2 text-sm text-gray-300">
-                                    <User size={14} className="text-gray-500" />
+                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                    <User size={14} className="text-gray-400 dark:text-gray-500" />
                                     <span className="truncate">{devis.chantiers?.clients?.name || 'Client inconnu'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-400">
-                                    <MapPin size={14} className="text-gray-500" />
+                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <MapPin size={14} className="text-gray-400 dark:text-gray-500" />
                                     <span className="truncate">{devis.chantiers?.name || 'Chantier inconnu'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -246,15 +246,15 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                             </div>
 
                             {/* Actions Footer */}
-                            <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                <span className="font-bold text-white">
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/5">
+                                <span className="font-bold text-gray-900 dark:text-white">
                                     {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
                                 </span>
 
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => handleDelete(devis.id)}
-                                        className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                                        className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-500 hover:text-white transition-all dark:bg-red-500/10 dark:text-red-400"
                                         title="Supprimer"
                                     >
                                         <Trash2 size={14} />
@@ -264,7 +264,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                         <button
                                             onClick={() => handleConvertToFacture(devis.id)}
                                             title="Transformer en facture"
-                                            className="p-2 rounded-lg bg-pink-600/10 text-pink-400 hover:bg-pink-600 hover:text-white transition-all"
+                                            className="p-2 rounded-lg bg-pink-100 text-pink-600 hover:bg-pink-600 hover:text-white transition-all dark:bg-pink-600/10 dark:text-pink-400"
                                         >
                                             <FileText size={14} className="rotate-180" />
                                         </button>
@@ -272,7 +272,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
 
                                     <Link
                                         href={`/dashboard/devis/${devis.id}/edit`}
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/10 text-blue-400 text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-100 text-blue-600 text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all dark:bg-blue-600/10 dark:text-blue-400"
                                     >
                                         <Edit size={14} />
                                         Ouvrir

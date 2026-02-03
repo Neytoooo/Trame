@@ -18,8 +18,8 @@ export default async function ArticlesPage() {
             {/* En-tête avec bouton d'action */}
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Bibliothèque de prix</h1>
-                    <p className="text-gray-400">Gérez vos ouvrages, fournitures et main d'œuvre.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bibliothèque de prix</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Gérez vos ouvrages, fournitures et main d'œuvre.</p>
                 </div>
                 <div className="flex gap-3">
                     <ImportHelpButton type="article" />

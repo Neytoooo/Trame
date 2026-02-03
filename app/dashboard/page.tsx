@@ -124,8 +124,8 @@ export default async function DashboardPage() {
             {/* En-tête */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Bonjour, {displayName} 👋</h1>
-                    <p className="mt-1 text-gray-400">Voici ce qui se passe sur vos chantiers aujourd'hui.</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bonjour, {displayName} 👋</h1>
+                    <p className="mt-1 text-gray-500 dark:text-gray-400">Voici ce qui se passe sur vos chantiers aujourd'hui.</p>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
                     title="Chiffre d'Affaires"
                     value={formatCurrency(revenueCurrent)}
                     trend={`${trendLabel} ce mois`}
-                    icon={<Wallet className="text-blue-400" />}
+                    icon={<Wallet className="text-blue-500 dark:text-blue-400" />}
                     color="blue"
                 />
                 <StatCard
@@ -143,49 +143,49 @@ export default async function DashboardPage() {
                     value={pendingQuotesCount.toString()}
                     details={formatCurrency(pendingQuotesAmount)}
                     trend="Potentiel"
-                    icon={<Users className="text-purple-400" />}
+                    icon={<Users className="text-purple-500 dark:text-purple-400" />}
                     color="purple"
                 />
                 <StatCard
                     title="Chantiers en cours"
                     value={ongoingProjectsCount.toString()}
                     trend="En production"
-                    icon={<Hammer className="text-emerald-400" />}
+                    icon={<Hammer className="text-emerald-500 dark:text-emerald-400" />}
                     color="emerald"
                 />
             </div>
 
             {/* Section "Activité Récente" */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-                <h2 className="mb-4 text-lg font-semibold text-white">Activité récente</h2>
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:bg-[#111827] dark:border-white/5">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Activité récente</h2>
 
                 {activities.length > 0 ? (
                     <div className="space-y-4">
                         {activities.map((activity) => (
-                            <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between rounded-xl bg-white/5 p-4 transition-colors hover:bg-white/10">
+                            <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between rounded-xl bg-gray-50 border border-gray-100 p-4 transition-colors hover:bg-gray-100 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10">
                                 <div className="flex items-center gap-4">
-                                    <div className={`rounded-full p-2 ${activity.type === 'facture' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                    <div className={`rounded-full p-2 ${activity.type === 'facture' ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'}`}>
                                         {activity.type === 'facture' ? <FileCheck size={20} /> : <FileText size={20} />}
                                     </div>
                                     <div>
-                                        <p className="font-medium text-white">
+                                        <p className="font-medium text-gray-900 dark:text-white">
                                             {activity.type === 'facture' ? 'Encaissée' : 'Proposé'} {activity.reference}
                                         </p>
-                                        <p className="text-sm text-gray-400">{activity.clientName} • {activity.date.toLocaleDateString()}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{activity.clientName} • {activity.date.toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-mono font-medium text-white">{formatCurrency(activity.amount)}</p>
+                                    <p className="font-mono font-medium text-gray-900 dark:text-white">{formatCurrency(activity.amount)}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/20 py-12">
-                        <div className="rounded-full bg-white/5 p-3 mb-3">
-                            <Plus className="text-gray-500" />
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-12 dark:border-white/10 dark:bg-black/20">
+                        <div className="rounded-full bg-white p-3 mb-3 shadow-sm dark:bg-white/5">
+                            <Plus className="text-gray-400 dark:text-gray-500" />
                         </div>
-                        <p className="text-gray-400">Aucune activité récente pour le moment.</p>
+                        <p className="text-gray-500 dark:text-gray-400">Aucune activité récente pour le moment.</p>
                     </div>
                 )}
             </div>
@@ -196,25 +196,25 @@ export default async function DashboardPage() {
 // Composant Carte Statistique réutilisable
 function StatCard({ title, value, details, trend, icon, color }: any) {
     const colors: any = {
-        blue: "from-blue-500/20 to-blue-600/5 border-blue-500/20",
-        purple: "from-purple-500/20 to-purple-600/5 border-purple-500/20",
-        emerald: "from-emerald-500/20 to-emerald-600/5 border-emerald-500/20",
+        blue: "bg-white border-blue-100 dark:bg-[#1e293b] dark:border-blue-500/10",
+        purple: "bg-white border-purple-100 dark:bg-[#2e1065] dark:border-purple-500/20",
+        emerald: "bg-white border-emerald-100 dark:bg-[#064e3b] dark:border-emerald-500/20",
     }
 
     return (
-        <div className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 backdrop-blur-md transition-all hover:border-opacity-50 ${colors[color] || colors.blue}`}>
+        <div className={`relative overflow-hidden rounded-2xl border p-6 backdrop-blur-md transition-all shadow-sm hover:shadow-md ${colors[color] || colors.blue}`}>
             <div className="flex items-start justify-between">
                 <div>
-                    <p className="text-sm font-medium text-gray-400">{title}</p>
-                    <h3 className="mt-2 text-3xl font-bold text-white">{value}</h3>
-                    {details && <p className="text-sm text-gray-400 mt-1">{details}</p>}
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+                    <h3 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+                    {details && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{details}</p>}
                 </div>
-                <div className="rounded-xl bg-white/10 p-2 shadow-inner">
+                <div className="rounded-xl bg-gray-50 p-2 shadow-sm border border-gray-100 dark:bg-white/10 dark:border-none dark:shadow-inner">
                     {icon}
                 </div>
             </div>
             <div className="mt-4 flex items-center gap-2 text-xs">
-                <span className={`flex items-center gap-1 font-medium ${color === 'blue' ? 'text-blue-400' : color === 'purple' ? 'text-purple-400' : 'text-emerald-400'}`}>
+                <span className={`flex items-center gap-1 font-medium ${color === 'blue' ? 'text-blue-600 dark:text-blue-400' : color === 'purple' ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     <ArrowUpRight size={14} />
                     {trend}
                 </span>
