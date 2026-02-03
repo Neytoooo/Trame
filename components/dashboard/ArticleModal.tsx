@@ -253,6 +253,39 @@ export default function ArticleModal() {
                                 </div>
                             </div>
 
+                            {/* SECTION STOCK (Uniquement pour fournitures) */}
+                            {type === 'simple' && (
+                                <div className="space-y-4 pt-4 border-t border-white/10">
+                                    <h3 className="text-sm font-semibold text-gray-300">Gestion de Stock (Optionnel)</h3>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium text-gray-400">Stock Actuel</label>
+                                            <input
+                                                name="stock" type="number" step="1"
+                                                placeholder="0"
+                                                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium text-gray-400">Seuil Alerte</label>
+                                            <input
+                                                name="min_stock" type="number" step="1"
+                                                placeholder="0"
+                                                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium text-gray-400">Fournisseur</label>
+                                            <input
+                                                name="supplier" type="text"
+                                                placeholder="Nom fournisseur"
+                                                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-white/10">
                                 <button
                                     type="button"

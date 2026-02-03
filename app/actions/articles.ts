@@ -16,6 +16,10 @@ export async function createArticle(formData: FormData) {
     const unit = formData.get('unit') as string
     const price_ht = parseFloat(formData.get('price_ht') as string)
     let cost_ht = parseFloat(formData.get('cost_ht') as string)
+    const stock = parseInt(formData.get('stock') as string) || 0
+    const min_stock = parseInt(formData.get('min_stock') as string) || 0
+    const supplier = formData.get('supplier') as string || null
+
     const composantsStr = formData.get('composants') as string
     const composants = composantsStr ? JSON.parse(composantsStr) : []
 
@@ -45,6 +49,9 @@ export async function createArticle(formData: FormData) {
         unit,
         price_ht,
         cost_ht,
+        stock,
+        min_stock,
+        supplier,
         created_by: user.id
     }).select().single()
 

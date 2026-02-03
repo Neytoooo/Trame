@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, useDragControls } from 'framer-motion'
-import { Check, Trash2, FileText, Receipt, HardHat, Mail, CircleDashed, Calendar, MessageSquare, Layout, Play, Settings } from 'lucide-react'
+import { Check, Trash2, FileText, Receipt, HardHat, Mail, CircleDashed, Calendar, MessageSquare, Layout, Play, Settings, Package, ClipboardCheck, Camera, MapPin, Palette, Sparkles } from 'lucide-react'
 
 export type Node = {
     id: string
@@ -87,6 +87,14 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
             case 'calendar': return { bg: 'bg-[#1A1A1A]', border: 'border-yellow-500', text: 'text-yellow-500', shadow: 'shadow-yellow-500/20' }
             case 'slack': return { bg: 'bg-[#1A1A1A]', border: 'border-pink-500', text: 'text-pink-500', shadow: 'shadow-pink-500/20' }
             case 'trello': return { bg: 'bg-[#1A1A1A]', border: 'border-cyan-500', text: 'text-cyan-500', shadow: 'shadow-cyan-500/20' }
+
+            case 'site_visit': return { bg: 'bg-[#1A1A1A]', border: 'border-lime-500', text: 'text-lime-500', shadow: 'shadow-lime-500/20' }
+            case 'client_choice': return { bg: 'bg-[#1A1A1A]', border: 'border-pink-600', text: 'text-pink-600', shadow: 'shadow-pink-600/20' }
+            case 'cleaning': return { bg: 'bg-[#1A1A1A]', border: 'border-cyan-400', text: 'text-cyan-400', shadow: 'shadow-cyan-400/20' }
+            case 'material_order': return { bg: 'bg-[#1A1A1A]', border: 'border-indigo-500', text: 'text-indigo-500', shadow: 'shadow-indigo-500/20' }
+            case 'reception_report': return { bg: 'bg-[#1A1A1A]', border: 'border-teal-500', text: 'text-teal-500', shadow: 'shadow-teal-500/20' }
+            case 'photo_report': return { bg: 'bg-[#1A1A1A]', border: 'border-rose-500', text: 'text-rose-500', shadow: 'shadow-rose-500/20' }
+
             default: return { bg: 'bg-[#1A1A1A]', border: 'border-white/20', text: 'text-gray-400', shadow: 'shadow-white/5' }
         }
     }
@@ -105,7 +113,15 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
             case 'calendar': return <Calendar size={24} />
             case 'slack': return <MessageSquare size={24} />
             case 'trello': return <Layout size={24} />
-            default: return <div className="w-3 h-3 rounded-full bg-white/20" />
+
+            case 'site_visit': return <MapPin size={24} />
+            case 'client_choice': return <Palette size={24} />
+            case 'cleaning': return <Sparkles size={24} />
+            case 'material_order': return <Package size={24} />
+            case 'reception_report': return <ClipboardCheck size={24} />
+            case 'photo_report': return <Camera size={24} />
+
+            default: return <Settings size={24} />
         }
     }
 

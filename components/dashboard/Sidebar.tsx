@@ -12,7 +12,8 @@ import {
     FileCheck,
     LogOut,
     Box,
-    Settings
+    Settings,
+    Layout
 } from 'lucide-react'
 
 export default function Sidebar({ user }: { user: any }) {
@@ -71,6 +72,12 @@ export default function Sidebar({ user }: { user: any }) {
                     icon={<FileCheck size={20} />}
                     label="Factures"
                     isActive={pathname?.startsWith('/dashboard/factures')}
+                />
+                <NavItem
+                    href="/dashboard/trello"
+                    icon={<Layout size={20} />}
+                    label="Tâches"
+                    isActive={pathname?.startsWith('/dashboard/trello')}
                 />
             </nav>
 

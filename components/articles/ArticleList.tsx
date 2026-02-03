@@ -71,6 +71,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                                 <th className="px-6 py-4 font-medium">Désignation</th>
                                 <th className="px-6 py-4 font-medium">Type</th>
                                 <th className="px-6 py-4 font-medium">Unité</th>
+                                <th className="px-6 py-4 font-medium text-right">Stock</th>
                                 <th className="px-6 py-4 font-medium text-right">Prix Vente HT</th>
                                 <th className="px-6 py-4 font-medium text-right">Déboursé</th>
                             </tr>
@@ -79,7 +80,10 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                             {filteredArticles && filteredArticles.length > 0 ? (
                                 filteredArticles.map((article) => (
                                     <tr key={article.id} className="transition-colors hover:bg-white/5">
-                                        <td className="px-6 py-4 font-medium text-white">{article.name}</td>
+                                        <td className="px-6 py-4 font-medium text-white">
+                                            {article.name}
+                                            {article.supplier && <div className="text-xs text-gray-500">{article.supplier}</div>}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getCategoryStyle(article.category)}`}>
                                                 {getCategoryIcon(article.category)}
@@ -87,13 +91,20 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">{article.unit}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            {article.category === 'fourniture' ? (
+                                                <span className={`font-bold ${article.stock <= (article.min_stock || 0) ? 'text-red-400' : 'text-gray-300'}`}>
+                                                    {article.stock || 0}
+                                                </span>
+                                            ) : '-'}
+                                        </td>
                                         <td className="px-6 py-4 text-right font-medium text-emerald-400">{article.price_ht} €</td>
                                         <td className="px-6 py-4 text-right text-gray-500">{article.cost_ht} €</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center">
+                                    <td colSpan={6} className="py-12 text-center">
                                         <p className="text-gray-500">Aucun article trouvé.</p>
                                     </td>
                                 </tr>
@@ -118,6 +129,13 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
 
                                 <h3 className="text-white font-bold text-lg mb-1">{article.name}</h3>
                                 <p className="text-gray-500 text-xs mb-4 uppercase tracking-wider">{article.category} • Par {article.unit}</p>
+
+                                {article.category === 'fourniture' && (
+                                    <div className="mb-4 flex items-center justify-between text-xs bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <span className="text-gray-400">Stock : <span className={`font-bold ${article.stock <= (article.min_stock || 0) ? 'text-red-400' : 'text-white'}`}>{article.stock || 0}</span></span>
+                                        <span className="text-gray-500">{article.supplier || 'Sans fournisseur'}</span>
+                                    </div>
+                                )}
 
                                 <div className="flex justify-between items-end border-t border-white/5 pt-4">
                                     <div>

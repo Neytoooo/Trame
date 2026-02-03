@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Receipt, HardHat, Mail, X, CircleDashed, Calendar, MessageSquare, Layout, Play } from 'lucide-react'
+import { FileText, Receipt, HardHat, Mail, X, CircleDashed, Calendar, MessageSquare, Layout, Play, Package, ClipboardCheck, Camera, MapPin, Palette, Sparkles } from 'lucide-react'
 
-type ActionType = 'quote' | 'invoice' | 'setup' | 'email' | 'general' | 'empty' | 'calendar' | 'slack' | 'trello' | 'play'
+type ActionType = 'quote' | 'invoice' | 'setup' | 'email' | 'general' | 'empty' | 'calendar' | 'slack' | 'trello' | 'play' | 'material_order' | 'reception_report' | 'photo_report' | 'site_visit' | 'client_choice' | 'cleaning'
 
 type NodeSelectionModalProps = {
     isOpen: boolean
@@ -42,6 +42,20 @@ export default function NodeSelectionModal({ isOpen, onClose, onSelect }: NodeSe
             description: 'Préparer le terrain et les équipes'
         },
         {
+            id: 'site_visit',
+            label: 'Visite de Chantier',
+            icon: MapPin,
+            color: 'bg-lime-500',
+            description: 'Point d\'étape sur place'
+        },
+        {
+            id: 'client_choice',
+            label: 'Choix Matériaux',
+            icon: Palette,
+            color: 'bg-pink-600',
+            description: 'Validation carrelage, peinture...'
+        },
+        {
             id: 'email',
             label: 'Email Automatique',
             icon: Mail,
@@ -50,18 +64,39 @@ export default function NodeSelectionModal({ isOpen, onClose, onSelect }: NodeSe
         },
         // New Automations
         {
-            id: 'empty',
-            label: 'Point de passage',
-            icon: CircleDashed,
-            color: 'bg-gray-500',
-            description: 'Nœud simple sans action'
-        },
-        {
             id: 'calendar',
             label: 'Google Calendar',
             icon: Calendar,
             color: 'bg-yellow-500',
             description: 'Créer un événement'
+        },
+        {
+            id: 'material_order',
+            label: 'Commande Matériaux',
+            icon: Package,
+            color: 'bg-indigo-500',
+            description: 'Gérer les commandes fournisseurs'
+        },
+        {
+            id: 'cleaning',
+            label: 'Nettoyage Pro',
+            icon: Sparkles,
+            color: 'bg-cyan-400',
+            description: 'Nettoyage fin de chantier'
+        },
+        {
+            id: 'reception_report',
+            label: 'PV de réception',
+            icon: ClipboardCheck,
+            color: 'bg-teal-500',
+            description: 'Valider la fin du chantier'
+        },
+        {
+            id: 'photo_report',
+            label: 'Envoi Photos',
+            icon: Camera,
+            color: 'bg-rose-500',
+            description: 'Envoyer des photos d\'avancement'
         },
         {
             id: 'slack',
@@ -76,6 +111,13 @@ export default function NodeSelectionModal({ isOpen, onClose, onSelect }: NodeSe
             icon: Layout,
             color: 'bg-cyan-500',
             description: 'Créer une carte dans un tableau'
+        },
+        {
+            id: 'empty',
+            label: 'Point de passage',
+            icon: CircleDashed,
+            color: 'bg-gray-500',
+            description: 'Nœud simple sans action'
         }
     ]
 

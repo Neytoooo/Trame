@@ -140,7 +140,7 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
         if (newStatus === 'done') {
             const { triggerNodeAutomation } = await import('@/app/actions/triggerNodeAutomation')
             triggerNodeAutomation(id, chantierId).then(res => {
-                if (res.success && res.message !== "Aucune suite") {
+                if (res.success && res.message !== "Aucune suite" && res.message !== "Fin de chaîne.") {
                     window.location.reload()
                     alert("✅ " + res.message)
                 }
