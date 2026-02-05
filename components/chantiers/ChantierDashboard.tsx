@@ -17,7 +17,7 @@ interface ChantierDashboardProps {
     devisList: any[]
     facturesList: any[]
     linkedDevisIds: Set<string>
-    createEmptyDevisAction: (chantierId: string) => Promise<void>
+    createEmptyDevisAction: (chantierId: string) => Promise<any>
 }
 
 export default function ChantierDashboard({
