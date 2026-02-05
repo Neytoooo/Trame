@@ -19,6 +19,14 @@ export default async function DevisPage() {
         `)
         .order('created_at', { ascending: false })
 
+    // Récupérer les ids des devis liés à l'automation
+    const { data: nodes } = await supabase
+        .from('chantier_nodes')
+        .select('data')
+        .eq('action_type', 'quote')
+
+    const linkedDevisIds = nodes?.map((n: any) => n.data?.devis_id).filter(Boolean) || []
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
@@ -40,7 +48,7 @@ export default async function DevisPage() {
                 </Link>
             </div>
 
-            <DevisList initialDevis={devis || []} />
+            <DevisList initialDevis={devis || []} linkedDevisIds={linkedDevisIds} />
         </div>
     )
 }

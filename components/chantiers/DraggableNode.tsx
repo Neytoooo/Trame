@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useDragControls } from 'framer-motion'
 import { Check, Trash2, FileText, Receipt, HardHat, Mail, CircleDashed, Calendar, MessageSquare, Layout, Play, Settings, Package, ClipboardCheck, Camera, MapPin, Palette, Sparkles } from 'lucide-react'
+import PulseLoader from '@/components/ui/PulseLoader'
 
 export type Node = {
     id: string
     type: 'start' | 'step' | 'end'
     action_type?: string // 'quote', 'invoice', 'setup', 'email', 'general', 'empty', 'calendar', 'slack', 'trello'
     label: string
-    status: 'pending' | 'done'
+    status: 'pending' | 'done' | 'waiting'
     position_x: number
     position_y: number
     data?: any
@@ -193,19 +194,10 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
                 {getIcon()}
 
                 {/* Status Badge (Bottom Right) */}
-                {(node.status === 'done' || isProcessing || isNext) && (
+                {(node.status === 'done' || node.status === 'waiting' || isProcessing || isNext) && (
                     <div className="absolute -bottom-1 -right-1 z-20">
-                        {isProcessing || isNext ? (
-                            <div className="flex items-center justify-center w-8 h-8">
-                                <div className="w-5 h-5 rounded-full bg-orange-500 animate-[pulse-orange_1.5s_infinite_ease-in-out]">
-                                    <style jsx global>{`
-                                        @keyframes pulse-orange {
-                                            0% { box-shadow: 0 0 0 0 #f97316; }
-                                            100% { box-shadow: 0 0 0 14px #f9731600; }
-                                        }
-                                    `}</style>
-                                </div>
-                            </div>
+                        {node.status === 'waiting' || isProcessing || isNext ? (
+                            <PulseLoader color="orange" />
                         ) : (
                             <div className="bg-green-500 text-white p-1 rounded-full shadow-lg border-2 border-[#0A0A0A] flex items-center justify-center w-6 h-6 animate-in zoom-in spin-in-90 duration-300">
                                 <Check size={14} strokeWidth={3} />
@@ -232,39 +224,41 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
             </div>
 
             {/* Label */}
-            {isEditing ? (
-                <input
-                    ref={inputRef}
-                    value={labelText}
-                    onChange={(e) => setLabelText(e.target.value)}
-                    onBlur={handleSaveLabel}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveLabel()}
-                    className="bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full border border-blue-500 text-xs font-medium text-white max-w-[150px] text-center focus:outline-none z-50 shadow-lg shadow-blue-500/20"
-                    onClick={(e) => e.stopPropagation()} // Prevent drag when clicking input
-                    onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on input
-                />
-            ) : (
-                <div
-                    className="bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/5 text-xs font-medium text-white max-w-[120px] truncate text-center cursor-text hover:border-white/20 transition-colors z-10"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        if (isDeleteMode) {
-                            onDelete()
-                            return
-                        }
-                        if (isLinkMode) {
-                            onLinkClick()
-                            return
-                        }
-                        if (!isDragging.current) setIsEditing(true)
-                    }}
-                >
-                    {node.label}
-                </div>
-            )}
+            {
+                isEditing ? (
+                    <input
+                        ref={inputRef}
+                        value={labelText}
+                        onChange={(e) => setLabelText(e.target.value)}
+                        onBlur={handleSaveLabel}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveLabel()}
+                        className="bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full border border-blue-500 text-xs font-medium text-white max-w-[150px] text-center focus:outline-none z-50 shadow-lg shadow-blue-500/20"
+                        onClick={(e) => e.stopPropagation()} // Prevent drag when clicking input
+                        onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on input
+                    />
+                ) : (
+                    <div
+                        className="bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/5 text-xs font-medium text-white max-w-[120px] truncate text-center cursor-text hover:border-white/20 transition-colors z-10"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (isDeleteMode) {
+                                onDelete()
+                                return
+                            }
+                            if (isLinkMode) {
+                                onLinkClick()
+                                return
+                            }
+                            if (!isDragging.current) setIsEditing(true)
+                        }}
+                    >
+                        {node.label}
+                    </div>
+                )
+            }
 
             {/* Extended Hitbox for Mouse Detection (Transparent background) */}
             <div className="absolute inset-[-40px] rounded-full z-0 pointer-events-none group-hover:pointer-events-auto" />
-        </motion.div>
+        </motion.div >
     )
 }

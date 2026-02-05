@@ -13,7 +13,8 @@ import {
     LogOut,
     Box,
     Settings,
-    Layout
+    Layout,
+    Bell
 } from 'lucide-react'
 
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -44,6 +45,12 @@ export default function Sidebar({ user }: { user: any }) {
                     icon={<LayoutDashboard size={20} />}
                     label="Tableau de bord"
                     isActive={pathname === '/dashboard'}
+                />
+                <NavItem
+                    href="/dashboard/annonces"
+                    icon={<Bell size={20} />}
+                    label="Annonces"
+                    isActive={pathname === '/dashboard/annonces'}
                 />
                 <NavItem
                     href="/dashboard/articles"

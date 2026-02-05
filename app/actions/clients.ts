@@ -16,6 +16,7 @@ export type ClientData = {
     zip_code?: string
     siret?: string
     iban?: string
+    tva_number?: string
 }
 
 export async function createClientAction(data: ClientData) {

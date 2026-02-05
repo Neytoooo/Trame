@@ -7,14 +7,17 @@ import { useRouter } from 'next/navigation'
 import FilterBar from '@/components/dashboard/FilterBar'
 import ViewToggle from '@/components/ui/ViewToggle'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
+import StatusBadge from '@/components/ui/StatusBadge'
 
-export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
+export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initialDevis: any[], linkedDevisIds?: string[] }) {
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-devis', 'grid')
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
     const [devisList, setDevisList] = useState(initialDevis)
     const router = useRouter()
+
+    const linkedIdsSet = new Set(linkedDevisIds)
 
     const isWithinDateRange = (dateString: string, range: string) => {
         if (range === 'all') return true
@@ -56,27 +59,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
         return true
     })
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'brouillon': return 'text-gray-500 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-500/10 dark:border-gray-500/20'
-            case 'en_attente': return 'text-blue-600 bg-blue-100 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20'
-            case 'en_attente_approbation': return 'text-green-600 bg-green-100 border-green-200 dark:text-green-400 dark:bg-green-500/10 dark:border-green-500/20'
-            case 'valide': return 'text-emerald-600 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20'
-            case 'refuse': return 'text-red-600 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20'
-            default: return 'text-gray-500 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-500/10 dark:border-gray-500/20'
-        }
-    }
 
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'brouillon': return 'Brouillon'
-            case 'en_attente': return 'En préparation'
-            case 'en_attente_approbation': return 'Approbation'
-            case 'valide': return 'Validé'
-            case 'refuse': return 'Refusé'
-            default: return status
-        }
-    }
 
     const handleDelete = async (id: string) => {
         if (!confirm("Supprimer définitivement ce devis ?")) return
@@ -150,8 +133,7 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                         <div className="flex items-center gap-2">
                                             <FileText size={16} className="text-blue-600 dark:text-blue-400" />
-                                            <div>
-                                                <p className="font-semibold">{devis.name || 'Sans Titre'}</p>
+                                            <div className="flex items-center gap-1">
                                                 <p className="text-xs text-gray-500 font-mono dark:text-gray-500">{devis.reference}</p>
                                             </div>
                                         </div>
@@ -169,9 +151,10 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                         {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(devis.status || 'brouillon')}`}>
-                                            {getStatusLabel(devis.status || 'brouillon')}
-                                        </span>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {linkedIdsSet.has(devis.id) && <StatusBadge status="automatise" />}
+                                            <StatusBadge status={devis.status || 'brouillon'} />
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -224,9 +207,10 @@ export default function DevisList({ initialDevis }: { initialDevis: any[] }) {
                                         </p>
                                     )}
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(devis.status || 'brouillon')}`}>
-                                    {getStatusLabel(devis.status || 'brouillon')}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {linkedIdsSet.has(devis.id) && <StatusBadge status="automatise" showIcon={true} />}
+                                    <StatusBadge status={devis.status || 'brouillon'} />
+                                </div>
                             </div>
 
                             {/* Info Client & Chantier */}

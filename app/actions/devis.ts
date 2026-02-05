@@ -84,91 +84,13 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             return { error: "Erreur lors de la mise à jour des infos du devis" }
         }
 
-        // AUTOMATION: If status changed to 'en_attente_approbation', trigger graph step
-        if (devisData.status === 'en_attente_approbation') {
-            // Fetch chantier_id from devis
-            const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
-
-            if (devis) {
-                const chantierId = devis.chantier_id
-                // Check for pending "Create Quote" node
-                const { data: nodes } = await supabase
-                    .from('chantier_nodes')
-                    .select('*')
-                    .eq('chantier_id', chantierId)
-                    .eq('action_type', 'quote')
-                    .eq('status', 'pending')
-                    .limit(1)
-
-                if (nodes && nodes.length > 0) {
-                    const targetNode = nodes[0]
-
-                    // Verify "Lancement"
-                    const { data: playNode } = await supabase
-                        .from('chantier_nodes')
-                        .select('status')
-                        .eq('chantier_id', chantierId)
-                        .eq('action_type', 'play')
-                        .single()
-
-                    if (!playNode || playNode.status === 'done') {
-                        console.log(`🤖 Auto-validating Quote Node ${targetNode.id} due to status '${devisData.status}'`)
-
-                        // Mark Done
-                        await supabase.from('chantier_nodes').update({ status: 'done' }).eq('id', targetNode.id)
-
-                        // Trigger Successors
-                        try {
-                            const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
-                            // We don't await this to keep UI responsive? Or maybe we do to ensure log? 
-                            // Let's await it but catch errors safely.
-                            await triggerNodeAutomation(targetNode.id, chantierId)
-                        } catch (e) {
-                            console.error("Auto-Trigger Failed:", e)
-                        }
-                    }
-                }
-            }
-        }
-
-        // AUTOMATION 2: Validate "Material Selection" (client_choice) if Quote has items (Draft or otherwise)
-        if (items && items.length > 0) {
-            // Re-fetch chantier_id if needed (or optimized to single fetch above? For now keep safe independent fetch)
-            const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
-
-            if (devis) {
-                const chantierId = devis.chantier_id
-                const { data: nodes } = await supabase
-                    .from('chantier_nodes')
-                    .select('*')
-                    .eq('chantier_id', chantierId)
-                    .eq('action_type', 'client_choice') // Look for 'Choix Matériaux'
-                    .eq('status', 'pending')
-                    .limit(1)
-
-                if (nodes && nodes.length > 0) {
-                    const targetNode = nodes[0]
-                    // Verify "Lancement"
-                    const { data: playNode } = await supabase
-                        .from('chantier_nodes')
-                        .select('status')
-                        .eq('chantier_id', chantierId)
-                        .eq('action_type', 'play')
-                        .single()
-
-                    if (!playNode || playNode.status === 'done') {
-                        console.log(`🤖 Auto-validating Material Choice Node ${targetNode.id} (Quote has items)`)
-                        await supabase.from('chantier_nodes').update({ status: 'done' }).eq('id', targetNode.id)
-
-                        try {
-                            const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
-                            await triggerNodeAutomation(targetNode.id, chantierId)
-                        } catch (e) {
-                            console.error("Auto-Trigger Failed:", e)
-                        }
-                    }
-                }
-            }
+        // AUTOMATION: TRIGGER GLOBAL INTEGRITY CHECK
+        // Whenever a Devis is updated (status or items), we re-evaluate the whole graph.
+        const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
+        if (devis) {
+            console.log(`🚀 [WORKFLOW ENGINE] Devis updated. Running integrity check...`)
+            const { checkWorkflowIntegrity } = await import('./workflowEngine')
+            await checkWorkflowIntegrity(devis.chantier_id)
         }
     }
 
@@ -253,6 +175,18 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
     }).eq('id', devisId)
 
     revalidatePath(`/dashboard/devis/${devisId}/edit`)
+
+    // AUTOMATION: TRIGGER GLOBAL INTEGRITY CHECK
+    // Ensure we trigger it after ANY save (items or metadata) so stock checks are refreshed.
+    const { data: devis } = await supabase.from('devis').select('chantier_id').eq('id', devisId).single()
+    if (devis && devis.chantier_id) {
+        // Dynamic import to avoid circular dependency if any
+        const { checkWorkflowIntegrity } = await import('./workflowEngine')
+        // Run in background (fire & forget-ish, but await is safer for sequence)
+        console.log(`🚀 [WORKFLOW TRIGGER] Devis Saved. Triggering integrity check for Chantier ${devis.chantier_id}`)
+        await checkWorkflowIntegrity(devis.chantier_id)
+    }
+
     return { success: true }
 }
 

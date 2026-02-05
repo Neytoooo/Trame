@@ -1,4 +1,4 @@
-import { Trash2, Link as LinkIcon, Plus, Terminal, Target } from 'lucide-react'
+import { Trash2, Link as LinkIcon, Plus, Terminal, Target, Save, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 interface GraphToolbarProps {
@@ -9,6 +9,8 @@ interface GraphToolbarProps {
     onAddClick: () => void
     onCenterClick: () => void
     onLogsClick: () => void
+    onSaveTemplateClick: () => void
+    onLoadTemplateClick: () => void
 }
 
 export default function GraphToolbar({
@@ -18,7 +20,9 @@ export default function GraphToolbar({
     toggleLinkMode,
     onAddClick,
     onCenterClick,
-    onLogsClick
+    onLogsClick,
+    onSaveTemplateClick,
+    onLoadTemplateClick
 }: GraphToolbarProps) {
     return (
         <div className="flex items-center gap-2 pointer-events-auto">
@@ -51,11 +55,32 @@ export default function GraphToolbar({
                 Ajouter une étape
             </Button>
 
+            <div className="w-[1px] h-8 bg-white/10 mx-2" />
+
+            <Button
+                variant="secondary"
+                size="icon"
+                onClick={onSaveTemplateClick}
+                title="Sauvegarder en tant que modèle"
+            >
+                <Save size={20} className="text-indigo-400" />
+            </Button>
+
+            <Button
+                variant="secondary"
+                size="icon"
+                onClick={onLoadTemplateClick}
+                title="Charger un modèle"
+            >
+                <FolderOpen size={20} className="text-blue-400" />
+            </Button>
+
+            <div className="w-[1px] h-8 bg-white/10 mx-2" />
+
             <Button
                 variant="secondary"
                 size="icon"
                 onClick={onCenterClick}
-                className="ml-2"
                 title="Recentrer la vue"
             >
                 <Target size={20} />

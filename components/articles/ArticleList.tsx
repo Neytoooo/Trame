@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import { Search, Filter, Package, Hammer, Truck, MoreVertical } from 'lucide-react'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import ViewToggle from '@/components/ui/ViewToggle'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/Card'
+import { useRouter } from 'next/navigation'
 
 
 interface ArticleListProps {
@@ -14,11 +16,38 @@ interface ArticleListProps {
 }
 
 export default function ArticleList({ initialArticles }: ArticleListProps) {
+    const router = useRouter()
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-articles', 'list')
+    const [articles, setArticles] = useState(initialArticles)
     const [searchTerm, setSearchTerm] = useState('')
 
-    const filteredArticles = initialArticles.filter(article =>
-        article.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // REALTIME SUBSCRIPTION
+    useEffect(() => {
+        const supabase = createClient()
+        const channel = supabase
+            .channel('realtime-articles-library')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, (payload) => {
+                console.log('📚 [LIBRARY REALTIME]', payload)
+                if (payload.eventType === 'INSERT') {
+                    setArticles(prev => [payload.new, ...prev])
+                } else if (payload.eventType === 'UPDATE') {
+                    setArticles(prev => prev.map(a => a.id === payload.new.id ? payload.new : a))
+                } else if (payload.eventType === 'DELETE') {
+                    setArticles(prev => prev.filter(a => a.id !== payload.old.id))
+                }
+                router.refresh()
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [router])
+
+    const filteredArticles = articles.filter(article =>
+        article.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (article.reference && article.reference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (article.supplier && article.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
     const getCategoryIcon = (category: string) => {
@@ -71,6 +100,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                     <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
                         <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300">
                             <tr>
+                                <th className="px-6 py-4 font-medium">Réf</th>
                                 <th className="px-6 py-4 font-medium">Désignation</th>
                                 <th className="px-6 py-4 font-medium">Type</th>
                                 <th className="px-6 py-4 font-medium">Unité</th>
@@ -83,6 +113,9 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                             {filteredArticles && filteredArticles.length > 0 ? (
                                 filteredArticles.map((article) => (
                                     <tr key={article.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                                        <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400">
+                                            {article.reference || '-'}
+                                        </td>
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                             {article.name}
                                             {article.supplier && <div className="text-xs text-gray-500">{article.supplier}</div>}
@@ -101,7 +134,10 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                                                 </span>
                                             ) : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">{article.price_ht} €</td>
+                                        <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                                            {article.price_ht} €
+                                            <span className="ml-1 text-[10px] text-gray-500 font-normal">({article.tva || 20}%)</span>
+                                        </td>
                                         <td className="px-6 py-4 text-right text-gray-500">{article.cost_ht} €</td>
                                     </tr>
                                 ))

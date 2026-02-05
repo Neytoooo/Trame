@@ -10,6 +10,9 @@ import LogsModal from './LogsModal'
 import GraphOverlay from './GraphOverlay'
 import GraphToolbar from './GraphToolbar'
 import GraphBackground from './GraphBackground'
+import SaveTemplateModal from './SaveTemplateModal'
+import TemplateListModal from './TemplateListModal'
+import NewNodeQuoteModal from './NewNodeQuoteModal'
 
 export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     const supabase = createClient()
@@ -21,6 +24,8 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     // Data Modal State
     const [dataModalNode, setDataModalNode] = useState<Node | null>(null)
     const [isLogsOpen, setIsLogsOpen] = useState(false)
+    const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false)
+    const [isLoadTemplateOpen, setIsLoadTemplateOpen] = useState(false)
 
     // Connection State
     const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null)
@@ -49,7 +54,7 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                 supabase.from('chantier_edges').select('*').eq('chantier_id', chantierId)
             ])
 
-            if (nodesRes.data) setNodes(nodesRes.data)
+            if (nodesRes.data) setNodes(nodesRes.data as unknown as Node[])
             if (edgesRes.data) setEdges(edgesRes.data)
             setLoading(false)
         }
@@ -122,6 +127,10 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
         await supabase.from('chantier_nodes').update({ position_x: x, position_y: y }).eq('id', id)
     }
 
+    // Quote Modal State
+    const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false)
+    const [pendingNodeLabel, setPendingNodeLabel] = useState("")
+
     // Open Modal instead of direct add
     const handleAddClick = () => {
         setIsModalOpen(true)
@@ -131,6 +140,24 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     const handleNodeSelect = async (type: string, label: string) => {
         setIsModalOpen(false)
 
+        // SPECIAL CASE: Linked Quote
+        if (type === 'quote') {
+            setPendingNodeLabel(label)
+            setIsQuoteModalOpen(true)
+            return
+        }
+
+        await createNode(type, label)
+    }
+
+    const handleQuoteCreated = async (quoteId: string, quoteTitle: string) => {
+        // Create the node linked to this quote
+        // We store the quote ID in 'data'
+        await createNode('quote', quoteTitle || "Devis", { devis_id: quoteId })
+        setIsQuoteModalOpen(false)
+    }
+
+    const createNode = async (type: string, label: string, extraData: any = {}) => {
         // Center new node on current view
         let x = 100
         let y = 100
@@ -150,7 +177,8 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
             action_type: type, // Store the specific action type
             status: 'pending',
             position_x: x, // Centered
-            position_y: y
+            position_y: y,
+            data: extraData // Link to Quote or other data
         }
 
         const { data, error } = await supabase.from('chantier_nodes').insert(newNode).select().single()
@@ -227,16 +255,20 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
 
         await supabase.from('chantier_nodes').update({ status: newStatus }).eq('id', id)
 
-        // Trigger Automation if validated
-        if (newStatus === 'done') {
-            const { triggerNodeAutomation } = await import('@/app/actions/triggerNodeAutomation')
-            triggerNodeAutomation(id, chantierId).then(res => {
-                if (res.success && res.message !== "Aucune suite" && res.message !== "Fin de chaîne.") {
-                    // window.location.reload() // Avoid full reload if possible, but keep for safety if complex
-                    // For now, let's just alert. Automation might update data that requires fetching?
-                    // Ideally we'd re-fetch nodes if automation changed them, but 'triggerNodeAutomation' mostly does emails/docs.
-                    alert("✅ " + res.message)
+        // Trigger GLOBAL INTEGRITY CHECK (New Engine)
+        if (newStatus === 'done' || newStatus === 'pending') {
+            console.log(`🚀 [WORKFLOW ENGINE] Checking integrity after update on "${targetNode.label}"...`)
+            const { checkWorkflowIntegrity } = await import('@/app/actions/workflowEngine')
+            checkWorkflowIntegrity(chantierId).then(res => {
+                console.log(`✅ [ENGINE RESULT]`, res)
+                if (res.success && res.updates && res.updates.length > 0) {
+                    // Refresh local state if server updated nodes (Anti-flicker or just trust Realtime?)
+                    // Ideally Realtime handles it, but we can fast-apply updates
+                    // For now, trust Realtime/Optimistic
+                    console.log(`🔄 [ENGINE] Updates applied:`, res.updates.length)
                 }
+            }).catch(err => {
+                console.error(`❌ [ENGINE ERROR]`, err)
             })
         }
 
@@ -407,6 +439,8 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                     onAddClick={handleAddClick}
                     onCenterClick={() => setViewPos({ x: 0, y: 0 })}
                     onLogsClick={() => setIsLogsOpen(true)}
+                    onSaveTemplateClick={() => setIsSaveTemplateOpen(true)}
+                    onLoadTemplateClick={() => setIsLoadTemplateOpen(true)}
                 />
             </div>
 
@@ -555,6 +589,28 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                 isOpen={isLogsOpen}
                 onClose={() => setIsLogsOpen(false)}
                 chantierId={chantierId}
+            />
+
+            {/* Template Modals */}
+            <SaveTemplateModal
+                isOpen={isSaveTemplateOpen}
+                onClose={() => setIsSaveTemplateOpen(false)}
+                nodes={nodes}
+                edges={edges}
+            />
+
+            <TemplateListModal
+                isOpen={isLoadTemplateOpen}
+                onClose={() => setIsLoadTemplateOpen(false)}
+                chantierId={chantierId}
+            />
+
+            {/* NEW: Linked Quote Creation Modal */}
+            <NewNodeQuoteModal
+                isOpen={isQuoteModalOpen}
+                onClose={() => setIsQuoteModalOpen(false)}
+                chantierId={chantierId}
+                onQuoteCreated={handleQuoteCreated}
             />
         </div>
     )

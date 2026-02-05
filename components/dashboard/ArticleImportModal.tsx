@@ -46,6 +46,12 @@ export default function ArticleImportModal() {
                     const priceIdx = getIdx(['vente', 'prix', 'price', 'pu'])
                     const costIdx = getIdx(['achat', 'cout', 'revient', 'cost', 'debourse'])
 
+                    const refIdx = getIdx(['ref', 'code'])
+                    const tvaIdx = getIdx(['tva', 'taxe'])
+                    const stockIdx = getIdx(['stock', 'quantite'])
+                    const minStockIdx = getIdx(['seuil', 'alert', 'min'])
+                    const supplierIdx = getIdx(['fournisseur', 'supplier', 'prov'])
+
                     if (nameIdx === -1) return null // Mandatory
 
                     return {
@@ -53,7 +59,12 @@ export default function ArticleImportModal() {
                         category: mapCategory(row[catIdx]),
                         unit: row[unitIdx] || 'u',
                         price_ht: parseFloat(row[priceIdx]) || 0,
-                        cost_ht: parseFloat(row[costIdx]) || 0
+                        cost_ht: parseFloat(row[costIdx]) || 0,
+                        reference: row[refIdx] || null,
+                        tva: parseFloat(row[tvaIdx]) || 20,
+                        stock: parseInt(row[stockIdx]) || 0,
+                        min_stock: parseInt(row[minStockIdx]) || 0,
+                        supplier: row[supplierIdx] || null
                     }
                 }).filter(Boolean)
 
@@ -101,8 +112,8 @@ export default function ArticleImportModal() {
 
     const downloadTemplate = () => {
         const ws = XLSX.utils.json_to_sheet([
-            { Designation: 'Exemple Placo', Categorie: 'Fourniture', Unite: 'm2', Prix_Vente: 25, Prix_Achat: 12 },
-            { Designation: 'Exemple Peintre', Categorie: 'Main d\'oeuvre', Unite: 'h', Prix_Vente: 45, Prix_Achat: 0 }
+            { Reference: "PLA001", Designation: 'Plaque BA13', Categorie: 'Fourniture', Unite: 'm2', Prix_Vente: 8.50, Prix_Achat: 3.20, TVA: 20, Stock: 500, Seuil_Alerte: 50, Fournisseur: "Point.P" },
+            { Reference: "MO_PEINT", Designation: 'Main d\'oeuvre Peintre', Categorie: 'Main d\'oeuvre', Unite: 'h', Prix_Vente: 45.00, Prix_Achat: 0, TVA: 10, Stock: 0, Seuil_Alerte: 0, Fournisseur: "Interne" }
         ])
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, "Modele")
@@ -121,7 +132,7 @@ export default function ArticleImportModal() {
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0f1115] p-6 shadow-2xl">
+                    <div className="w-full max-w-4xl rounded-2xl border border-white/10 bg-[#0f1115] p-6 shadow-2xl">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                 <FileSpreadsheet className="text-emerald-500" />
@@ -167,29 +178,39 @@ export default function ArticleImportModal() {
                                     <button onClick={() => setPreviewData([])} className="text-xs text-gray-500 hover:text-white">Annuler et changer de fichier</button>
                                 </div>
 
-                                <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5 max-h-[300px] overflow-y-auto">
+                                <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5 max-h-[400px] overflow-y-auto">
                                     <table className="w-full text-left text-xs">
-                                        <thead className="bg-black/20 text-gray-500 uppercase sticky top-0 backdrop-blur-md">
+                                        <thead className="bg-black/20 text-gray-500 uppercase sticky top-0 backdrop-blur-md z-10">
                                             <tr>
+                                                <th className="px-4 py-2">Réf</th>
                                                 <th className="px-4 py-2">Désignation</th>
                                                 <th className="px-4 py-2">Catégorie</th>
                                                 <th className="px-4 py-2">Unité</th>
-                                                <th className="px-4 py-2 text-right">Prix</th>
+                                                <th className="px-4 py-2 text-right">Prix HT</th>
+                                                <th className="px-4 py-2 text-right">Coût HT</th>
+                                                <th className="px-4 py-2 text-right">Stock</th>
+                                                <th className="px-4 py-2">Fournisseur</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
-                                            {previewData.slice(0, 10).map((row, i) => (
-                                                <tr key={i} className="hover:bg-white/5">
-                                                    <td className="px-4 py-2 text-white">{row.name}</td>
+                                            {previewData.slice(0, 50).map((row, i) => (
+                                                <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                    <td className="px-4 py-2 text-gray-400 font-mono">{row.reference}</td>
+                                                    <td className="px-4 py-2 text-white font-medium">{row.name}</td>
                                                     <td className="px-4 py-2 text-gray-400">{row.category}</td>
                                                     <td className="px-4 py-2 text-gray-400">{row.unit}</td>
-                                                    <td className="px-4 py-2 text-right text-emerald-400">{row.price_ht?.toFixed(2)}</td>
+                                                    <td className="px-4 py-2 text-right text-emerald-400">{row.price_ht?.toFixed(2)} €</td>
+                                                    <td className="px-4 py-2 text-right text-gray-500">{row.cost_ht?.toFixed(2)} €</td>
+                                                    <td className={`px-4 py-2 text-right font-medium ${row.stock <= row.min_stock ? 'text-red-400' : 'text-blue-400'}`}>
+                                                        {row.stock}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-gray-400 truncate max-w-[100px]">{row.supplier}</td>
                                                 </tr>
                                             ))}
-                                            {previewData.length > 10 && (
+                                            {previewData.length > 50 && (
                                                 <tr>
-                                                    <td colSpan={4} className="px-4 py-2 text-center text-gray-500 italic">
-                                                        ... et {previewData.length - 10} autres lignes
+                                                    <td colSpan={8} className="px-4 py-2 text-center text-gray-500 italic">
+                                                        ... et {previewData.length - 50} autres lignes
                                                     </td>
                                                 </tr>
                                             )}

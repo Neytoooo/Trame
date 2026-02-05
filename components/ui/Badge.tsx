@@ -24,6 +24,14 @@ const badgeVariants = cva(
                 lime: "border-lime-500/20 bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-400",
                 teal: "border-teal-500/20 bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400",
                 rose: "border-rose-500/20 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
+
+                // Legacy Status Colors (Vivid)
+                "status_blue": "border-blue-200 bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+                "status_green": "border-green-200 bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20",
+                "status_emerald": "border-emerald-200 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+                "status_red": "border-red-200 bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
+                "status_gray": "border-gray-200 bg-gray-100 text-gray-500 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/20",
+                "status_purple": "border-purple-200 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
             },
         },
         defaultVariants: {

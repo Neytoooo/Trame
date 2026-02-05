@@ -123,13 +123,23 @@ export default function ArticleModal() {
                         </div>
 
                         <form ref={formRef} action={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Désignation</label>
-                                <input
-                                    name="name" required autoFocus
-                                    placeholder="ex: Pose Parquet Chêne"
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
+                            <div className="flex gap-4">
+                                <div className="w-1/3">
+                                    <label className="mb-1 block text-sm font-medium text-gray-400">Référence</label>
+                                    <input
+                                        name="reference"
+                                        placeholder="ex: REF-001"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-sm font-medium text-gray-400">Désignation</label>
+                                    <input
+                                        name="name" required autoFocus
+                                        placeholder="ex: Pose Parquet Chêne"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -230,7 +240,7 @@ export default function ArticleModal() {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-emerald-400">Prix Vente HT (€)</label>
                                     <input
@@ -238,6 +248,16 @@ export default function ArticleModal() {
                                         placeholder="0.00"
                                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-400">TVA (%)</label>
+                                    <select name="tva" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none [&>option]:bg-gray-900">
+                                        <option value="20">20%</option>
+                                        <option value="10">10%</option>
+                                        <option value="5.5">5.5%</option>
+                                        <option value="0">0%</option>
+                                    </select>
                                 </div>
 
                                 <div>

@@ -47,15 +47,16 @@ export default function ClientImportModal({ isOpen, onClose }: ClientImportModal
                     name: row['name'] || row['Name'] || row['Nom'] || row['Nom complet'] || 'Nom Inconnu',
                     type: (row['type'] || row['Type'] || '').toLowerCase().includes('pro') ? 'professionnel' : 'particulier',
                     email: row['email'] || row['Email'] || row['E-mail'] || row['Mail'],
-                    billing_email: row['billing_email'] || row['Email Facturation'],
-                    phone_mobile: row['phone_mobile'] || row['Téléphone'] || row['Phone'] || row['Tel'],
+                    billing_email: row['billing_email'] || row['Email_Facturation'] || row['Email Facturation'],
+                    phone_mobile: row['phone_mobile'] || row['Telephone_Mobile'] || row['Téléphone Mobile'] || row['Tel'],
+                    phone_fixe: row['phone_fixe'] || row['Telephone_Fixe'] || row['Téléphone Fixe'] || row['Fixe'],
                     city: row['city'] || row['Ville'] || row['City'],
                     address_line1: row['address_line1'] || row['Adresse'] || row['Address'],
-                    address_line2: row['address_line2'] || row['Adresse 2'],
+                    address_line2: row['address_line2'] || row['Adresse 2'] || row['Complément'],
                     zip_code: row['zip_code'] || row['Code Postal'] || row['CP'] || row['Zip'],
                     siret: row['siret'] || row['SIRET'] || row['Siret'],
                     iban: row['iban'] || row['IBAN'] || row['Iban'],
-                    // Note: tva_number n'est pas dans le type ClientData actuel, on peut l'ignorer ou l'ajouter si besoin
+                    tva_number: row['tva_number'] || row['TVA_Intracom'] || row['TVA']
                 }))
 
                 if (clients.length === 0) {

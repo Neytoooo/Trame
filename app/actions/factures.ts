@@ -46,49 +46,13 @@ export async function saveFacture(factureId: string, items: any[], factureData?:
             return { error: "Erreur lors de la mise à jour des infos de la facture" }
         }
 
-        // AUTOMATION: If status changed to 'payee', trigger graph step
-        if (factureData.status === 'payee') {
-            // Fetch chantier_id from facture
-            const { data: facture } = await supabase.from('factures').select('chantier_id').eq('id', factureId).single()
-
-            if (facture) {
-                const chantierId = facture.chantier_id
-                // Check for pending "Invoice" node
-                const { data: nodes } = await supabase
-                    .from('chantier_nodes')
-                    .select('*')
-                    .eq('chantier_id', chantierId)
-                    .eq('action_type', 'invoice')
-                    .eq('status', 'pending')
-                    .limit(1)
-
-                if (nodes && nodes.length > 0) {
-                    const targetNode = nodes[0]
-
-                    // Verify "Lancement"
-                    const { data: playNode } = await supabase
-                        .from('chantier_nodes')
-                        .select('status')
-                        .eq('chantier_id', chantierId)
-                        .eq('action_type', 'play')
-                        .single()
-
-                    if (!playNode || playNode.status === 'done') {
-                        console.log(`🤖 Auto-validating Invoice Node ${targetNode.id} due to payment`)
-
-                        // Mark Done
-                        await supabase.from('chantier_nodes').update({ status: 'done' }).eq('id', targetNode.id)
-
-                        // Trigger Successors
-                        try {
-                            const { triggerNodeAutomation } = await import('./triggerNodeAutomation')
-                            await triggerNodeAutomation(targetNode.id, chantierId)
-                        } catch (e) {
-                            console.error("Auto-Trigger Failed:", e)
-                        }
-                    }
-                }
-            }
+        // AUTOMATION: TRIGGER GLOBAL INTEGRITY CHECK
+        // Whenever a Facture is updated (status or items), we re-evaluate the whole graph.
+        const { data: facture } = await supabase.from('factures').select('chantier_id').eq('id', factureId).single()
+        if (facture) {
+            console.log(`🚀 [WORKFLOW ENGINE] Facture updated. Running integrity check...`)
+            const { checkWorkflowIntegrity } = await import('./workflowEngine')
+            await checkWorkflowIntegrity(facture.chantier_id)
         }
     }
 

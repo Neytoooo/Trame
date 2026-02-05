@@ -19,6 +19,8 @@ export async function createArticle(formData: FormData) {
     const stock = parseInt(formData.get('stock') as string) || 0
     const min_stock = parseInt(formData.get('min_stock') as string) || 0
     const supplier = formData.get('supplier') as string || null
+    const reference = formData.get('reference') as string || null
+    const tva = parseFloat(formData.get('tva') as string) || 20
 
     const composantsStr = formData.get('composants') as string
     const composants = composantsStr ? JSON.parse(composantsStr) : []
@@ -52,6 +54,8 @@ export async function createArticle(formData: FormData) {
         stock,
         min_stock,
         supplier,
+        reference,
+        tva,
         created_by: user.id
     }).select().single()
 
@@ -100,7 +104,12 @@ export async function importArticlesAction(articles: any[]) {
         category: a.category || 'fourniture',
         unit: a.unit || 'u',
         price_ht: a.price_ht || 0,
-        cost_ht: a.cost_ht || 0
+        cost_ht: a.cost_ht || 0,
+        reference: a.reference || null,
+        tva: a.tva || 20,
+        stock: a.stock || 0,
+        min_stock: a.min_stock || 0,
+        supplier: a.supplier || null
     }))
 
     // Insertion en masse
