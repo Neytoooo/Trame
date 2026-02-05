@@ -193,8 +193,8 @@ export default function DevisEditor({
             />
 
             {/* CHAMP NOM DU DEVIS */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-sm">
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                     Nom du devis (Optionnel)
                 </label>
                 <input
@@ -202,7 +202,7 @@ export default function DevisEditor({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ex: Rénovation Cuisine M. Dupont"
-                    className="w-full bg-transparent text-xl font-bold text-white placeholder-gray-600 outline-none border-none p-0 focus:ring-0"
+                    className="w-full bg-transparent text-xl font-bold text-gray-900 placeholder-gray-400 outline-none border-none p-0 focus:ring-0 dark:text-white dark:placeholder-gray-600"
                 />
             </div>
 
@@ -217,7 +217,7 @@ export default function DevisEditor({
                 </button>
                 <button
                     onClick={handleAddSection}
-                    className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all active:scale-95 whitespace-nowrap"
+                    className="flex items-center gap-2 rounded-xl bg-white border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all active:scale-95 whitespace-nowrap dark:bg-white/10 dark:border-white/10 dark:text-white dark:hover:bg-white/20"
                 >
                     <Layout size={16} />
                     Ajouter tranche
@@ -235,7 +235,7 @@ export default function DevisEditor({
                 <button
                     onClick={() => handleSave('brouillon')}
                     disabled={loading}
-                    className="flex items-center gap-2 rounded-xl border border-gray-600 bg-gray-800/50 px-4 py-2 text-sm font-semibold text-gray-300 hover:bg-gray-700/50 transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                    className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-700/50"
                 >
                     {loading ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />}
                     Brouillon
@@ -320,9 +320,9 @@ export default function DevisEditor({
             </div>
 
             {/* TABLEAU ÉDITABLE (Style Glass) */}
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
-                <table className="w-full text-left text-sm text-gray-300">
-                    <thead className="bg-black/20 text-xs uppercase text-gray-500">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-md">
+                <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                    <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 dark:bg-black/20 dark:border-white/5">
                         <tr>
                             <th className="px-4 py-3 font-medium">Description</th>
                             <th className="px-4 py-3 font-medium w-32 text-center">Qté</th>
@@ -333,7 +333,7 @@ export default function DevisEditor({
                             <th className="px-4 py-3 w-10"></th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                         {items.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="py-12 text-center text-gray-500 italic">
@@ -345,13 +345,13 @@ export default function DevisEditor({
                                 // RENDER SECTION ROW
                                 if (item.item_type === 'section') {
                                     return (
-                                        <tr key={item.id} className="bg-white/10 hover:bg-white/15 transition-colors group">
+                                        <tr key={item.id} className="bg-gray-100 hover:bg-gray-200 transition-colors group dark:bg-white/10 dark:hover:bg-white/15">
                                             <td colSpan={6} className="px-4 py-3">
                                                 <input
                                                     type="text"
                                                     value={item.description}
                                                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                    className="w-full bg-transparent font-bold text-white placeholder-gray-400 outline-none"
+                                                    className="w-full bg-transparent font-bold text-gray-900 placeholder-gray-500 outline-none dark:text-white dark:placeholder-gray-400"
                                                     placeholder="Nom de la tranche (ex: Lot Électricité)"
                                                 />
                                             </td>
@@ -370,7 +370,7 @@ export default function DevisEditor({
                                 // RENDER STANDARD ROW
                                 return (
                                     <Fragment key={item.id}>
-                                        <tr className="hover:bg-white/5 transition-colors group relative">
+                                        <tr className="hover:bg-gray-50 transition-colors group relative dark:hover:bg-white/5">
                                             <td className="px-4 py-2">
                                                 <div className="flex items-center gap-2">
                                                     {item.components && item.components.length > 0 && (
@@ -388,7 +388,7 @@ export default function DevisEditor({
                                                         type="text"
                                                         value={item.description}
                                                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                        className="w-full bg-transparent p-1 outline-none focus:border-b focus:border-blue-500"
+                                                        className="w-full bg-transparent p-1 outline-none focus:border-b focus:border-blue-500 text-gray-900 dark:text-white"
                                                     />
                                                 </div>
                                             </td>
@@ -398,7 +398,7 @@ export default function DevisEditor({
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                                        className="w-20 bg-transparent p-1 outline-none text-center focus:border-b focus:border-blue-500"
+                                                        className="w-20 bg-transparent p-1 outline-none text-center focus:border-b focus:border-blue-500 text-gray-900 dark:text-white"
                                                     />
                                                     <button
                                                         onClick={() => openCalculator(item.id)}
@@ -422,13 +422,13 @@ export default function DevisEditor({
                                                     type="number"
                                                     value={item.unit_price}
                                                     onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-400 focus:border-b focus:border-emerald-500"
+                                                    className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-600 focus:border-b focus:border-emerald-500 dark:text-emerald-400"
                                                 />
                                             </td>
                                             <td className="px-4 py-2 text-right text-gray-500">
                                                 {item.tva}%
                                             </td>
-                                            <td className="px-4 py-2 text-right font-bold text-white">
+                                            <td className="px-4 py-2 text-right font-bold text-gray-900 dark:text-white">
                                                 {(item.quantity * item.unit_price).toFixed(2)} €
                                             </td>
                                             <td className="px-4 py-2 text-center">
@@ -442,17 +442,17 @@ export default function DevisEditor({
                                         </tr>
                                         {/* EXPANDED OUVAGE */}
                                         {item.components && expandedItems.has(item.id) && (
-                                            <tr className="bg-white/[0.02] border-b border-white/5">
+                                            <tr className="bg-gray-50/50 border-b border-gray-100 dark:bg-white/[0.02] dark:border-white/5">
                                                 <td colSpan={7} className="px-4 py-3 pl-14">
                                                     <div className="text-xs uppercase text-gray-500 mb-2 font-semibold tracking-wider flex items-center gap-2">
                                                         <span>📦 Composition de l'ouvrage</span>
-                                                        <span className="h-px flex-1 bg-white/5"></span>
+                                                        <span className="h-px flex-1 bg-gray-200 dark:bg-white/5"></span>
                                                     </div>
                                                     <div className="space-y-1">
                                                         {item.components.map((comp, idx) => (
-                                                            <div key={idx} className="flex items-center gap-4 text-sm text-gray-400">
+                                                            <div key={idx} className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                                                                 <div className="w-16 text-right font-medium text-gray-500">{comp.quantity} {comp.unit}</div>
-                                                                <div className="text-gray-300">{comp.name}</div>
+                                                                <div className="text-gray-700 dark:text-gray-300">{comp.name}</div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -461,12 +461,12 @@ export default function DevisEditor({
                                         )}
                                         {/* DISPLAY DETAILS (Métré) if present */}
                                         {item.details && item.details.length > 0 && (
-                                            <tr className="bg-purple-900/10 border-b border-purple-500/10">
-                                                <td colSpan={7} className="px-4 py-2 pl-14 text-xs text-purple-300 font-mono">
+                                            <tr className="bg-purple-50 border-b border-purple-100 dark:bg-purple-900/10 dark:border-purple-500/10">
+                                                <td colSpan={7} className="px-4 py-2 pl-14 text-xs text-purple-700 font-mono dark:text-purple-300">
                                                     <span className="mr-2 opacity-70">Calcul :</span>
                                                     {item.details.map((d, i) => (
                                                         <span key={i} className="mr-4">
-                                                            {d.label ? <span className="text-purple-400">{d.label}: </span> : ''}
+                                                            {d.label ? <span className="text-purple-600 dark:text-purple-400">{d.label}: </span> : ''}
                                                             {d.expression} = {d.result}
                                                         </span>
                                                     ))}
@@ -479,10 +479,10 @@ export default function DevisEditor({
                         )}
                     </tbody>
                     {/* PIED DE TABLEAU (Totaux) */}
-                    <tfoot className="bg-black/20 font-medium">
+                    <tfoot className="bg-gray-50 border-t border-gray-200 font-medium dark:bg-black/20 dark:border-white/5">
                         <tr>
-                            <td colSpan={5} className="px-4 py-3 text-right text-gray-400">Total HT</td>
-                            <td className="px-4 py-3 text-right text-white text-lg">{totalHT.toFixed(2)} €</td>
+                            <td colSpan={5} className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">Total HT</td>
+                            <td className="px-4 py-3 text-right text-gray-900 text-lg dark:text-white">{totalHT.toFixed(2)} €</td>
                             <td></td>
                         </tr>
                         <tr>
@@ -491,8 +491,8 @@ export default function DevisEditor({
                             <td></td>
                         </tr>
                         <tr>
-                            <td colSpan={5} className="px-4 py-4 text-right text-white font-bold">Net à payer TTC</td>
-                            <td className="px-4 py-4 text-right text-blue-400 font-bold text-xl">{totalTTC.toFixed(2)} €</td>
+                            <td colSpan={5} className="px-4 py-4 text-right text-gray-900 font-bold dark:text-white">Net à payer TTC</td>
+                            <td className="px-4 py-4 text-right text-blue-600 font-bold text-xl dark:text-blue-400">{totalTTC.toFixed(2)} €</td>
                             <td></td>
                         </tr>
                     </tfoot>

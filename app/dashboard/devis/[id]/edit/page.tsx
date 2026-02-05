@@ -85,11 +85,11 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
 
             {/* HEADER NAVIGATION */}
             <div className="flex items-center justify-between">
-                <Link href={`/dashboard/chantiers/${devis.chantiers.id}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+                <Link href={`/dashboard/chantiers/${devis.chantiers.id}`} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors dark:text-gray-400 dark:hover:text-white">
                     <ArrowLeft size={16} />
                     Retour au chantier
                 </Link>
-                <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-400 border border-orange-500/20 uppercase tracking-wide">
+                <span className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-medium text-orange-600 uppercase tracking-wide dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400">
                     Mode Édition
                 </span>
             </div>

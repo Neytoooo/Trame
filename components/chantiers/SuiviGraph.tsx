@@ -13,13 +13,49 @@ import GraphBackground from './GraphBackground'
 import SaveTemplateModal from './SaveTemplateModal'
 import TemplateListModal from './TemplateListModal'
 import NewNodeQuoteModal from './NewNodeQuoteModal'
+import CollaborativeCursors from './CollaborativeCursors'
+import { useRealtimeGraph } from '@/hooks/useRealtimeGraph'
 
-export default function SuiviGraph({ chantierId }: { chantierId: string }) {
+export default function SuiviGraph({ chantierId, user }: { chantierId: string, user: any }) {
     const supabase = createClient()
     const containerRef = useRef<HTMLDivElement>(null)
     const [nodes, setNodes] = useState<Node[]>([])
     const [edges, setEdges] = useState<Edge[]>([])
     const [loading, setLoading] = useState(true)
+
+    // Real-Time Hook
+    const { cursors, presentUsers, remoteNodePositions, emitCursorMove, emitNodeDrag } = useRealtimeGraph(chantierId, user)
+
+    // Local Drag State (Ephemeral, prevents thrashing main state)
+    const [draggingNode, setDraggingNode] = useState<{ id: string, x: number, y: number } | null>(null)
+
+    // Helper: Get display position (merged local drag + remote drag + committed state)
+    const getNodePosition = (node: Node) => {
+        // 1. Local Drag (Highest Priority for current user)
+        if (draggingNode && draggingNode.id === node.id) {
+            return { x: draggingNode.x, y: draggingNode.y }
+        }
+        // 2. Remote Drag (Broadcasted from others)
+        const remote = remoteNodePositions[node.id]
+        if (remote) return remote
+
+        // 3. Committed State (DB)
+        return { x: node.position_x, y: node.position_y }
+    }
+
+    // Derived state for Edges: They need the "Visible" positions to update in realtime
+    const visibleNodes = nodes.map(node => {
+        const pos = getNodePosition(node)
+        return { ...node, position_x: pos.x, position_y: pos.y }
+    })
+
+    // ... (rest of code) ...
+
+    {
+        edges.map(edge => (
+            <GraphEdge key={edge.id} edge={edge} nodes={visibleNodes} />
+        ))
+    }
 
     // Data Modal State
     const [dataModalNode, setDataModalNode] = useState<Node | null>(null)
@@ -61,10 +97,10 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
         fetchData()
     }, [chantierId, supabase])
 
-    // Subscription Realtime
+    // Subscription Realtime (DB Changes only - Cursors/Nodes handled by hook)
     useEffect(() => {
         const channel = supabase
-            .channel(`realtime_chantier_${chantierId}`)
+            .channel(`realtime_chantier_db_${chantierId}`)
             .on(
                 'postgres_changes',
                 {
@@ -114,7 +150,10 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
 
     // Update Node Position (State Only - Realtime)
     const handleNodeDrag = (id: string, x: number, y: number) => {
-        setNodes(prev => prev.map(n => n.id === id ? { ...n, position_x: x, position_y: y } : n))
+        // Use ephemeral state for smooth updates
+        setDraggingNode({ id, x, y })
+        // Broadcast drag
+        emitNodeDrag(id, x, y)
     }
 
     // Save Node Position (DB - On Drag End)
@@ -122,8 +161,13 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
     // Framer motion drag returns position relative to parent.
     // If parent is the panned layer, then x,y should be correct relative to that layer's origin.
     const handleNodeDragEnd = async (id: string, x: number, y: number) => {
-        // Ensure state is synced one last time
-        handleNodeDrag(id, x, y)
+        // Clear ephemeral state
+        setDraggingNode(null)
+
+        // Commit state locally
+        setNodes(prev => prev.map(n => n.id === id ? { ...n, position_x: x, position_y: y } : n))
+
+        // Commit to DB
         await supabase.from('chantier_nodes').update({ position_x: x, position_y: y }).eq('id', id)
     }
 
@@ -349,6 +393,14 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
 
     // Global Mouse Move for connecting line AND Panning
     const handleMouseMove = (e: React.MouseEvent) => {
+        // Broadcast mouse move
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect()
+            const gridX = e.clientX - rect.left - viewPos.x
+            const gridY = e.clientY - rect.top - viewPos.y
+            emitCursorMove(gridX, gridY)
+        }
+
         // Panning Logic
         if (isPanning) {
             const dx = e.clientX - lastPanPos.current.x
@@ -423,6 +475,13 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
 
     return (
         <div className="relative h-[80vh] w-full bg-[#0A0A0A] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+            {/* Collaborative Cursors (UI Only) */}
+            <CollaborativeCursors
+                cursors={cursors}
+                presentUsers={presentUsers}
+                viewPos={viewPos}
+            />
+
             {/* Grid Background - Moves with Pan */}
             <GraphBackground viewPos={viewPos} />
 
@@ -483,7 +542,7 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                         </defs>
 
                         {edges.map(edge => (
-                            <GraphEdge key={edge.id} edge={edge} nodes={nodes} />
+                            <GraphEdge key={edge.id} edge={edge} nodes={visibleNodes} />
                         ))}
 
                         {/* Temporary Connection Line (Drag) */}
@@ -543,10 +602,12 @@ export default function SuiviGraph({ chantierId }: { chantierId: string }) {
                         // 4. (Implicit) If it IS the Play node, it depends only on parents (usually none)
                         const isNext = node.status === 'pending' && allParentsDone && (isPlayNode || isPlayDone)
 
+                        const displayPos = getNodePosition(node)
+
                         return (
                             <DraggableNode
                                 key={node.id}
-                                node={node}
+                                node={{ ...node, position_x: displayPos.x, position_y: displayPos.y }}
                                 containerRef={null as any}
                                 onDrag={(x, y) => handleNodeDrag(node.id, x, y)}
                                 onDragEnd={(x, y) => handleNodeDragEnd(node.id, x, y)}

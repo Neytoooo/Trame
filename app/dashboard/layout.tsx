@@ -15,7 +15,7 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="relative flex h-screen overflow-hidden bg-slate-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+        <div className="relative flex h-screen overflow-hidden bg-slate-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
 
             {/* --- FOND ANIMÉ (Global pour tout le dashboard) --- */}
             <div className="hidden dark:block fixed -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600 opacity-20 blur-[100px] animate-pulse" />

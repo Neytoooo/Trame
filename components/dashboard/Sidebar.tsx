@@ -23,7 +23,7 @@ export default function Sidebar({ user }: { user: any }) {
     const pathname = usePathname()
 
     return (
-        <aside className="relative z-20 flex w-64 h-full flex-col border-r border-gray-200 bg-gray-50/80 backdrop-blur-xl dark:bg-gray-900/50 dark:border-white/10">
+        <aside className="relative z-20 flex w-64 h-full flex-col border-r border-gray-200 bg-slate-100 backdrop-blur-xl dark:bg-gray-900/50 dark:border-white/10">
             {/* Logo */}
             <div className="flex h-20 items-center px-6 border-b border-gray-200 dark:border-white/5 flex-shrink-0">
                 <span className="text-xl font-bold text-gray-900 tracking-wide dark:text-white">Trame</span>
