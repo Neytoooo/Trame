@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/dashboard/Sidebar'
+import TopPillNavbar from '@/components/dashboard/TopPillNavbar'
+import ArchitecturalWave from '@/components/dashboard/ArchitecturalWave'
 
 export default async function DashboardLayout({
     children,
@@ -15,21 +16,16 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="relative flex h-screen overflow-hidden bg-slate-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+        <div className="relative min-h-screen bg-[#EEF3F8] text-slate-800 antialiased selection:bg-indigo-500 selection:text-white overflow-x-hidden font-sans">
+            {/* --- 3D ARCHITECTURAL WAVE ACCENT --- */}
+            <ArchitecturalWave />
 
-            {/* --- FOND ANIMÉ (Global pour tout le dashboard) --- */}
-            <div className="hidden dark:block fixed -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600 opacity-20 blur-[100px] animate-pulse" />
-            <div className="hidden dark:block fixed top-1/2 right-0 h-96 w-96 rounded-full bg-purple-600 opacity-10 blur-[100px] animate-pulse delay-1000" />
-            <div className="hidden dark:block fixed bottom-0 left-1/3 h-64 w-64 rounded-full bg-emerald-500 opacity-10 blur-[100px]" />
+            {/* --- TOP FLOATING PILL NAVBAR --- */}
+            <TopPillNavbar user={user} />
 
-            {/* --- SIDEBAR --- */}
-            <Sidebar user={user} />
-
-            {/* --- CONTENU PRINCIPAL --- */}
-            <main className="relative z-10 flex-1 overflow-y-auto">
-                <div className="min-h-full p-8">
-                    {children}
-                </div>
+            {/* --- MAIN WORKSPACE CONTAINER --- */}
+            <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 md:px-8 py-4">
+                {children}
             </main>
         </div>
     )

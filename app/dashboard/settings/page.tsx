@@ -19,8 +19,8 @@ export default async function SettingsPage() {
     return (
         <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-bold text-white">Paramètres Entreprise</h1>
-                <p className="text-gray-400">Ces informations apparaîtront sur vos devis et factures.</p>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Paramètres Entreprise</h1>
+                <p className="text-slate-500 dark:text-gray-400">Ces informations apparaîtront sur vos devis et factures.</p>
             </div>
 
             <form action={async (formData) => {
@@ -29,28 +29,28 @@ export default async function SettingsPage() {
             }} className="space-y-6">
 
                 {/* Section Identité */}
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md space-y-6">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <Building2 className="text-blue-400" size={20} />
+                <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md space-y-6">
+                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Building2 className="text-indigo-600" size={20} />
                         Identité
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Nom de l'entreprise</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Nom de l'entreprise</label>
                             <input
                                 name="name"
                                 type="text"
                                 defaultValue={settings?.name || ''}
                                 placeholder="Ma Super Entreprise"
-                                className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"
+                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-medium"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Logo de l'entreprise</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Logo de l'entreprise</label>
                             <div className="flex items-center gap-4">
                                 {settings?.logo_url && (
-                                    <div className="h-16 w-16 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-1">
+                                    <div className="h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
                                         <img src={settings.logo_url} alt="Logo" className="h-full w-full object-contain" />
                                     </div>
                                 )}
@@ -58,67 +58,67 @@ export default async function SettingsPage() {
                                     name="logo"
                                     type="file"
                                     accept="image/png, image/jpeg"
-                                    className="w-full text-sm text-gray-400 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-500"
+                                    className="w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-indigo-500 cursor-pointer"
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                                <Hash size={14} /> SIRET
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                <Hash size={13} /> SIRET
                             </label>
                             <input
                                 name="siret"
                                 type="text"
                                 defaultValue={settings?.siret || ''}
                                 placeholder="123 456 789 00012"
-                                className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"
+                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-medium"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Section Contact */}
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md space-y-6">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <MapPin className="text-purple-400" size={20} />
+                <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md space-y-6">
+                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <MapPin className="text-purple-600" size={20} />
                         Coordonnées
                     </h2>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Adresse complète</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Adresse complète</label>
                             <textarea
                                 name="address"
                                 rows={2}
                                 defaultValue={settings?.address || ''}
                                 placeholder="12 Rue du Chantier, 75000 Paris"
-                                className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all resize-none"
+                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-purple-500 focus:bg-white focus:ring-1 focus:ring-purple-500 outline-none transition-all text-sm font-medium resize-none"
                             />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                                    <Mail size={14} /> Email de contact
+                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Mail size={13} /> Email de contact
                                 </label>
                                 <input
                                     name="email"
                                     type="email"
                                     defaultValue={settings?.email || ''}
                                     placeholder="contact@entreprise.com"
-                                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all"
+                                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-purple-500 focus:bg-white focus:ring-1 focus:ring-purple-500 outline-none transition-all text-sm font-medium"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                                    <Phone size={14} /> Téléphone
+                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Phone size={13} /> Téléphone
                                 </label>
                                 <input
                                     name="phone"
                                     type="text"
                                     defaultValue={settings?.phone || ''}
                                     placeholder="06 12 34 56 78"
-                                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all"
+                                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-purple-500 focus:bg-white focus:ring-1 focus:ring-purple-500 outline-none transition-all text-sm font-medium"
                                 />
                             </div>
                         </div>
@@ -126,28 +126,28 @@ export default async function SettingsPage() {
                 </div>
 
                 {/* Section Pied de page */}
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md space-y-6">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <FileText className="text-emerald-400" size={20} />
+                <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md space-y-6">
+                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <FileText className="text-emerald-600" size={20} />
                         Pied de page PDF
                     </h2>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Mentions légales / Texte libre</label>
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Mentions légales / Texte libre</label>
                         <textarea
                             name="footer_text"
                             rows={3}
                             defaultValue={settings?.footer_text || ''}
                             placeholder="TVA Intracommunautaire : FRXX... / Assurance Décennale n°..."
-                            className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-white placeholder-gray-600 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all"
+                            className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-medium"
                         />
-                        <p className="text-xs text-gray-500">Ce texte apparaîtra en bas de chaque page de vos devis et factures.</p>
+                        <p className="text-xs text-slate-400">Ce texte apparaîtra en bas de chaque page de vos devis et factures.</p>
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <button type="submit" className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
-                        <Save size={20} />
+                    <button type="submit" className="flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white hover:bg-indigo-500 shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95">
+                        <Save size={18} />
                         Enregistrer les modifications
                     </button>
                 </div>

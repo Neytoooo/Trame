@@ -84,22 +84,22 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
             <div className="flex h-full gap-6 min-w-[800px] pb-4">
 
                 {/* COLUMN 1: TO DO */}
-                <div className="flex-1 min-w-[320px] max-w-md flex flex-col bg-[#0F0F12] border border-white/5 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 border border-slate-200/80 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] overflow-hidden backdrop-blur-md">
                     {/* Header */}
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
                         <div className="flex items-center gap-3">
-                            <h2 className="font-bold text-white tracking-wide">À Faire</h2>
-                            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-white/10 text-[10px] font-bold text-gray-400">
+                            <h2 className="font-bold text-slate-800 tracking-wide text-sm">À Faire</h2>
+                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-700">
                                 {pendingNodes.length}
                             </span>
                         </div>
-                        <button className="text-gray-500 hover:text-white transition-colors">
+                        <button className="text-slate-400 hover:text-slate-700 transition-colors">
                             <Settings size={16} />
                         </button>
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar bg-slate-50/30">
                         <AnimatePresence mode="popLayout">
                             {pendingNodes.map(node => (
                                 <motion.div
@@ -108,7 +108,7 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    className="group relative flex flex-col gap-3 p-4 rounded-xl bg-[#1A1A1E] border border-white/5 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all cursor-pointer"
+                                    className="group relative flex flex-col gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer"
                                     onClick={() => moveNodeToDone(node)} // Simple click to move for now, acting as "check"
                                 >
                                     {/* Action Type Tag */}
@@ -118,55 +118,52 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                             {node.action_type?.replace(/_/g, ' ')}
                                         </Badge>
                                         {/* Hover Check Action */}
-                                        <div className="w-5 h-5 rounded-full border border-white/10 flex items-center justify-center text-transparent group-hover:text-green-400 group-hover:border-green-500/50 transition-all bg-black/20">
+                                        <div className="w-5 h-5 rounded-full border border-slate-200 flex items-center justify-center text-transparent group-hover:text-emerald-600 group-hover:border-emerald-500 transition-all bg-slate-50 group-hover:bg-emerald-50">
                                             <Check size={12} strokeWidth={3} />
                                         </div>
                                     </div>
 
                                     {/* Content */}
                                     <div>
-                                        <h3 className="text-sm font-semibold text-gray-200 leading-snug mb-1">{node.label}</h3>
-                                        <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-600"></span>
+                                        <h3 className="text-sm font-bold text-slate-800 leading-snug mb-1 group-hover:text-indigo-600 transition-colors">{node.label}</h3>
+                                        <p className="text-xs text-slate-400 truncate flex items-center gap-1.5 font-medium">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             {node.chantiers?.name}
                                         </p>
                                     </div>
-
-                                    {/* Footer / Decor */}
-                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-10 pointer-events-none" />
                                 </motion.div>
                             ))}
                         </AnimatePresence>
 
                         {/* Empty State */}
                         {pendingNodes.length === 0 && (
-                            <div className="h-24 rounded-xl border border-dashed border-white/10 flex items-center justify-center text-gray-600 text-sm italic">
+                            <div className="h-28 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm italic">
                                 Tout est fait ! 👏
                             </div>
                         )}
 
                         {/* Add Button Placeholder - for visuals */}
-                        <button className="w-full py-2.5 rounded-xl border border-dashed border-white/10 text-gray-500 hover:text-gray-300 hover:bg-white/5 hover:border-white/20 transition-all text-sm flex items-center justify-center gap-2 mt-2">
-                            <Plus size={16} />
+                        <button className="w-full py-2.5 rounded-2xl border border-dashed border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all text-xs font-semibold flex items-center justify-center gap-2 mt-2">
+                            <Plus size={15} />
                             Ajouter une carte
                         </button>
                     </div>
                 </div>
 
                 {/* COLUMN 2: TERMINÉ */}
-                <div className="flex-1 min-w-[320px] max-w-md flex flex-col bg-[#0F0F12] border border-white/5 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm opacity-80 hover:opacity-100 transition-opacity">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 border border-slate-200/80 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] overflow-hidden backdrop-blur-md opacity-90 hover:opacity-100 transition-opacity">
                     {/* Header */}
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
                         <div className="flex items-center gap-3">
-                            <h2 className="font-bold text-gray-300 tracking-wide">Terminé</h2>
-                            <span className="flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-green-500/10 text-[10px] font-bold text-green-400">
+                            <h2 className="font-bold text-slate-800 tracking-wide text-sm">Terminé</h2>
+                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-700">
                                 {doneNodes.length}
                             </span>
                         </div>
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar bg-slate-50/30">
                         <AnimatePresence mode="popLayout">
                             {doneNodes.map(node => (
                                 <motion.div
@@ -175,22 +172,22 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    className="relative flex flex-col gap-3 p-4 rounded-xl bg-[#151518] border border-white/5 opacity-60 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0"
+                                    className="relative flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 opacity-80 hover:opacity-100 transition-all cursor-pointer"
                                     onClick={() => moveNodeToPending(node)}
                                 >
                                     <div className="flex items-start justify-between">
-                                        <Badge variant="gray" className="uppercase tracking-wider text-[10px] opacity-70">
+                                        <Badge variant="gray" className="uppercase tracking-wider text-[10px] opacity-75">
                                             {getIcon(node.action_type)}
                                             {node.action_type?.replace(/_/g, ' ')}
                                         </Badge>
-                                        <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
                                             <Check size={12} strokeWidth={3} />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-sm font-semibold text-gray-500 decoration-gray-700 line-through mb-1">{node.label}</h3>
-                                        <p className="text-xs text-gray-600 truncate">
+                                        <h3 className="text-sm font-semibold text-slate-400 line-through mb-1">{node.label}</h3>
+                                        <p className="text-xs text-slate-400 truncate">
                                             {node.chantiers?.name}
                                         </p>
                                     </div>

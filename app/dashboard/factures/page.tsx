@@ -31,9 +31,9 @@ export default async function FacturesPage() {
     if (error && error.code === '42P01') { // undefined_table
         return (
             <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Module Facturation</h1>
-                <p className="text-gray-400 mb-6">La table des factures n'a pas encore été créée.</p>
-                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 inline-block text-left text-sm font-mono">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Module Facturation</h1>
+                <p className="text-slate-500 dark:text-gray-400 mb-6">La table des factures n'a pas encore été créée.</p>
+                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-600 inline-block text-left text-sm font-mono">
                     <p>Veuillez exécuter le script SQL fourni pour activer ce module.</p>
                 </div>
             </div>
@@ -45,8 +45,8 @@ export default async function FacturesPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Factures</h1>
-                    <p className="text-gray-400">Suivi des paiements et relances</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Factures</h1>
+                    <p className="text-slate-500 dark:text-gray-400">Suivi des paiements et relances</p>
                 </div>
 
                 <Link
