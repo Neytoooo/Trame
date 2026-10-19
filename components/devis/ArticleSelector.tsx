@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { X, Search, Package, Hammer, Plus } from 'lucide-react'
+import VirtualizedList from '@/components/ui/VirtualizedList'
+
+import { BTP_PRESTATIONS_CATALOG } from '@/lib/btpCatalog'
 
 // On définit le type Article pour TypeScript
 type Article = {
@@ -10,6 +13,9 @@ type Article = {
     category: string
     price_ht: number
     unit: string
+    reference?: string
+    tva?: number
+    cost_ht?: number
 }
 
 export default function ArticleSelector({
@@ -25,9 +31,24 @@ export default function ArticleSelector({
 }) {
     const [search, setSearch] = useState('')
 
-    // Filtrer les articles en temps réel (Côté client pour la rapidité)
-    const filteredArticles = articles.filter(a =>
-        a.name.toLowerCase().includes(search.toLowerCase())
+    // Si articles est vide, utiliser le catalogue BTP pro par défaut
+    const pool = (articles && articles.length > 0)
+        ? articles
+        : BTP_PRESTATIONS_CATALOG.map((a, idx) => ({
+            id: `btp_cat_${idx}`,
+            name: `${a.name}\n${a.complement}`,
+            category: a.category,
+            unit: a.unit,
+            price_ht: a.price_ht,
+            reference: a.reference,
+            tva: a.tva,
+            cost_ht: a.cost_ht
+        }))
+
+    // Filtrer les articles en temps réel
+    const filteredArticles = pool.filter(a =>
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        (a.reference && a.reference.toLowerCase().includes(search.toLowerCase()))
     )
 
     const handleSelect = (article: Article) => {
@@ -65,38 +86,55 @@ export default function ArticleSelector({
                 </div>
 
                 {/* Liste des articles */}
-                <div className="flex-1 overflow-y-auto p-2">
+                <div className="flex-1 min-h-0 bg-gray-900">
                     {filteredArticles.length === 0 ? (
                         <p className="py-8 text-center text-gray-500">Aucun article trouvé.</p>
                     ) : (
-                        <div className="space-y-1">
-                            {filteredArticles.map((article) => (
-                                <button
-                                    key={article.id}
-                                    onClick={() => handleSelect(article)}
-                                    className="group flex w-full items-center justify-between rounded-lg p-3 text-left hover:bg-blue-600/10 hover:border-blue-500/20 border border-transparent transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${article.category === 'main_doeuvre' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                                            }`}>
-                                            {article.category === 'main_doeuvre' ? <Hammer size={16} /> : <Package size={16} />}
+                        <VirtualizedList
+                            items={filteredArticles}
+                            renderItem={(article: Article, index: number) => (
+                                <div className="px-2 py-1" key={article.id}>
+                                    <button
+                                        onClick={() => handleSelect(article)}
+                                        className="group flex w-full items-center justify-between rounded-lg p-3 text-left hover:bg-blue-600/10 hover:border-blue-500/20 border border-transparent transition-all h-full"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${article.category === 'main_doeuvre' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                                                }`}>
+                                                {article.category === 'main_doeuvre' ? <Hammer size={16} /> : <Package size={16} />}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    {article.reference && (
+                                                        <span className="text-[11px] font-mono font-semibold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                                                            {article.reference}
+                                                        </span>
+                                                    )}
+                                                    <p className="font-medium text-gray-200 group-hover:text-blue-100 truncate">
+                                                        {article.name.split('\n')[0]}
+                                                    </p>
+                                                </div>
+                                                {article.name.includes('\n') && (
+                                                    <p className="text-xs text-gray-400 group-hover:text-gray-300 truncate italic">
+                                                        {article.name.split('\n')[1]}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-gray-500 group-hover:text-blue-200/50">Unité : {article.unit}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-gray-200 group-hover:text-blue-100">{article.name}</p>
-                                            <p className="text-xs text-gray-500 group-hover:text-blue-200/50">Unité : {article.unit}</p>
-                                        </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-4">
-                                        <span className="font-bold text-emerald-400">{article.price_ht} €</span>
-                                        <Plus className="text-gray-600 group-hover:text-blue-400" size={18} />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                                        <div className="flex items-center gap-4 shrink-0">
+                                            <span className="font-bold text-emerald-400">{article.price_ht} €</span>
+                                            <Plus className="text-gray-600 group-hover:text-blue-400" size={18} />
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+                        />
                     )}
                 </div>
             </div>
         </div>
+
     )
 }

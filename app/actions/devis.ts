@@ -100,7 +100,7 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
 
     const promises = []
 
-    // 1. Insertion des nouveaux items (sans ID, Postgres le génère)
+    // 1. Insertion des nouveaux items
     if (newItems.length > 0) {
         const itemsToInsert = newItems.map((item: any) => ({
             devis_id: devisId,
@@ -110,7 +110,23 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             unit_price: item.unit_price,
             tva: item.tva,
             article_id: item.article_id || null,
-            details: item.details || [],
+            details: {
+                reference: item.reference,
+                complement: item.complement,
+                discount_pct: item.discount_pct,
+                cost_mat: item.cost_mat,
+                cost_mo: item.cost_mo,
+                cost_fg_pct: item.cost_fg_pct,
+                cost_total: item.cost_total,
+                margin: item.margin,
+                margin_pct: item.margin_pct,
+                dont_totalize: item.dont_totalize,
+                copy_to_schedule: item.copy_to_schedule,
+                billed_pct: item.billed_pct,
+                commercial: item.commercial,
+                technicien: item.technicien,
+                calcLines: Array.isArray(item.details) ? item.details : item.details?.calcLines || []
+            },
             item_type: item.item_type || 'item'
         }))
         // @ts-ignore
@@ -128,7 +144,23 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
             unit_price: item.unit_price,
             tva: item.tva,
             article_id: item.article_id || null,
-            details: item.details || [],
+            details: {
+                reference: item.reference,
+                complement: item.complement,
+                discount_pct: item.discount_pct,
+                cost_mat: item.cost_mat,
+                cost_mo: item.cost_mo,
+                cost_fg_pct: item.cost_fg_pct,
+                cost_total: item.cost_total,
+                margin: item.margin,
+                margin_pct: item.margin_pct,
+                dont_totalize: item.dont_totalize,
+                copy_to_schedule: item.copy_to_schedule,
+                billed_pct: item.billed_pct,
+                commercial: item.commercial,
+                technicien: item.technicien,
+                calcLines: Array.isArray(item.details) ? item.details : item.details?.calcLines || []
+            },
             item_type: item.item_type || 'item'
         }))
         promises.push(supabase.from('devis_items').upsert(itemsToUpdate, { onConflict: 'id' }))
@@ -144,8 +176,6 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
     }
 
     // --- RECALCUL DES TOTAUX ---
-    // On ré-assemble tous les items (nouveaux + anciens mis à jour) pour le calcul du total
-    // Pour être sûr, on refetch tout
     const { data: allItems } = await supabase
         .from('devis_items')
         .select('*')
@@ -156,11 +186,15 @@ export async function saveDevis(devisId: string, items: any[], devisData?: { nam
 
     if (allItems) {
         allItems.forEach(item => {
+            if (item.item_type === 'section' || item.item_type === 'sub_section') return
+            if (item.details?.dont_totalize) return
+
             const qty = Number(item.quantity) || 0
             const price = Number(item.unit_price) || 0
             const tva = Number(item.tva) || 0
+            const discount = Number(item.details?.discount_pct) || 0
 
-            const lineHT = qty * price
+            const lineHT = qty * price * (1 - discount / 100)
             const lineTTC = lineHT * (1 + tva / 100)
 
             totalHT += lineHT
@@ -212,4 +246,37 @@ export async function deleteDevis(devisId: string) {
 
     revalidatePath('/dashboard/devis')
     return { success: true }
+}
+
+export async function fetchDevisAction(offset: number, search: string) {
+    const supabase = await createClient()
+    const limit = 10
+
+    let query = supabase
+        .from('devis')
+        .select(`
+            *,
+            chantiers (
+                id,
+                name,
+                clients ( id, name )
+            )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    // Wait, searching in relations like chantiers.clients.name is not supported by default ilike on the main table without postgrest view.
+    // We will search by reference and name on the devis table.
+    if (search) {
+        query = query.or(`reference.ilike.%${search}%,name.ilike.%${search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching devis:', error)
+        return []
+    }
+
+    return data || []
 }

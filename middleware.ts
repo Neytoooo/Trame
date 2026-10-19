@@ -37,6 +37,23 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Redirections rapides pour les routes d'accès direct (Articles, Clients, Devis, Chantiers, Factures, Annonces, Tâches, Planning)
+    const rootShortcuts: Record<string, string> = {
+        '/articles': '/dashboard/articles',
+        '/annonces': '/dashboard/annonces',
+        '/clients': '/dashboard/clients',
+        '/chantiers': '/dashboard/chantiers',
+        '/devis': '/dashboard/devis',
+        '/factures': '/dashboard/factures',
+        '/taches': '/dashboard/trello',
+        '/dashboard/taches': '/dashboard/trello',
+        '/planning': '/dashboard/planning',
+    }
+
+    if (rootShortcuts[request.nextUrl.pathname]) {
+        return NextResponse.redirect(new URL(rootShortcuts[request.nextUrl.pathname], request.url))
+    }
+
     // 1. Protection des routes Dashboard (Si non connecté -> Redirection login)
     if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
         return NextResponse.redirect(new URL('/', request.url))

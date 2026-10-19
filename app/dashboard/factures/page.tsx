@@ -19,6 +19,7 @@ export default async function FacturesPage() {
             )
         `)
         .order('date_emission', { ascending: false })
+        .limit(10)
 
     const { data: companySettings } = await supabase
         .from('company_settings')

@@ -7,11 +7,12 @@ import ClientPageClient from './ClientPageClient'
 export default async function ClientsPage() {
     const supabase = await createClient()
 
-    // 1. Récupérer les clients
+    // 1. Récupérer les clients (limite 10)
     const { data: clients, error } = await supabase
         .from('clients')
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(10)
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

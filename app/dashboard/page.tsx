@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { ArrowUpRight, Plus, Wallet, Users, Hammer, FileText, FileCheck } from 'lucide-react'
 import Link from 'next/link'
 import ActiveAutomations from '@/components/dashboard/ActiveAutomations'
+import SeedBtpBanner from '@/components/dashboard/SeedBtpBanner'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
 
     // 3. Parallel Data Fetching
     const [
+        clientsCountResult,
         currentMonthRevenue,
         lastMonthRevenue,
         pendingQuotes,
@@ -28,6 +30,11 @@ export default async function DashboardPage() {
         recentDevis,
         recentFactures
     ] = await Promise.all([
+        // Clients count for demo seed state
+        supabase
+            .from('clients')
+            .select('id', { count: 'exact', head: true }),
+
         // A. Current Month Revenue (Statut 'payee')
         supabase
             .from('factures')
@@ -98,6 +105,9 @@ export default async function DashboardPage() {
     // Ongoing Projects
     const ongoingProjectsCount = ongoingProjects.count || 0
 
+    // Clients Count
+    const clientsCount = clientsCountResult.count || 0
+
     // Recent Activity Feed
     // Standardize structure: { type: 'devis'|'facture', date: Date, reference, clientName, amount, id }
     const activities = [
@@ -129,6 +139,9 @@ export default async function DashboardPage() {
                     <p className="mt-1 text-gray-500 dark:text-gray-400">Voici ce qui se passe sur vos chantiers aujourd'hui.</p>
                 </div>
             </div>
+
+            {/* Bannière Démo BTP Métier */}
+            <SeedBtpBanner clientCount={clientsCount} />
 
             {/* Grille des Stats (Style Glass) */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

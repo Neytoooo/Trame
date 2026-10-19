@@ -123,3 +123,86 @@ export async function importArticlesAction(articles: any[]) {
     revalidatePath('/dashboard/articles')
     return { success: true, count: preparedData.length }
 }
+
+import { BTP_PRESTATIONS_CATALOG } from '@/lib/btpCatalog'
+
+export async function seedBtpCatalogAction() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: "Vous devez être connecté." }
+
+    const preparedData = BTP_PRESTATIONS_CATALOG.map(a => ({
+        created_by: user.id,
+        name: `${a.name}\n${a.complement}`,
+        category: a.category,
+        unit: a.unit,
+        price_ht: a.price_ht,
+        cost_ht: a.cost_ht,
+        reference: a.reference,
+        tva: a.tva,
+        stock: a.stock || 50,
+        min_stock: a.min_stock || 10,
+        supplier: `${a.metier} - ${a.famille}`
+    }))
+
+    const { error } = await supabase.from('articles').insert(preparedData)
+
+    if (error) {
+        console.error("Erreur seed catalogue BTP:", error)
+        return { error: "Erreur lors de l'enregistrement du catalogue." }
+    }
+
+    revalidatePath('/dashboard/articles')
+    return { success: true, count: preparedData.length }
+}
+
+export async function fetchArticlesAction(offset: number, search: string) {
+    const supabase = await createClient()
+    const limit = 10
+
+    let query = supabase
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (search) {
+        query = query.or(`name.ilike.%${search}%,reference.ilike.%${search}%,supplier.ilike.%${search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching articles:', error)
+    }
+
+    // Si la table est encore vide et offset == 0, fournir les articles du catalogue pro comme aperçu
+    if ((!data || data.length === 0) && offset === 0) {
+        const filtered = search
+            ? BTP_PRESTATIONS_CATALOG.filter(a =>
+                a.name.toLowerCase().includes(search.toLowerCase()) ||
+                a.reference.toLowerCase().includes(search.toLowerCase()) ||
+                a.metier.toLowerCase().includes(search.toLowerCase()) ||
+                a.famille.toLowerCase().includes(search.toLowerCase())
+            )
+            : BTP_PRESTATIONS_CATALOG
+
+        return filtered.map((a, idx) => ({
+            id: `btp_demo_${idx}`,
+            name: `${a.name}\n${a.complement}`,
+            category: a.category,
+            unit: a.unit,
+            price_ht: a.price_ht,
+            cost_ht: a.cost_ht,
+            reference: a.reference,
+            tva: a.tva,
+            stock: 50,
+            min_stock: 10,
+            supplier: `${a.metier} - ${a.famille}`,
+            is_catalog_template: true
+        }))
+    }
+
+    return data || []
+}

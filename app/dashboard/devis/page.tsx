@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import DevisList from '@/components/devis/DevisList'
+import AiDevisButton from '@/components/devis/AiDevisButton'
 
 export default async function DevisPage() {
     const supabase = await createClient()
@@ -18,6 +19,7 @@ export default async function DevisPage() {
             )
         `)
         .order('created_at', { ascending: false })
+        .limit(10)
 
     // Récupérer les ids des devis liés à l'automation
     const { data: nodes } = await supabase
@@ -36,16 +38,17 @@ export default async function DevisPage() {
                     <p className="text-gray-400">Gérez vos propositions commerciales</p>
                 </div>
 
-                {/* On ne peut pas créer un devis sans chantier pour l'instant, 
-                    donc on redirige vers la liste des chantiers ou on ouvre un modal de sélection de chantier.
-                    Pour faire simple : Bouton vers chantiers */}
-                <Link
-                    href="/dashboard/chantiers"
-                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                >
-                    <Plus size={18} />
-                    Nouveau Devis
-                </Link>
+                <div className="flex items-center gap-3">
+                    <AiDevisButton />
+                    
+                    <Link
+                        href="/dashboard/chantiers"
+                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                    >
+                        <Plus size={18} />
+                        Nouveau Devis
+                    </Link>
+                </div>
             </div>
 
             <DevisList initialDevis={devis || []} linkedDevisIds={linkedDevisIds} />

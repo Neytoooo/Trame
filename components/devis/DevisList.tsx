@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { FileText, Plus, Search, MoreVertical, Edit, User, MapPin, Calendar, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -8,14 +8,47 @@ import FilterBar from '@/components/dashboard/FilterBar'
 import ViewToggle from '@/components/ui/ViewToggle'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { fetchDevisAction } from '@/app/actions/devis'
 
 export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initialDevis: any[], linkedDevisIds?: string[] }) {
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-devis', 'grid')
-    const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
-    const [devisList, setDevisList] = useState(initialDevis)
     const router = useRouter()
+
+    const {
+        data: devisList,
+        setData: setDevisList,
+        hasMore,
+        isLoading,
+        loadMore,
+        searchQuery,
+        setSearchQuery
+    } = useInfiniteScroll({
+        fetchAction: fetchDevisAction,
+        initialData: initialDevis,
+        limit: 10
+    })
+
+    const loadMoreRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoading) {
+                    loadMore()
+                }
+            },
+            { rootMargin: '100px' }
+        )
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current)
+        }
+
+        return () => observer.disconnect()
+    }, [hasMore, isLoading, loadMore])
 
     const linkedIdsSet = new Set(linkedDevisIds)
 
@@ -41,21 +74,12 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
         return true
     }
 
-    const filteredDevis = devisList.filter(devis => {
-        // 1. Search Term
-        const matchesSearch =
-            devis.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            devis.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            devis.chantiers?.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-
-        if (!matchesSearch) return false
-
+    const filteredDevis = devisList.filter((devis: any) => {
+        // 1. Search Term (Server handled, but we can double check locally for relations)
         // 2. Status Filter
         if (statusFilter !== 'all' && devis.status !== statusFilter) return false
-
         // 3. Date Filter
         if (!isWithinDateRange(devis.created_at, dateFilter)) return false
-
         return true
     })
 
@@ -94,8 +118,8 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
         <div className="space-y-6">
             <FilterBar
                 placeholder="Rechercher un devis..."
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
+                searchValue={searchQuery}
+                onSearchChange={setSearchQuery}
                 statusValue={statusFilter}
                 onStatusChange={setStatusFilter}
                 dateRangeValue={dateFilter}
@@ -265,6 +289,15 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Sentinel for detecting bottom of list */}
+            {(hasMore || isLoading) && (
+                <div ref={loadMoreRef} className="h-10 w-full flex items-center justify-center p-4 mt-6">
+                    {isLoading && (
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                    )}
                 </div>
             )}
         </div>

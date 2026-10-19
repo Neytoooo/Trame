@@ -4,6 +4,8 @@ import ArticleImportModal from '@/components/dashboard/ArticleImportModal'
 import ImportHelpButton from '@/components/dashboard/ImportHelpButton'
 import ArticleList from '@/components/articles/ArticleList'
 
+import { BTP_PRESTATIONS_CATALOG } from '@/lib/btpCatalog'
+
 export default async function ArticlesPage() {
     const supabase = await createClient()
 
@@ -12,6 +14,24 @@ export default async function ArticlesPage() {
         .from('articles')
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(10)
+
+    const initialData = (articles && articles.length > 0)
+        ? articles
+        : BTP_PRESTATIONS_CATALOG.map((a, idx) => ({
+            id: `btp_demo_${idx}`,
+            name: `${a.name}\n${a.complement}`,
+            category: a.category,
+            unit: a.unit,
+            price_ht: a.price_ht,
+            cost_ht: a.cost_ht,
+            reference: a.reference,
+            tva: a.tva,
+            stock: 50,
+            min_stock: 10,
+            supplier: `${a.metier} - ${a.famille}`,
+            is_catalog_template: true
+        }))
 
     return (
         <div className="space-y-6">
@@ -28,7 +48,7 @@ export default async function ArticlesPage() {
                 </div>
             </div>
 
-            <ArticleList initialArticles={articles || []} />
+            <ArticleList initialArticles={initialData} />
         </div>
     )
 }

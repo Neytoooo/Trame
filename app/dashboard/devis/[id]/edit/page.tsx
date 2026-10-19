@@ -80,6 +80,29 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
 
     const client = devis.chantiers?.clients
 
+    // Déballage des métadonnées BTP
+    const mappedItems = enrichedItems.map(item => {
+        const d = (item.details && typeof item.details === 'object' && !Array.isArray(item.details)) ? item.details : {}
+        return {
+            ...item,
+            reference: d.reference || '',
+            complement: d.complement || '',
+            discount_pct: d.discount_pct || 0,
+            cost_mat: d.cost_mat || 0,
+            cost_mo: d.cost_mo || 0,
+            cost_fg_pct: d.cost_fg_pct || 0,
+            cost_total: d.cost_total || 0,
+            margin: d.margin || 0,
+            margin_pct: d.margin_pct || 0,
+            dont_totalize: Boolean(d.dont_totalize),
+            copy_to_schedule: Boolean(d.copy_to_schedule),
+            billed_pct: d.billed_pct || 100,
+            commercial: d.commercial,
+            technicien: d.technicien,
+            details: Array.isArray(d.calcLines) ? d.calcLines : (Array.isArray(item.details) ? item.details : [])
+        }
+    })
+
     return (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
 
@@ -90,13 +113,13 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
                     Retour au chantier
                 </Link>
                 <span className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-medium text-orange-600 uppercase tracking-wide dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400">
-                    Mode Édition
+                    Mode Édition Pro BTP
                 </span>
             </div>
 
             {/* L'ÉDITEUR INTERACTIF */}
             <DevisEditor
-                initialItems={enrichedItems}
+                initialItems={mappedItems}
                 devisId={devis.id}
                 articles={allArticles || []}
                 initialName={devis.name || ''}

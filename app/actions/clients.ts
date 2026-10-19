@@ -117,3 +117,28 @@ export async function importClientsAction(clients: ClientData[]) {
     revalidatePath('/dashboard/clients')
     return { success: true, count: data?.length || 0 }
 }
+
+export async function fetchClientsAction(offset: number, search: string) {
+    const supabase = await createClient()
+    const limit = 10
+
+    let query = supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (search) {
+        // Search by name or email
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching clients:', error)
+        return []
+    }
+
+    return data || []
+}

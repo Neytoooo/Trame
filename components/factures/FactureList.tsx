@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { FileCheck, Search, MoreVertical, Eye, User, MapPin, Calendar, Clock, Download, Mail, Trash2, RotateCcw, AlertTriangle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -10,16 +10,49 @@ import { deleteFacture, deleteFacturePermanently, restoreFacture } from '@/app/a
 import FilterBar from '@/components/dashboard/FilterBar'
 import ViewToggle from '@/components/ui/ViewToggle'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { fetchFacturesAction } from '@/app/actions/factures'
 
 export default function FactureList({ initialFactures, companySettings }: { initialFactures: any[], companySettings: any }) {
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-factures', 'grid')
-    const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
-    const [facturesList, setFacturesList] = useState(initialFactures)
     const [showHistory, setShowHistory] = useState(false)
     const [isProcessing, setIsProcessing] = useState<string | null>(null) // ID being processed
     const router = useRouter()
+
+    const {
+        data: facturesList,
+        setData: setFacturesList,
+        hasMore,
+        isLoading,
+        loadMore,
+        searchQuery,
+        setSearchQuery
+    } = useInfiniteScroll({
+        fetchAction: fetchFacturesAction,
+        initialData: initialFactures,
+        limit: 10
+    })
+
+    const loadMoreRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoading) {
+                    loadMore()
+                }
+            },
+            { rootMargin: '100px' }
+        )
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current)
+        }
+
+        return () => observer.disconnect()
+    }, [hasMore, isLoading, loadMore])
 
     // Helper for date filtering
     const isWithinDateRange = (dateString: string, range: string) => {
@@ -44,16 +77,17 @@ export default function FactureList({ initialFactures, companySettings }: { init
         return true
     }
 
-    const filteredFactures = facturesList.filter(facture => {
+    const filteredFactures = facturesList.filter((facture: any) => {
         // 1. History Mode
         if ((showHistory && !facture.deleted_at) || (!showHistory && facture.deleted_at)) return false
 
-        // 2. Search Term
+        // 2. Search Term (Handled server-side, local checks for relation strings since search focuses on ref)
+        // Let's do a fallback filter if they loaded more locally.
         const matchesSearch =
-            facture.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            facture.chantiers?.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (facture.chantiers?.clients === null && "client supprimé".includes(searchTerm.toLowerCase()))
-
+            facture.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            facture.chantiers?.clients?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (facture.chantiers?.clients === null && "client supprimé".includes(searchQuery.toLowerCase()))
+        
         if (!matchesSearch) return false
 
         // 3. Status Filter
@@ -122,8 +156,8 @@ export default function FactureList({ initialFactures, companySettings }: { init
             <div className="flex flex-col gap-4">
                 <FilterBar
                     placeholder="Rechercher une facture..."
-                    searchValue={searchTerm}
-                    onSearchChange={setSearchTerm}
+                    searchValue={searchQuery}
+                    onSearchChange={setSearchQuery}
                     statusValue={statusFilter}
                     onStatusChange={setStatusFilter}
                     dateRangeValue={dateFilter}
@@ -387,9 +421,20 @@ export default function FactureList({ initialFactures, companySettings }: { init
                         </div>
                     ))}
                 </div>
-            )}      {filteredFactures.length === 0 && (
+            )}
+            
+            {filteredFactures.length === 0 && (
                 <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">
                     {showHistory ? "La corbeille est vide." : "Aucune facture trouvée avec ces filtres."}
+                </div>
+            )}
+
+            {/* Sentinel for detecting bottom of list */}
+            {(hasMore || isLoading) && (
+                <div ref={loadMoreRef} className="h-10 w-full flex items-center justify-center p-4 mt-6">
+                    {isLoading && (
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                    )}
                 </div>
             )}
         </div>

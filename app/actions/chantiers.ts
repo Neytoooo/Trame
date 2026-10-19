@@ -53,3 +53,33 @@ export async function updateChantierStatus(id: string, status: string) {
     revalidatePath(`/dashboard/chantiers/${id}`)
     return { success: true }
 }
+
+export async function fetchChantiersAction(offset: number, search: string) {
+    const supabase = await createClient()
+    const limit = 10
+
+    let query = supabase
+        .from('chantiers')
+        .select(`
+            *,
+            clients(name),
+            chantier_nodes(status, type)
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (search) {
+        // Search by chantier name or client name (Supabase allows nested filtering in some cases but it's tricky, 
+        // to keep it simple we search by chantier name or address)
+        query = query.or(`name.ilike.%${search}%,address_line1.ilike.%${search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching chantiers:', error)
+        return []
+    }
+
+    return data || []
+}

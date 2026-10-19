@@ -386,3 +386,34 @@ export async function deleteFacturePermanently(id: string) {
     revalidatePath('/dashboard/factures')
     return { success: true }
 }
+
+export async function fetchFacturesAction(offset: number, search: string) {
+    const supabase = await createClient()
+    const limit = 10
+
+    let query = supabase
+        .from('factures')
+        .select(`
+            *,
+            chantiers (
+                id,
+                name,
+                clients ( id, name, email, billing_email )
+            )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (search) {
+        query = query.ilike('reference', `%${search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching factures:', error)
+        return []
+    }
+
+    return data || []
+}

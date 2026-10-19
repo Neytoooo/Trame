@@ -14,7 +14,8 @@ import {
     Box,
     Settings,
     Layout,
-    Bell
+    Bell,
+    Calendar
 } from 'lucide-react'
 
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -71,6 +72,12 @@ export default function Sidebar({ user }: { user: any }) {
                     isActive={pathname?.startsWith('/dashboard/chantiers')}
                 />
                 <NavItem
+                    href="/dashboard/planning"
+                    icon={<Calendar size={20} />}
+                    label="Planning"
+                    isActive={pathname?.startsWith('/dashboard/planning')}
+                />
+                <NavItem
                     href="/dashboard/devis"
                     icon={<FileText size={20} />}
                     label="Devis"
@@ -86,7 +93,7 @@ export default function Sidebar({ user }: { user: any }) {
                     href="/dashboard/trello"
                     icon={<Layout size={20} />}
                     label="Tâches"
-                    isActive={pathname?.startsWith('/dashboard/trello')}
+                    isActive={pathname?.startsWith('/dashboard/trello') || pathname?.startsWith('/dashboard/taches')}
                 />
             </nav>
 
