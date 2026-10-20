@@ -2,7 +2,7 @@
 
 import { MapPin, Calendar, ArrowRight, Search } from 'lucide-react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/Badge'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { fetchChantiersAction } from '@/app/actions/chantiers'
 import { useEffect, useRef } from 'react'
@@ -73,15 +73,7 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
                             <div>
                                 {/* Badge Status */}
                                 <div className="mb-4 flex justify-between items-start">
-                                    <Badge variant={
-                                        (chantier.status === 'en_cours' ? 'success' :
-                                            chantier.status === 'etude' ? 'info' :
-                                                chantier.status === 'annule' ? 'error' : 'gray') as any
-                                    }>
-                                        {chantier.status === 'en_cours' ? 'En cours' :
-                                            chantier.status === 'etude' ? 'En étude' :
-                                                chantier.status === 'annule' ? 'Annulé' : 'Terminé'}
-                                    </Badge>
+                                    <StatusBadge status={chantier.status || 'etude'} />
                                     <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-[#0E1524] border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors">
                                         <ArrowRight size={15} />
                                     </div>

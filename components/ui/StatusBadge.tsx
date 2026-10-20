@@ -1,45 +1,50 @@
 import React from 'react'
 import { Badge } from '@/components/ui/Badge'
-import { Workflow, FileText, CheckCircle, Clock, AlertTriangle, XCircle, FileClock } from 'lucide-react'
+import { Workflow } from 'lucide-react'
 
-// Type Definition for all possible statuses in the app
-// You can extend this union type as you discover more statuses
 export type AppStatus =
     // Devis
     | 'brouillon'
-    | 'en_attente' // En préparation
-    | 'en_attente_approbation' // Approbation
+    | 'en_attente'
+    | 'en_preparation'
+    | 'en_attente_approbation'
+    | 'approbation'
     | 'valide'
-    | 'signe' // Souvent synonyme de validé
+    | 'signe'
+    | 'approuve'
     | 'refuse'
     // Factures
     | 'payee'
     | 'paye'
     | 'retard'
+    | 'envoye'
+    | 'envoyee'
+    // Chantiers
+    | 'en_cours'
+    | 'etude'
+    | 'termine'
+    | 'annule'
     // Automation
-    | 'automatise' // Custom status for the automation tag
+    | 'automatise'
 
 interface StatusBadgeProps {
-    status: AppStatus | string // Allow string for flexibility but prefer typed
+    status: AppStatus | string
     className?: string
     showIcon?: boolean
-    customLabel?: string // Override the default label mapping
+    customLabel?: string
 }
 
 export default function StatusBadge({ status, className, showIcon = false, customLabel }: StatusBadgeProps) {
-
-    // 1. Normalize status
     const normalizedStatus = status?.toLowerCase() || 'brouillon'
 
-    // 2. Define Configuration for each status
     let config = {
         label: customLabel || status,
-        variant: 'gray' as any,
+        variant: 'status_gray' as any,
         icon: null as any
     }
 
     switch (normalizedStatus) {
-        // --- DEVIS ---
+        // --- BROUILLON / NEUTRE ---
         case 'brouillon':
             config = {
                 label: customLabel || 'Brouillon',
@@ -47,17 +52,56 @@ export default function StatusBadge({ status, className, showIcon = false, custo
                 icon: null
             }
             break
+
+        // --- EN ATTENTE (Ambre chaleureux - Image 1) ---
         case 'en_attente':
             config = {
+                label: customLabel || 'En Attente',
+                variant: 'status_amber',
+                icon: null
+            }
+            break
+
+        case 'en_preparation':
+            config = {
                 label: customLabel || 'En préparation',
+                variant: 'status_sky',
+                icon: null
+            }
+            break
+
+        // --- APPROBATION (Teal doux - Image 2) ---
+        case 'en_attente_approbation':
+        case 'approbation':
+            config = {
+                label: customLabel || 'Approbation',
+                variant: 'status_teal',
+                icon: null
+            }
+            break
+
+        // --- CHANTIERS EN COURS / ÉTUDE ---
+        case 'en_cours':
+            config = {
+                label: customLabel || 'En cours',
                 variant: 'status_blue',
                 icon: null
             }
             break
-        case 'en_attente_approbation':
+        case 'etude':
             config = {
-                label: customLabel || 'Approbation',
-                variant: 'status_green',
+                label: customLabel || 'En étude',
+                variant: 'status_sky',
+                icon: null
+            }
+            break
+
+        // --- VALIDÉ / SIGNÉ / PAYÉE / TERMINÉ (Émeraude élégant - Image 1) ---
+        case 'payee':
+        case 'paye':
+            config = {
+                label: customLabel || 'Payée',
+                variant: 'status_emerald',
                 icon: null
             }
             break
@@ -70,30 +114,15 @@ export default function StatusBadge({ status, className, showIcon = false, custo
                 icon: null
             }
             break
-        case 'refuse':
+        case 'termine':
             config = {
-                label: customLabel || 'Refusé',
-                variant: 'status_red',
-                icon: null
-            }
-            break
-
-        // --- FACTURES ---
-        case 'payee':
-        case 'paye':
-            config = {
-                label: customLabel || 'Payée',
+                label: customLabel || 'Terminé',
                 variant: 'status_emerald',
                 icon: null
             }
             break
-        case 'retard':
-            config = {
-                label: customLabel || 'En retard',
-                variant: 'status_red',
-                icon: null
-            }
-            break
+
+        // --- ENVOYÉE ---
         case 'envoye':
         case 'envoyee':
             config = {
@@ -103,12 +132,35 @@ export default function StatusBadge({ status, className, showIcon = false, custo
             }
             break
 
-        // --- AUTOMATION ---
+        // --- AUTOMATION (Violet - Image 2) ---
         case 'automatise':
             config = {
                 label: customLabel || 'Automatisé',
                 variant: 'status_purple',
                 icon: Workflow
+            }
+            break
+
+        // --- RETARD / REFUSÉ / ANNULÉ (Rose doux) ---
+        case 'retard':
+            config = {
+                label: customLabel || 'En retard',
+                variant: 'status_red',
+                icon: null
+            }
+            break
+        case 'refuse':
+            config = {
+                label: customLabel || 'Refusé',
+                variant: 'status_red',
+                icon: null
+            }
+            break
+        case 'annule':
+            config = {
+                label: customLabel || 'Annulé',
+                variant: 'status_red',
+                icon: null
             }
             break
 

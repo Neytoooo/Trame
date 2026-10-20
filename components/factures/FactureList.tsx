@@ -12,6 +12,7 @@ import ViewToggle from '@/components/ui/ViewToggle'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { fetchFacturesAction } from '@/app/actions/factures'
+import StatusBadge from '@/components/ui/StatusBadge'
 
 export default function FactureList({ initialFactures, companySettings }: { initialFactures: any[], companySettings: any }) {
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-factures', 'grid')
@@ -98,24 +99,6 @@ export default function FactureList({ initialFactures, companySettings }: { init
 
         return true
     })
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'en_attente': return 'text-orange-600 bg-orange-100 border-orange-200 dark:text-orange-400 dark:bg-orange-500/10 dark:border-orange-500/20'
-            case 'payee': return 'text-green-600 bg-green-100 border-green-200 dark:text-green-400 dark:bg-green-500/10 dark:border-green-500/20'
-            case 'retard': return 'text-red-600 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20'
-            default: return 'text-gray-500 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-gray-500/10 dark:border-gray-500/20'
-        }
-    }
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'en_attente': return 'En Attente'
-            case 'payee': return 'Payée'
-            case 'retard': return 'En Retard'
-            default: return status
-        }
-    }
 
     const handleDelete = async (id: string, permanent: boolean = false) => {
         if (!confirm(permanent ? "Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette facture ? Cette action est irréversible." : "Voulez-vous déplacer cette facture dans la corbeille ?")) return
@@ -230,9 +213,7 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                         {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(facture.status || 'en_attente')}`}>
-                                            {getStatusLabel(facture.status || 'en_attente')}
-                                        </span>
+                                        <StatusBadge status={facture.status || 'en_attente'} />
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -316,9 +297,7 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                         {facture.reference || 'Sans Ref'}
                                     </h3>
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(facture.status || 'en_attente')}`}>
-                                    {getStatusLabel(facture.status || 'en_attente')}
-                                </span>
+                                <StatusBadge status={facture.status || 'en_attente'} />
                             </div>
 
                             {/* Info Client & Chantier */}

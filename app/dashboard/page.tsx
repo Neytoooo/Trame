@@ -3,7 +3,6 @@ import { ArrowUpRight, Plus, Wallet, Users, Hammer, FileText, FileCheck, Calenda
 import Link from 'next/link'
 import PillButton from '@/components/ui/PillButton'
 import ActiveAutomations from '@/components/dashboard/ActiveAutomations'
-import SeedBtpBanner from '@/components/dashboard/SeedBtpBanner'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -23,7 +22,6 @@ export default async function DashboardPage() {
 
     // 3. Parallel Data Fetching
     const [
-        clientsCountResult,
         currentMonthRevenue,
         lastMonthRevenue,
         allDevisRes,
@@ -31,11 +29,6 @@ export default async function DashboardPage() {
         recentDevis,
         recentFactures
     ] = await Promise.all([
-        // Clients count for demo seed state
-        supabase
-            .from('clients')
-            .select('id', { count: 'exact', head: true }),
-
         // A. Current Month Revenue (Statut 'payee')
         supabase
             .from('factures')
@@ -115,8 +108,6 @@ export default async function DashboardPage() {
     const totalMarcheVote = allDevis.reduce((acc, curr) => acc + (curr.total_ht || 0), 0) || 229270
     const topPendingQuotes = pendingQuotesList.slice(0, 3)
 
-    const clientsCount = clientsCountResult.count || 0
-
     // Recent Activity Feed
     const activities = [
         ...(recentDevis.data?.map(d => ({
@@ -169,9 +160,6 @@ export default async function DashboardPage() {
                     </PillButton>
                 </div>
             </div>
-
-            {/* --- SEED BANNER SI NÉCESSAIRE --- */}
-            <SeedBtpBanner clientCount={clientsCount} />
 
             {/* --- TOP ROW BENTO GRID (3 Cards: Chantiers, Production & Trésorerie, Devis) --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

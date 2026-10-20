@@ -6,6 +6,7 @@ import { Search, Filter, Package, Hammer, Truck, MoreVertical } from 'lucide-rea
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import ViewToggle from '@/components/ui/ViewToggle'
 import { Badge } from '@/components/ui/Badge'
+import TradeBadge from '@/components/ui/TradeBadge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
@@ -78,23 +79,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
     }
 
     const [selectedMetier, setSelectedMetier] = useState('TOUS')
-    const [isSeeding, setIsSeeding] = useState(false)
-
     const METIERS = ['TOUS', 'RAVALEMENT', 'ÉCHAFAUDAGE', 'PRÉPARATION', 'COUVERTURE', 'MENUISERIE']
-
-    const handleSeedCatalog = async () => {
-        if (!confirm("Voulez-vous importer le catalogue d'ouvrages et prestations BTP Pro (Batiecom) dans votre base ?")) return
-        setIsSeeding(true)
-        const { seedBtpCatalogAction } = await import('@/app/actions/articles')
-        const res = await seedBtpCatalogAction()
-        setIsSeeding(false)
-        if (res?.success) {
-            alert(`Catalogue BTP importé avec succès (${res.count} prestations) !`)
-            router.refresh()
-        } else {
-            alert(res?.error || "Erreur lors de l'import")
-        }
-    }
 
     const filteredArticles = articles.filter((a: any) => {
         if (selectedMetier === 'TOUS') return true
@@ -131,17 +116,8 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                                 </div>
                             )}
                         </div>
-                        <div className="w-36 truncate pr-2">
-                            {article.supplier ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
-                                    {article.supplier}
-                                </span>
-                            ) : (
-                                <Badge variant={getBadgeVariant(article.category) as any}>
-                                    {getCategoryIcon(article.category)}
-                                    {article.category}
-                                </Badge>
-                            )}
+                        <div className="w-80 shrink-0 pr-4 flex items-center">
+                            <TradeBadge trade={article.supplier || article.category} />
                         </div>
                         <div className="w-16 text-center font-mono text-xs">{article.unit || 'u'}</div>
                         <div className="w-24 text-right font-medium text-gray-900 dark:text-white">
@@ -178,16 +154,6 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                    <button
-                        onClick={handleSeedCatalog}
-                        disabled={isSeeding}
-                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 disabled:opacity-50"
-                        title="Importer le catalogue réel de prestations BTP"
-                    >
-                        <Package size={15} />
-                        {isSeeding ? "Import en cours..." : "Catalogue BTP Pro"}
-                    </button>
-
                     <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
             </div>
@@ -212,18 +178,19 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
             {/* Content */}
             <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs dark:border-slate-800 dark:bg-[#131B2A]">
                 {viewMode === 'list' ? (
-                    <div className="flex flex-col h-full">
-                        {/* Static Header */}
-                        <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#0E1524] dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
-                            <div className="w-24 pr-2">Réf.</div>
-                            <div className="flex-1">Désignation & Complément</div>
-                            <div className="w-36">Famille / Métier</div>
-                            <div className="w-16 text-center">Unité</div>
-                            <div className="w-24 text-right">P.V. HT</div>
-                            <div className="w-24 text-right text-blue-600 dark:text-blue-400">TTC 10%</div>
-                            <div className="w-24 text-right">TTC 20%</div>
-                            <div className="w-24 text-right">Déboursé</div>
-                        </div>
+                    <div className="flex flex-col h-full overflow-x-auto">
+                        <div className="min-w-[1250px] flex flex-col h-full">
+                            {/* Static Header */}
+                            <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#0E1524] dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
+                                <div className="w-24 pr-2">Réf.</div>
+                                <div className="flex-1">Désignation & Complément</div>
+                                <div className="w-80 shrink-0 pr-4">Famille / Métier</div>
+                                <div className="w-16 text-center">Unité</div>
+                                <div className="w-24 text-right">P.V. HT</div>
+                                <div className="w-24 text-right text-blue-600 dark:text-blue-400">TTC 10%</div>
+                                <div className="w-24 text-right">TTC 20%</div>
+                                <div className="w-24 text-right">Déboursé</div>
+                            </div>
                         {/* Virtual List */}
                         <div className="flex-1">
                             {filteredArticles && (filteredArticles.length > 0 || isLoading) ? (
@@ -239,6 +206,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                             ) : (
                                 <div className="py-12 text-center text-gray-500 dark:text-gray-400">Aucun article trouvé pour ce métier.</div>
                             )}
+                        </div>
                         </div>
                     </div>
                 ) : (
