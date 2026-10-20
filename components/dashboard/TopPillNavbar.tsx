@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import {
     LayoutDashboard,
     HardHat,
@@ -32,6 +33,11 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
     const router = useRouter()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [activePath, setActivePath] = useState(pathname)
+
+    useEffect(() => {
+        setActivePath(pathname)
+    }, [pathname])
 
     const supabase = createClient()
 
@@ -46,54 +52,60 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
         ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
         : user?.email?.split('@')[0] || "Utilisateur"
 
+    const isLinkActive = (href: string) => {
+        if (href === '/dashboard') return activePath === '/dashboard'
+        if (href === '/dashboard/trello') return activePath?.startsWith('/dashboard/trello') || activePath?.startsWith('/dashboard/taches')
+        return activePath?.startsWith(href)
+    }
+
     const navLinks = [
         {
             name: "Dashboard",
             href: "/dashboard",
             icon: <LayoutDashboard size={14} />,
-            active: pathname === '/dashboard'
+            active: isLinkActive('/dashboard')
         },
         {
             name: "Chantiers",
             href: "/dashboard/chantiers",
             icon: <HardHat size={14} />,
-            active: pathname?.startsWith('/dashboard/chantiers')
+            active: isLinkActive('/dashboard/chantiers')
         },
         {
             name: "Clients",
             href: "/dashboard/clients",
             icon: <Users size={14} />,
-            active: pathname?.startsWith('/dashboard/clients')
+            active: isLinkActive('/dashboard/clients')
         },
         {
             name: "Devis",
             href: "/dashboard/devis",
             icon: <FileText size={14} />,
-            active: pathname?.startsWith('/dashboard/devis')
+            active: isLinkActive('/dashboard/devis')
         },
         {
             name: "Factures",
             href: "/dashboard/factures",
             icon: <FileCheck size={14} />,
-            active: pathname?.startsWith('/dashboard/factures')
+            active: isLinkActive('/dashboard/factures')
         },
         {
             name: "Planning",
             href: "/dashboard/planning",
             icon: <Calendar size={14} />,
-            active: pathname?.startsWith('/dashboard/planning')
+            active: isLinkActive('/dashboard/planning')
         },
         {
             name: "Tâches",
             href: "/dashboard/trello",
             icon: <Layout size={14} />,
-            active: pathname?.startsWith('/dashboard/trello') || pathname?.startsWith('/dashboard/taches')
+            active: isLinkActive('/dashboard/trello')
         },
         {
             name: "Bibliothèque",
             href: "/dashboard/articles",
             icon: <Box size={14} />,
-            active: pathname?.startsWith('/dashboard/articles')
+            active: isLinkActive('/dashboard/articles')
         }
     ]
 
@@ -171,25 +183,41 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                     )}
                 </div>
 
-                {/* --- 2. CENTER PILL NAVBAR (NO HORIZONTAL SCROLLBAR) --- */}
+                {/* --- 2. CENTER PILL NAVBAR (LIQUID MORPHING SELECTOR) --- */}
                 <div className="flex items-center justify-center">
-                    <nav className="flex items-center gap-1 p-1 bg-white dark:bg-[#131B2A]/90 border border-slate-200/90 dark:border-slate-800 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md no-scrollbar">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
-                                    link.active
-                                        ? 'bg-slate-900 dark:bg-indigo-600 text-white font-semibold shadow-xs'
-                                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60 font-medium'
-                                }`}
-                            >
-                                <span className={link.active ? 'text-white' : 'text-slate-400 dark:text-slate-400'}>
-                                    {link.icon}
-                                </span>
-                                <span>{link.name}</span>
-                            </Link>
-                        ))}
+                    <nav className="relative flex items-center gap-0.5 p-1 bg-white dark:bg-[#131B2A]/90 border border-slate-200/90 dark:border-slate-800 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md no-scrollbar">
+                        {navLinks.map((link) => {
+                            const isActive = link.active
+                            return (
+                                <Link
+                                    key={link.name}
+                                    href={link.href}
+                                    onClick={() => setActivePath(link.href)}
+                                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors duration-200 select-none ${
+                                        isActive
+                                            ? 'text-white font-semibold'
+                                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium'
+                                    }`}
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="liquidActivePill"
+                                            className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full shadow-[0_2px_14px_rgba(124,58,237,0.45)]"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 420,
+                                                damping: 28,
+                                                mass: 0.7
+                                            }}
+                                        />
+                                    )}
+                                    <span className={`relative z-10 flex items-center transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400'}`}>
+                                        {link.icon}
+                                    </span>
+                                    <span className="relative z-10 transition-colors duration-200">{link.name}</span>
+                                </Link>
+                            )
+                        })}
                     </nav>
                 </div>
 
