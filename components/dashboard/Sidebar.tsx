@@ -18,7 +18,7 @@ import {
     Calendar
 } from 'lucide-react'
 
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 export default function Sidebar({ user }: { user: any }) {
     const pathname = usePathname()

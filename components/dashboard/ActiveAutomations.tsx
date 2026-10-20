@@ -108,25 +108,25 @@ export default function ActiveAutomations() {
     }, [])
 
     if (loading) return (
-        <div className="rounded-[28px] border border-slate-200/70 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md flex justify-center py-12">
-            <Loader2 className="animate-spin text-indigo-600" />
+        <div className="rounded-[28px] border border-slate-200/70 dark:border-slate-800 bg-white/95 dark:bg-[#131B2A] p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md flex justify-center py-12">
+            <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" />
         </div>
     )
 
     return (
-        <div className="rounded-[28px] border border-slate-200/70 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md">
+        <div className="rounded-[28px] border border-slate-200/70 dark:border-slate-800 bg-white/95 dark:bg-[#131B2A] p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-sm font-bold text-slate-900 tracking-wider uppercase flex items-center gap-2">
-                    <Activity className="text-indigo-600" size={18} />
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wider uppercase flex items-center gap-2">
+                    <Activity className="text-indigo-600 dark:text-indigo-400" size={18} />
                     Automatisations en cours
                 </h2>
-                <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 px-2.5 py-0.5 rounded-full">
                     {automations.length} actif{automations.length !== 1 ? 's' : ''}
                 </span>
             </div>
 
             {automations.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs">
+                <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs">
                     Aucune automatisation active.
                 </div>
             ) : (
@@ -137,33 +137,33 @@ export default function ActiveAutomations() {
                             href={`/dashboard/chantiers/${auto.chantier_id}/suivi`}
                             className="block group"
                         >
-                            <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/80 p-4 transition-all hover:bg-indigo-50/40 hover:border-indigo-200 hover:shadow-sm">
+                            <div className="relative overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/80 dark:bg-[#0E1524] p-4 transition-all hover:bg-indigo-50/40 dark:hover:bg-[#162032] hover:border-indigo-200 dark:hover:border-slate-700 hover:shadow-sm">
 
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
-                                        <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors text-sm">
+                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-sm">
                                             {auto.chantier_name}
                                         </h3>
-                                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 dark:text-slate-500">
                                             <PlayCircle size={12} />
                                             Lancé le {new Date(auto.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
-                                    <div className="bg-white p-2 rounded-full border border-slate-200/80 shadow-xs group-hover:border-indigo-300">
-                                        <ArrowRight size={15} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                    <div className="bg-white dark:bg-[#131B2A] p-2 rounded-full border border-slate-200/80 dark:border-slate-800 shadow-xs group-hover:border-indigo-300 dark:group-hover:border-indigo-500">
+                                        <ArrowRight size={15} className="text-slate-400 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-slate-600 flex items-center gap-1.5 font-medium">
-                                            {auto.progress === 100 ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Loader2 size={14} className="animate-spin text-indigo-600" />}
+                                        <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                                            {auto.progress === 100 ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Loader2 size={14} className="animate-spin text-indigo-600 dark:text-indigo-400" />}
                                             {auto.current_step}
                                         </span>
-                                        <span className="font-mono font-bold text-indigo-600">{auto.progress}%</span>
+                                        <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{auto.progress}%</span>
                                     </div>
 
-                                    <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+                                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                                         <div
                                             className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 ease-out"
                                             style={{ width: `${auto.progress}%` }}

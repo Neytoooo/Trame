@@ -258,19 +258,19 @@ export default function TechnicianSchedule() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* --- HEADER BAR (Issu de la capture Batiecom Photo 2) --- */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-md">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 shadow-inner">
-                        <CalendarIcon size={26} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 shadow-xs">
+                        <CalendarIcon size={24} />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Planning des Interventions</h1>
-                            <span className="rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-xs font-semibold dark:bg-blue-900/40 dark:text-blue-300">
+                            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Planning des Interventions</h1>
+                            <span className="rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-xs font-bold dark:bg-indigo-950/50 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
                                 Semaine 42
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                             Planning hebdomadaire par technicien, zone géographique et chantier (Vue Progiciel BTP)
                         </p>
                     </div>
@@ -279,11 +279,11 @@ export default function TechnicianSchedule() {
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Sélecteur Technicien */}
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:inline">Technicien :</span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden sm:inline">Technicien :</span>
                         <select
                             value={selectedTech}
                             onChange={(e) => setSelectedTech(e.target.value)}
-                            className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-[#0E1524] dark:text-slate-100"
                         >
                             {TECHNICIENS.map(t => (
                                 <option key={t} value={t}>{t}</option>
@@ -295,7 +295,7 @@ export default function TechnicianSchedule() {
                     <select
                         value={selectedZone}
                         onChange={(e) => setSelectedZone(e.target.value)}
-                        className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-[#0E1524] dark:text-slate-100"
                     >
                         {ZONES.map(z => (
                             <option key={z} value={z}>{z}</option>
@@ -305,7 +305,7 @@ export default function TechnicianSchedule() {
                     {/* Bouton Nouvelle Intervention */}
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition-all active:scale-95"
+                        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-500 transition-all active:scale-95"
                     >
                         <Plus size={15} />
                         Planifier
@@ -314,17 +314,17 @@ export default function TechnicianSchedule() {
             </div>
 
             {/* --- GRILLE DU PLANNING HEBDOMADAIRE (Batiecom BLUE SELECT Style) --- */}
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-md">
+            <div className="rounded-[24px] border border-slate-200/80 bg-white shadow-xs overflow-hidden dark:border-slate-800 dark:bg-[#131B2A]">
                 {/* Header Jours */}
-                <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50/80 text-center dark:border-white/10 dark:bg-black/20">
-                    <div className="p-3 text-xs font-bold uppercase text-gray-500 border-r border-gray-200 dark:border-white/10 flex items-center justify-center">
+                <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center dark:border-slate-800 dark:bg-[#0E1524]">
+                    <div className="p-3 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
                         <Clock size={14} className="mr-1" /> Heure
                     </div>
                     {DAYS.map((day, idx) => (
                         <div
                             key={idx}
-                            className={`p-3 text-xs font-bold uppercase border-r border-gray-200 last:border-r-0 dark:border-white/10 ${
-                                idx === 4 ? 'bg-blue-50/40 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' : 'text-gray-700 dark:text-gray-200'
+                            className={`p-3 text-xs font-bold uppercase border-r border-slate-200 last:border-r-0 dark:border-slate-800 ${
+                                idx === 4 ? 'bg-indigo-50/40 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
                             }`}
                         >
                             <span>{day.label} </span>
@@ -334,7 +334,7 @@ export default function TechnicianSchedule() {
                 </div>
 
                 {/* Corps de la grille horaire */}
-                <div className="divide-y divide-gray-100 dark:divide-white/5 font-mono text-xs">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/80 font-mono text-xs">
                     {TIME_SLOTS.map((slot) => {
                         const slotHour = parseInt(slot.split(':')[0])
 
@@ -406,39 +406,39 @@ export default function TechnicianSchedule() {
             {activeModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setActiveModalItem(null)} />
-                    <div className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-gray-900 animate-in zoom-in-95 duration-200">
+                    <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#131B2A] animate-in zoom-in-95 duration-200">
                         <div className="flex items-start justify-between mb-4">
                             <div>
-                                <span className="inline-block rounded-md bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 mb-1">
+                                <span className="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 mb-1 border border-indigo-100 dark:border-indigo-900/50">
                                     {activeModalItem.startTime} - {activeModalItem.endTime} • {DAYS[activeModalItem.dayIndex].label} {DAYS[activeModalItem.dayIndex].date}
                                 </span>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                                     {activeModalItem.chantierName}
                                 </h3>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                                     {activeModalItem.title}
                                 </p>
                             </div>
-                            <button onClick={() => setActiveModalItem(null)} className="rounded-lg p-1 text-gray-400 hover:text-gray-700 dark:hover:text-white">
+                            <button onClick={() => setActiveModalItem(null)} className="rounded-lg p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="space-y-3 border-y border-gray-100 py-4 my-4 dark:border-white/10 text-sm">
-                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                                <Building2 size={16} className="text-blue-500 shrink-0" />
+                        <div className="space-y-3 border-y border-slate-100 py-4 my-4 dark:border-slate-800/80 text-sm">
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                                <Building2 size={16} className="text-indigo-500 shrink-0" />
                                 <span>Client / Syndic : <strong>{activeModalItem.clientName}</strong></span>
                             </div>
-                            <div className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
                                 <MapPin size={16} className="text-rose-500 shrink-0 mt-0.5" />
                                 <span>{activeModalItem.address}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                                 <HardHat size={16} className="text-amber-500 shrink-0" />
                                 <span>Technicien assigné : <strong>{activeModalItem.technicien}</strong></span>
                             </div>
                             {activeModalItem.notes && (
-                                <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 dark:bg-white/5 dark:text-gray-400 italic">
+                                <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-[#0E1524] dark:text-slate-400 italic border border-slate-100 dark:border-slate-800">
                                     Consignes : {activeModalItem.notes}
                                 </div>
                             )}
@@ -447,7 +447,7 @@ export default function TechnicianSchedule() {
                         <div className="flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setActiveModalItem(null)}
-                                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-500"
+                                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500"
                             >
                                 Fermer
                             </button>
@@ -460,54 +460,54 @@ export default function TechnicianSchedule() {
             {isCreateModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)} />
-                    <form onSubmit={handleCreateIntervention} className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-gray-900 animate-in zoom-in-95 duration-200">
+                    <form onSubmit={handleCreateIntervention} className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#131B2A] animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Plus size={18} className="text-blue-500" /> Planifier une intervention
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Plus size={18} className="text-indigo-600 dark:text-indigo-400" /> Planifier une intervention
                             </h3>
-                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-lg p-1 text-gray-400 hover:text-gray-700 dark:hover:text-white">
+                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white">
                                 <X size={20} />
                             </button>
                         </div>
 
                         <div className="space-y-4 text-sm">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 mb-1">Chantier</label>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Chantier</label>
                                 <input
                                     type="text"
                                     value={newChantier}
                                     onChange={(e) => setNewChantier(e.target.value)}
                                     required
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white text-xs font-medium"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 mb-1">Mission / Travaux</label>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mission / Travaux</label>
                                 <input
                                     type="text"
                                     placeholder="Ex: Pose échafaudage, Ravalement D2..."
                                     value={newTitle}
                                     onChange={(e) => setNewTitle(e.target.value)}
                                     required
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white text-xs font-medium placeholder-slate-400 dark:placeholder-slate-500"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 mb-1">Adresse</label>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Adresse</label>
                                 <input
                                     type="text"
                                     value={newAddress}
                                     onChange={(e) => setNewAddress(e.target.value)}
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white text-xs font-medium"
                                 />
                             </div>
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Jour</label>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Jour</label>
                                     <select
                                         value={newDay}
                                         onChange={(e) => setNewDay(parseInt(e.target.value))}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white"
                                     >
                                         {DAYS.map((d, i) => (
                                             <option key={i} value={i}>{d.label} {d.date}</option>
@@ -515,21 +515,21 @@ export default function TechnicianSchedule() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Début</label>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Début</label>
                                     <input
                                         type="text"
                                         value={newStart}
                                         onChange={(e) => setNewStart(e.target.value)}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-mono text-center text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-mono text-center text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Fin</label>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Fin</label>
                                     <input
                                         type="text"
                                         value={newEnd}
                                         onChange={(e) => setNewEnd(e.target.value)}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-mono text-center text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-mono text-center text-slate-900 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white"
                                     />
                                 </div>
                             </div>
@@ -539,13 +539,13 @@ export default function TechnicianSchedule() {
                             <button
                                 type="button"
                                 onClick={() => setIsCreateModalOpen(false)}
-                                className="rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5"
+                                className="rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                             >
                                 Annuler
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500"
+                                className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500"
                             >
                                 Enregistrer
                             </button>

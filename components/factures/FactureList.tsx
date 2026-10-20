@@ -172,9 +172,9 @@ export default function FactureList({ initialFactures, companySettings }: { init
                         <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                         <button
                             onClick={() => setShowHistory(!showHistory)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${showHistory ? 'bg-orange-100 border-orange-200 text-orange-600 dark:bg-orange-500/20 dark:border-orange-500 dark:text-orange-400' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/10'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border text-xs font-semibold ${showHistory ? 'bg-amber-100 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-400' : 'bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50 dark:bg-[#131B2A] dark:border-slate-800 dark:text-slate-300 dark:hover:bg-[#1A2438]'}`}
                         >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
                             {showHistory ? 'Masquer' : 'Corbeille'}
                         </button>
                     </div>
@@ -183,8 +183,8 @@ export default function FactureList({ initialFactures, companySettings }: { init
 
             {/* Banner Corbeille */}
             {showHistory && (
-                <div className="flex items-center gap-2 rounded-xl bg-orange-100 border border-orange-200 p-4 text-orange-600 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400">
-                    <AlertTriangle size={20} />
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300 text-xs font-medium">
+                    <AlertTriangle size={18} />
                     <p>Vous visualisez les factures supprimées. Elles seront effacées définitivement après 30 jours.</p>
                 </div>
             )}
@@ -192,9 +192,9 @@ export default function FactureList({ initialFactures, companySettings }: { init
             {/* Grid / List via viewMode */}
             {viewMode === 'list' ? (
                 // TABLE VIEW
-                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-                    <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
+                    <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                        <thead className="bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Référence</th>
                                 <th className="px-6 py-4 font-semibold">Client</th>
@@ -205,28 +205,28 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                             {filteredFactures.map((facture) => (
-                                <tr key={facture.id} className={`transition-colors hover:bg-slate-50/80 ${facture.deleted_at ? 'opacity-50' : ''}`}>
-                                    <td className="px-6 py-4 font-bold text-slate-900">
+                                <tr key={facture.id} className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-[#162032] ${facture.deleted_at ? 'opacity-50' : ''}`}>
+                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
                                         <div className="flex items-center gap-2">
-                                            <FileCheck size={16} className={facture.deleted_at ? "text-slate-400" : "text-indigo-600"} />
-                                            <span className="font-mono text-xs text-slate-800">{facture.reference || 'Sans Ref'}</span>
+                                            <FileCheck size={16} className={facture.deleted_at ? "text-slate-400 dark:text-slate-500" : "text-indigo-600 dark:text-indigo-400"} />
+                                            <span className="font-mono text-xs text-slate-800 dark:text-slate-200">{facture.reference || 'Sans Ref'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-800 font-medium hover:text-indigo-600 transition-colors">
+                                    <td className="px-6 py-4 text-slate-800 dark:text-slate-200 font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                                         <div className="flex items-center gap-2">
-                                            <User size={14} className="text-slate-400" />
+                                            <User size={14} className="text-slate-400 dark:text-slate-500" />
                                             {facture.chantiers?.clients?.name || 'Client supprimé'}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-500 font-medium">
+                                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-medium">
                                         {facture.chantiers?.name || '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-slate-500 text-xs">
+                                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
                                         {new Date(facture.date_emission).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-black text-slate-900">
+                                    <td className="px-6 py-4 text-right font-black text-slate-900 dark:text-white">
                                         {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -306,13 +306,13 @@ export default function FactureList({ initialFactures, companySettings }: { init
                 // GRID VIEW
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredFactures.map((facture) => (
-                        <div key={facture.id} className={`group relative overflow-hidden rounded-[24px] border p-5 transition-all ${facture.deleted_at ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200/90 hover:border-indigo-400 hover:shadow-md shadow-[0_2px_12px_rgba(0,0,0,0.03)]'}`}>
+                        <div key={facture.id} className={`group relative overflow-hidden rounded-[24px] border p-5 transition-all ${facture.deleted_at ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60' : 'bg-white dark:bg-[#131B2A] border-slate-200/90 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md dark:shadow-none shadow-[0_2px_12px_rgba(0,0,0,0.03)]'}`}>
 
                             {/* Header Card */}
                             <div className="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                                        <FileCheck size={16} className={facture.deleted_at ? "text-slate-400" : "text-indigo-600"} />
+                                    <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                                        <FileCheck size={16} className={facture.deleted_at ? "text-slate-400 dark:text-slate-500" : "text-indigo-600 dark:text-indigo-400"} />
                                         {facture.reference || 'Sans Ref'}
                                     </h3>
                                 </div>
@@ -323,25 +323,25 @@ export default function FactureList({ initialFactures, companySettings }: { init
 
                             {/* Info Client & Chantier */}
                             <div className="space-y-2.5 mb-6 text-xs font-medium">
-                                <div className="flex items-center gap-2 text-slate-700">
-                                    <User size={13} className="text-slate-400" />
+                                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                                    <User size={13} className="text-slate-400 dark:text-slate-500" />
                                     <span className={facture.chantiers?.clients ? "font-semibold" : "text-rose-500 italic"}>
                                         {facture.chantiers?.clients?.name || 'Client supprimé'}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 text-slate-500">
-                                    <MapPin size={13} className="text-slate-400" />
+                                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                                    <MapPin size={13} className="text-slate-400 dark:text-slate-500" />
                                     <span className="truncate">{facture.chantiers?.name || 'Chantier inconnu'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-slate-400">
+                                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                                     <Calendar size={13} />
                                     <span>Émise le : {new Date(facture.date_emission).toLocaleDateString()}</span>
                                 </div>
                             </div>
 
                             {/* Actions Footer */}
-                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                                <span className="font-black text-slate-900 text-lg">
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                                <span className="font-black text-slate-900 dark:text-white text-lg">
                                     {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-'}
                                 </span>
 

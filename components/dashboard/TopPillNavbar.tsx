@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface TopPillNavbarProps {
     user: any
@@ -104,29 +105,29 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                 <div className="relative shrink-0">
                     <button
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                        className="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 group cursor-pointer"
+                        className="flex items-center gap-2.5 bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700 group cursor-pointer"
                     >
                         <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs shadow-xs">
                             {firstName[0]?.toUpperCase()}
-                            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border-2 border-white rounded-full"></span>
+                            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border-2 border-white dark:border-[#131B2A] rounded-full"></span>
                         </div>
                         <div className="text-left hidden sm:block pr-1">
-                            <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                 {displayName}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-medium leading-none">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-none">
                                 Administrateur
                             </p>
                         </div>
-                        <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+                        <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : ''}`} />
                     </button>
 
                     {/* Dropdown Menu */}
                     {userMenuOpen && (
-                        <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white border border-slate-200 p-2 shadow-xl shadow-slate-900/10 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-                            <div className="px-3 py-2 border-b border-slate-100">
-                                <p className="text-xs font-semibold text-slate-800">{user?.email}</p>
-                                <span className="inline-flex items-center gap-1 text-[10px] text-indigo-600 font-medium mt-0.5">
+                        <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#131B2A] border border-slate-200 dark:border-slate-800 p-2 shadow-xl shadow-slate-900/10 dark:shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+                            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80">
+                                <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">{user?.email}</p>
+                                <span className="inline-flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
                                     <ShieldCheck size={11} />
                                     Accès Complet BTP
                                 </span>
@@ -135,7 +136,7 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                                 <Link
                                     href="/dashboard/planning"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-colors font-medium"
+                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-[#1A2438] rounded-xl transition-colors font-medium"
                                 >
                                     <Calendar size={14} />
                                     Mon planning hebdomadaire
@@ -143,7 +144,7 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                                 <Link
                                     href="/dashboard/articles"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-colors font-medium"
+                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-[#1A2438] rounded-xl transition-colors font-medium"
                                 >
                                     <Box size={14} />
                                     Catalogue BTP Pro
@@ -151,16 +152,16 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                                 <Link
                                     href="/dashboard/settings"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-colors font-medium"
+                                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-[#1A2438] rounded-xl transition-colors font-medium"
                                 >
                                     <Settings size={14} />
                                     Paramètres Entreprise
                                 </Link>
                             </div>
-                            <div className="pt-1 border-t border-slate-100">
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80">
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left font-medium"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left font-medium"
                                 >
                                     <LogOut size={14} />
                                     Se déconnecter
@@ -172,18 +173,18 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
 
                 {/* --- 2. CENTER PILL NAVBAR (NO HORIZONTAL SCROLLBAR) --- */}
                 <div className="flex items-center justify-center">
-                    <nav className="flex items-center gap-1 p-1 bg-white border border-slate-200/90 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md no-scrollbar">
+                    <nav className="flex items-center gap-1 p-1 bg-white dark:bg-[#131B2A]/90 border border-slate-200/90 dark:border-slate-800 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md no-scrollbar">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.name}
                                 href={link.href}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
                                     link.active
-                                        ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium'
+                                        ? 'bg-slate-900 dark:bg-indigo-600 text-white font-semibold shadow-xs'
+                                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60 font-medium'
                                 }`}
                             >
-                                <span className={link.active ? 'text-white' : 'text-slate-400'}>
+                                <span className={link.active ? 'text-white' : 'text-slate-400 dark:text-slate-400'}>
                                     {link.icon}
                                 </span>
                                 <span>{link.name}</span>
@@ -192,36 +193,39 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                     </nav>
                 </div>
 
-                {/* --- 3. TOP RIGHT CONTROLS (Search, Notifications, Settings) --- */}
+                {/* --- 3. TOP RIGHT CONTROLS (Search, Theme, Notifications, Settings) --- */}
                 <div className="flex items-center gap-2 shrink-0">
                     {/* Search Pill */}
                     <div className="relative hidden md:block">
-                        <div className="flex items-center gap-2 bg-white border border-slate-200/90 rounded-full px-3.5 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md text-xs text-slate-400 hover:border-slate-300 transition-all">
-                            <Search size={14} className="text-slate-400" />
+                        <div className="flex items-center gap-2 bg-white dark:bg-[#131B2A] border border-slate-200/90 dark:border-slate-800 rounded-full px-3.5 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md text-xs text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+                            <Search size={14} className="text-slate-400 dark:text-slate-500" />
                             <input
                                 type="text"
                                 placeholder="Recherche..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none outline-none text-xs text-slate-800 placeholder-slate-400 w-24 lg:w-32 focus:w-40 transition-all font-medium"
+                                className="bg-transparent border-none outline-none text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-24 lg:w-32 focus:w-40 transition-all font-medium"
                             />
                         </div>
                     </div>
 
+                    {/* Dark / Light Mode Toggle Pill */}
+                    <ThemeToggle />
+
                     {/* Notification Bell Pill */}
                     <Link
                         href="/dashboard/annonces"
-                        className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-600 hover:text-indigo-600 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300"
+                        className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700"
                         title="Notifications & Annonces"
                     >
                         <Bell size={14} />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#131B2A]"></span>
                     </Link>
 
                     {/* Settings Pill */}
                     <Link
                         href="/dashboard/settings"
-                        className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-600 hover:text-indigo-600 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300"
+                        className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700"
                         title="Paramètres de l'entreprise"
                     >
                         <Settings size={14} />

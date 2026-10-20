@@ -35,18 +35,18 @@ export default function FilterBar({
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
             {/* Search Input */}
             <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
                 <input
                     type="text"
                     placeholder={placeholder}
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full rounded-xl bg-white border border-gray-200 pl-10 pr-4 py-2 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder-gray-500 dark:focus:border-purple-500/50 dark:focus:ring-purple-500/50"
+                    className="w-full rounded-2xl bg-white border border-slate-200/90 pl-10 pr-4 py-2 text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all dark:bg-[#131B2A] dark:border-slate-800 dark:text-white dark:placeholder-slate-500 dark:focus:border-indigo-500"
                 />
                 {searchValue && (
                     <button
                         onClick={() => onSearchChange('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white"
                     >
                         <X size={16} />
                     </button>

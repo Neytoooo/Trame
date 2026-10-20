@@ -118,13 +118,13 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
         <div className="flex flex-col h-[calc(100vh-140px)]">
             <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between mb-6 shrink-0">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={17} />
                     <input
                         type="text"
                         placeholder="Rechercher un client..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -148,18 +148,18 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
             </div>
 
             {/* Grid / List via viewMode */}
-            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-xs">
                 {clients.length === 0 && !isLoading ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                             <User size={32} />
                         </div>
-                        <p className="text-slate-400 text-sm">Aucun client trouvé.</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-sm">Aucun client trouvé.</p>
                     </div>
                 ) : viewMode === 'list' ? (
                     <div className="flex flex-col h-full">
                         {/* Static Header */}
-                        <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 py-3.5 px-6 font-semibold border-b border-slate-200 shrink-0">
+                        <div className="flex items-center bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
                             <div className="flex-1 pr-4">Nom</div>
                             <div className="w-32">Type</div>
                             <div className="w-64">Contact</div>
@@ -239,17 +239,17 @@ function VirtualizedGridAdapter({ items, onEdit, onDelete, isProcessing, hasMore
 
 function ClientCard({ client, onEdit, onDelete, isProcessing }: { client: Client, onEdit: (client: Client) => void, onDelete: (id: string, name: string) => void, isProcessing: string | null }) {
     return (
-        <div className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all hover:border-indigo-400 hover:shadow-md h-[200px] flex flex-col justify-between">
+        <div className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none transition-all hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md h-[200px] flex flex-col justify-between">
             {/* Card Content */}
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50' : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50'
                         }`}>
                         {client.type === 'professionnel' ? <Building2 size={19} /> : <User size={19} />}
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate max-w-[140px] text-sm">{client.name}</h3>
-                        <span className="text-[11px] text-slate-400 capitalize font-medium">{client.type}</span>
+                        <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[140px] text-sm">{client.name}</h3>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 capitalize font-medium">{client.type}</span>
                     </div>
                 </div>
 
@@ -274,23 +274,23 @@ function ClientCard({ client, onEdit, onDelete, isProcessing }: { client: Client
 
             <div className="space-y-2">
                 {client.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Mail size={14} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <Mail size={14} className="text-gray-400 dark:text-slate-500 shrink-0" />
                         <span className="truncate">{client.email}</span>
                         {client.billing_email && client.billing_email !== client.email && (
-                            <span className="text-xs text-gray-500">(Fac: {client.billing_email})</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400">(Fac: {client.billing_email})</span>
                         )}
                     </div>
                 )}
                 {client.phone_mobile && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Phone size={14} className="text-gray-400 dark:text-gray-600" />
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <Phone size={14} className="text-gray-400 dark:text-slate-500" />
                         <span>{client.phone_mobile}</span>
                     </div>
                 )}
                 {client.city && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <MapPin size={14} className="text-gray-400 dark:text-gray-600" />
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <MapPin size={14} className="text-gray-400 dark:text-slate-500" />
                         <span>{client.city}</span>
                     </div>
                 )}

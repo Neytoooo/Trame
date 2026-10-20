@@ -165,15 +165,15 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
     return (
         <div className="flex flex-col h-[calc(100vh-140px)]">
             {/* Barre de recherche et filtres */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-md mb-4 shrink-0">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md mb-4 shrink-0">
                 <div className="relative flex-1 w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
                     <input
                         type="text"
                         placeholder="Rechercher référence, ouvrage, prestation (ex: RAV D2, Échafaudage...)"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-white/10 dark:bg-black/20 dark:text-white dark:focus:border-blue-500/50 dark:focus:ring-blue-500/50"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white dark:placeholder-slate-500 dark:focus:border-indigo-500"
                     />
                 </div>
 
@@ -181,7 +181,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                     <button
                         onClick={handleSeedCatalog}
                         disabled={isSeeding}
-                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 disabled:opacity-50"
                         title="Importer le catalogue réel de prestations BTP"
                     >
                         <Package size={15} />
@@ -193,15 +193,15 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
             </div>
 
             {/* Onglets Filtres Métier BTP (Style Batiecom) */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2 shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2 shrink-0 no-scrollbar">
                 {METIERS.map(m => (
                     <button
                         key={m}
                         onClick={() => setSelectedMetier(m)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                             selectedMetier === m
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-[#131B2A] dark:text-slate-300 dark:border dark:border-slate-800 dark:hover:bg-[#1A2438]'
                         }`}
                     >
                         {m}
@@ -210,11 +210,11 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-md">
+            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs dark:border-slate-800 dark:bg-[#131B2A]">
                 {viewMode === 'list' ? (
                     <div className="flex flex-col h-full">
                         {/* Static Header */}
-                        <div className="flex items-center bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300 py-3.5 px-6 font-semibold border-b border-gray-200 dark:border-white/10 shrink-0">
+                        <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#0E1524] dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
                             <div className="w-24 pr-2">Réf.</div>
                             <div className="flex-1">Désignation & Complément</div>
                             <div className="w-36">Famille / Métier</div>

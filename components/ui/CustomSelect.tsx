@@ -45,38 +45,38 @@ export default function CustomSelect({
         <div className={`relative min-w-[160px] ${className}`} ref={containerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between rounded-xl bg-white border border-gray-200 px-4 py-2 text-sm text-gray-900 transition-all hover:bg-gray-50 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 ${isOpen ? 'border-purple-500 ring-1 ring-purple-500 dark:border-purple-500/50 dark:ring-purple-500/50' : ''}`}
+                className={`w-full flex items-center justify-between rounded-xl bg-white border border-slate-200/90 px-4 py-2 text-sm text-slate-900 transition-all hover:bg-slate-50 dark:bg-[#131B2A] dark:border-slate-800 dark:text-slate-200 dark:hover:bg-[#1A2438] ${isOpen ? 'border-indigo-500 ring-1 ring-indigo-500 dark:border-indigo-500/50 dark:ring-indigo-500/50' : ''}`}
                 type="button"
             >
                 <div className="flex items-center gap-2 truncate">
                     {icon}
-                    <span className={value === 'all' ? "text-gray-500 dark:text-gray-400" : "text-gray-900 font-medium dark:text-white"}>
+                    <span className={value === 'all' ? "text-slate-500 dark:text-slate-400" : "text-slate-900 font-medium dark:text-white"}>
                         {selectedLabel}
                     </span>
                 </div>
                 <ChevronDown
                     size={16}
-                    className={`text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                    className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : ''}`}
                 />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 top-[calc(100%+4px)] left-0 w-full rounded-xl border border-gray-200 bg-white p-1 shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100 dark:border-white/10 dark:bg-[#1E1E2E] dark:shadow-black/50">
-                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
+                <div className="absolute z-50 top-[calc(100%+4px)] left-0 w-full rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 dark:border-slate-800 dark:bg-[#131B2A] dark:shadow-black/60">
+                    <div className="max-h-[240px] overflow-y-auto no-scrollbar">
                         {options.map((option) => (
                             <button
                                 key={option.value}
                                 onClick={() => {
                                     onChange(option.value)
                                     setIsOpen(false)
-                                }}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors text-left ${value === option.value
-                                    ? 'bg-purple-100 text-purple-700 font-medium dark:bg-purple-600/20 dark:text-purple-400'
-                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'
+                                    }}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left ${value === option.value
+                                    ? 'bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-600/20 dark:text-indigo-400'
+                                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#1A2438] dark:hover:text-white'
                                     }`}
                             >
                                 <span className="truncate">{option.label}</span>
-                                {value === option.value && <Check size={14} />}
+                                {value === option.value && <Check size={14} className="text-indigo-600 dark:text-indigo-400" />}
                             </button>
                         ))}
                     </div>

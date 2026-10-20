@@ -45,30 +45,30 @@ export default function SeedBtpBanner({ clientCount }: SeedBtpBannerProps) {
     // Si les données sont déjà là, on affiche un bouton compact discret
     if (clientCount > 0) {
         return (
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                    <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
                         <HardHat size={18} />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-800">Données Démo BTP Métier actives</p>
-                        <p className="text-[11px] text-slate-500">3 Clients Copro & Syndics (Poissy, Saint-Mandé, Conflans) • Email: <span className="text-indigo-600 font-mono font-medium">mattiskhn@gmail.com</span></p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Données Démo BTP Métier actives</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">3 Clients Copro & Syndics (Poissy, Saint-Mandé, Conflans) • Email: <span className="text-indigo-600 dark:text-indigo-400 font-mono font-medium">mattiskhn@gmail.com</span></p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {statusMsg && (
-                        <span className={`text-xs px-2.5 py-1 rounded-lg ${statusMsg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                        <span className={`text-xs px-2.5 py-1 rounded-lg ${statusMsg.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'}`}>
                             {statusMsg.text}
                         </span>
                     )}
                     <button
                         onClick={handleSeed}
                         disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#0E1524] hover:bg-slate-100 dark:hover:bg-[#1A2438] border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all disabled:opacity-50"
                         title="Réinitialiser et recharger les 3 clients BTP"
                     >
-                        <RefreshCw size={13} className={loading ? "animate-spin text-indigo-600" : ""} />
+                        <RefreshCw size={13} className={loading ? "animate-spin text-indigo-600 dark:text-indigo-400" : ""} />
                         {loading ? "Génération..." : "Recharger la démo BTP"}
                     </button>
                 </div>

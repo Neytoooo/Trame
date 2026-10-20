@@ -84,22 +84,22 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
             <div className="flex h-full gap-6 min-w-[800px] pb-4">
 
                 {/* COLUMN 1: TO DO */}
-                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 border border-slate-200/80 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] overflow-hidden backdrop-blur-md">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md">
                     {/* Header */}
-                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
                         <div className="flex items-center gap-3">
-                            <h2 className="font-bold text-slate-800 tracking-wide text-sm">À Faire</h2>
-                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-700">
+                            <h2 className="font-bold text-slate-800 dark:text-slate-100 tracking-wide text-sm">À Faire</h2>
+                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
                                 {pendingNodes.length}
                             </span>
                         </div>
-                        <button className="text-slate-400 hover:text-slate-700 transition-colors">
+                        <button className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
                             <Settings size={16} />
                         </button>
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar bg-slate-50/30">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
                         <AnimatePresence mode="popLayout">
                             {pendingNodes.map(node => (
                                 <motion.div
@@ -108,7 +108,7 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    className="group relative flex flex-col gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer"
+                                    className="group relative flex flex-col gap-3 p-4 rounded-2xl bg-white dark:bg-[#0E1524] border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer"
                                     onClick={() => moveNodeToDone(node)} // Simple click to move for now, acting as "check"
                                 >
                                     {/* Action Type Tag */}
@@ -118,16 +118,16 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                             {node.action_type?.replace(/_/g, ' ')}
                                         </Badge>
                                         {/* Hover Check Action */}
-                                        <div className="w-5 h-5 rounded-full border border-slate-200 flex items-center justify-center text-transparent group-hover:text-emerald-600 group-hover:border-emerald-500 transition-all bg-slate-50 group-hover:bg-emerald-50">
+                                        <div className="w-5 h-5 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-transparent group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:border-emerald-500 dark:group-hover:border-emerald-500 transition-all bg-slate-50 dark:bg-slate-800 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/40">
                                             <Check size={12} strokeWidth={3} />
                                         </div>
                                     </div>
 
                                     {/* Content */}
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-800 leading-snug mb-1 group-hover:text-indigo-600 transition-colors">{node.label}</h3>
-                                        <p className="text-xs text-slate-400 truncate flex items-center gap-1.5 font-medium">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{node.label}</h3>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate flex items-center gap-1.5 font-medium">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
                                             {node.chantiers?.name}
                                         </p>
                                     </div>
@@ -137,13 +137,13 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
 
                         {/* Empty State */}
                         {pendingNodes.length === 0 && (
-                            <div className="h-28 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm italic">
+                            <div className="h-28 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm italic">
                                 Tout est fait ! 👏
                             </div>
                         )}
 
                         {/* Add Button Placeholder - for visuals */}
-                        <button className="w-full py-2.5 rounded-2xl border border-dashed border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all text-xs font-semibold flex items-center justify-center gap-2 mt-2">
+                        <button className="w-full py-2.5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 transition-all text-xs font-semibold flex items-center justify-center gap-2 mt-2">
                             <Plus size={15} />
                             Ajouter une carte
                         </button>
@@ -151,19 +151,19 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                 </div>
 
                 {/* COLUMN 2: TERMINÉ */}
-                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 border border-slate-200/80 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] overflow-hidden backdrop-blur-md opacity-90 hover:opacity-100 transition-opacity">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md opacity-90 hover:opacity-100 transition-opacity">
                     {/* Header */}
-                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
                         <div className="flex items-center gap-3">
-                            <h2 className="font-bold text-slate-800 tracking-wide text-sm">Terminé</h2>
-                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-700">
+                            <h2 className="font-bold text-slate-800 dark:text-slate-100 tracking-wide text-sm">Terminé</h2>
+                            <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                                 {doneNodes.length}
                             </span>
                         </div>
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar bg-slate-50/30">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
                         <AnimatePresence mode="popLayout">
                             {doneNodes.map(node => (
                                 <motion.div
@@ -172,7 +172,7 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    className="relative flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 opacity-80 hover:opacity-100 transition-all cursor-pointer"
+                                    className="relative flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/80 dark:bg-[#0E1524]/60 border border-slate-200/60 dark:border-slate-800 opacity-80 hover:opacity-100 transition-all cursor-pointer"
                                     onClick={() => moveNodeToPending(node)}
                                 >
                                     <div className="flex items-start justify-between">
@@ -180,14 +180,14 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                                             {getIcon(node.action_type)}
                                             {node.action_type?.replace(/_/g, ' ')}
                                         </Badge>
-                                        <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                                             <Check size={12} strokeWidth={3} />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-sm font-semibold text-slate-400 line-through mb-1">{node.label}</h3>
-                                        <p className="text-xs text-slate-400 truncate">
+                                        <h3 className="text-sm font-semibold text-slate-400 dark:text-slate-500 line-through mb-1">{node.label}</h3>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
                                             {node.chantiers?.name}
                                         </p>
                                     </div>
