@@ -7,26 +7,33 @@ import FactureList from '@/components/factures/FactureList'
 export default async function FacturesPage() {
     const supabase = await createClient()
 
-    // Récupérer les factures (si la table existe)
-    const { data: factures, error } = await supabase
-        .from('factures')
-        .select(`
-            *,
-            factures_items (*),
-            chantiers (
-                id,
-                name,
-                clients ( id, name, address_line1, city, zip_code, email, billing_email )
-            )
-        `)
-        .order('date_emission', { ascending: false })
-        .limit(10)
+    // 1. Exécution en parallèle de l'auth et de la requête des factures
+    const [userRes, facturesRes] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+            .from('factures')
+            .select(`
+                *,
+                factures_items (*),
+                chantiers (
+                    id,
+                    name,
+                    clients ( id, name, address_line1, city, zip_code, email, billing_email )
+                )
+            `)
+            .order('date_emission', { ascending: false })
+            .limit(10)
+    ])
 
-    const { data: companySettings } = await supabase
+    const user = userRes.data?.user
+    const factures = facturesRes.data
+    const error = facturesRes.error
+
+    const { data: companySettings } = user?.id ? await supabase
         .from('company_settings')
         .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
-        .single()
+        .eq('user_id', user.id)
+        .single() : { data: null }
 
     // Si erreur (table n'existe pas encore), on gère proprement
     if (error && error.code === '42P01') { // undefined_table

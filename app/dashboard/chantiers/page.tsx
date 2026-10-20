@@ -5,22 +5,25 @@ import ChantiersListClient from '@/components/chantiers/ChantiersListClient'
 export default async function ChantiersPage() {
     const supabase = await createClient()
 
-    // 1. On récupère les chantiers ET le nom du client associé (Jointure) ET les nœuds pour le calcul (limite 10)
-    const { data: chantiers } = await supabase
-        .from('chantiers')
-        .select(`
-            *,
-            clients(name),
-            chantier_nodes(status, type)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10)
+    // 1. Exécution en parallèle des chantiers et de la liste des clients
+    const [chantiersRes, clientsRes] = await Promise.all([
+        supabase
+            .from('chantiers')
+            .select(`
+                *,
+                clients(name),
+                chantier_nodes(status, type)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(10),
+        supabase
+            .from('clients')
+            .select('id, name')
+            .order('name')
+    ])
 
-    // 2. On récupère la liste simple des clients pour le formulaire
-    const { data: clients } = await supabase
-        .from('clients')
-        .select('id, name')
-        .order('name')
+    const chantiers = chantiersRes.data
+    const clients = clientsRes.data
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

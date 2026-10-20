@@ -14,6 +14,29 @@ export function useInfiniteScroll<T>({ fetchAction, initialData, limit = 10 }: U
   const [searchQuery, setSearchQuery] = useState('')
   const isFirstRender = useRef(true)
 
+  const isLoadingRef = useRef(false)
+  const hasMoreRef = useRef(initialData.length >= limit)
+  const offsetRef = useRef(initialData.length)
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    hasMoreRef.current = hasMore
+  }, [hasMore])
+
+  useEffect(() => {
+    offsetRef.current = offset
+  }, [offset])
+
+  // Sync initialData if server revalidates
+  useEffect(() => {
+    setData(initialData)
+    setOffset(initialData.length)
+    offsetRef.current = initialData.length
+    const more = initialData.length >= limit
+    setHasMore(more)
+    hasMoreRef.current = more
+  }, [initialData, limit])
+
   // Reload data from server when search query changes
   useEffect(() => {
     if (isFirstRender.current) {
@@ -22,15 +45,20 @@ export function useInfiniteScroll<T>({ fetchAction, initialData, limit = 10 }: U
     }
 
     const loadSearch = async () => {
+      isLoadingRef.current = true
       setIsLoading(true)
       try {
         const results = await fetchAction(0, searchQuery)
         setData(results)
         setOffset(results.length)
-        setHasMore(results.length >= limit)
+        offsetRef.current = results.length
+        const more = results.length >= limit
+        setHasMore(more)
+        hasMoreRef.current = more
       } catch (error) {
         console.error("Search failed", error)
       } finally {
+        isLoadingRef.current = false
         setIsLoading(false)
       }
     }
@@ -44,11 +72,13 @@ export function useInfiniteScroll<T>({ fetchAction, initialData, limit = 10 }: U
   }, [searchQuery, fetchAction, limit])
 
   const loadMore = useCallback(async () => {
-    if (isLoading || !hasMore) return
+    if (isLoadingRef.current || !hasMoreRef.current) return
 
+    isLoadingRef.current = true
     setIsLoading(true)
     try {
-      const newItems = await fetchAction(offset, searchQuery)
+      const currentOffset = offsetRef.current
+      const newItems = await fetchAction(currentOffset, searchQuery)
       if (newItems.length > 0) {
         setData(prev => {
            // Prevent duplicates if React Strict Mode double invokes or network race conditions
@@ -56,17 +86,21 @@ export function useInfiniteScroll<T>({ fetchAction, initialData, limit = 10 }: U
            const uniqueNewItems = newItems.filter((item: any) => !existingIds.has(item.id))
            return [...prev, ...uniqueNewItems]
         })
-        setOffset(prev => prev + newItems.length)
+        const nextOffset = currentOffset + newItems.length
+        offsetRef.current = nextOffset
+        setOffset(nextOffset)
       }
       if (newItems.length < limit) {
+        hasMoreRef.current = false
         setHasMore(false)
       }
     } catch (error) {
       console.error("Failed to load more items", error)
     } finally {
+      isLoadingRef.current = false
       setIsLoading(false)
     }
-  }, [isLoading, hasMore, fetchAction, offset, searchQuery, limit])
+  }, [fetchAction, searchQuery, limit])
 
   return {
     data,

@@ -192,6 +192,7 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                                 <Link
                                     key={link.name}
                                     href={link.href}
+                                    prefetch={false}
                                     onClick={() => setActivePath(link.href)}
                                     className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors duration-200 select-none ${
                                         isActive

@@ -8,26 +8,28 @@ import AiDevisButton from '@/components/devis/AiDevisButton'
 export default async function DevisPage() {
     const supabase = await createClient()
 
-    // Récupérer les devis avec les infos du chantier et du client
-    const { data: devis } = await supabase
-        .from('devis')
-        .select(`
-            *,
-            chantiers (
-                id,
-                name,
-                clients ( id, name )
-            )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10)
+    // Récupération en parallèle des devis et des nodes d'automatisation
+    const [devisRes, nodesRes] = await Promise.all([
+        supabase
+            .from('devis')
+            .select(`
+                *,
+                chantiers (
+                    id,
+                    name,
+                    clients ( id, name )
+                )
+            `)
+            .order('created_at', { ascending: false })
+            .limit(10),
+        supabase
+            .from('chantier_nodes')
+            .select('data')
+            .eq('action_type', 'quote')
+    ])
 
-    // Récupérer les ids des devis liés à l'automation
-    const { data: nodes } = await supabase
-        .from('chantier_nodes')
-        .select('data')
-        .eq('action_type', 'quote')
-
+    const devis = devisRes.data
+    const nodes = nodesRes.data
     const linkedDevisIds = nodes?.map((n: any) => n.data?.devis_id).filter(Boolean) || []
 
     return (
