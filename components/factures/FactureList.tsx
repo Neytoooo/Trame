@@ -192,45 +192,45 @@ export default function FactureList({ initialFactures, companySettings }: { init
             {/* Grid / List via viewMode */}
             {viewMode === 'list' ? (
                 // TABLE VIEW
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md">
-                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300">
+                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                    <table className="w-full text-left text-sm text-slate-600">
+                        <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 font-medium">Référence</th>
-                                <th className="px-6 py-4 font-medium">Client</th>
-                                <th className="px-6 py-4 font-medium">Chantier</th>
-                                <th className="px-6 py-4 font-medium">Date d'émission</th>
-                                <th className="px-6 py-4 font-medium text-right">Montant TTC</th>
-                                <th className="px-6 py-4 font-medium text-right">Statut</th>
-                                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                <th className="px-6 py-4 font-semibold">Référence</th>
+                                <th className="px-6 py-4 font-semibold">Client</th>
+                                <th className="px-6 py-4 font-semibold">Chantier</th>
+                                <th className="px-6 py-4 font-semibold">Date d'émission</th>
+                                <th className="px-6 py-4 font-semibold text-right">Montant TTC</th>
+                                <th className="px-6 py-4 font-semibold text-right">Statut</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-slate-100">
                             {filteredFactures.map((facture) => (
-                                <tr key={facture.id} className={`transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${facture.deleted_at ? 'opacity-50' : ''}`}>
-                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                <tr key={facture.id} className={`transition-colors hover:bg-slate-50/80 ${facture.deleted_at ? 'opacity-50' : ''}`}>
+                                    <td className="px-6 py-4 font-bold text-slate-900">
                                         <div className="flex items-center gap-2">
-                                            <FileCheck size={16} className={facture.deleted_at ? "text-gray-400 dark:text-gray-500" : "text-purple-600 dark:text-purple-400"} />
-                                            {facture.reference || 'Sans Ref'}
+                                            <FileCheck size={16} className={facture.deleted_at ? "text-slate-400" : "text-indigo-600"} />
+                                            <span className="font-mono text-xs text-slate-800">{facture.reference || 'Sans Ref'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-900 hover:text-purple-600 transition-colors dark:text-white dark:hover:text-purple-400">
+                                    <td className="px-6 py-4 text-slate-800 font-medium hover:text-indigo-600 transition-colors">
                                         <div className="flex items-center gap-2">
-                                            <User size={14} className="text-gray-400 dark:text-gray-500" />
+                                            <User size={14} className="text-slate-400" />
                                             {facture.chantiers?.clients?.name || 'Client supprimé'}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 text-slate-500 font-medium">
                                         {facture.chantiers?.name || '-'}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 text-slate-500 text-xs">
                                         {new Date(facture.date_emission).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                                    <td className="px-6 py-4 text-right font-black text-slate-900">
                                         {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(facture.status || 'en_attente')}`}>
+                                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(facture.status || 'en_attente')}`}>
                                             {getStatusLabel(facture.status || 'en_attente')}
                                         </span>
                                     </td>
@@ -306,42 +306,42 @@ export default function FactureList({ initialFactures, companySettings }: { init
                 // GRID VIEW
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredFactures.map((facture) => (
-                        <div key={facture.id} className={`group relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm transition-all ${facture.deleted_at ? 'bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-500/20' : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-lg hover:-translate-y-1 dark:bg-[#1e293b] dark:border-white/10 dark:hover:bg-[#334155] dark:hover:border-white/20 dark:hover:shadow-black/20'}`}>
+                        <div key={facture.id} className={`group relative overflow-hidden rounded-[24px] border p-5 transition-all ${facture.deleted_at ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200/90 hover:border-indigo-400 hover:shadow-md shadow-[0_2px_12px_rgba(0,0,0,0.03)]'}`}>
 
                             {/* Header Card */}
                             <div className="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2 dark:text-white">
-                                        <FileCheck size={18} className={facture.deleted_at ? "text-gray-400 dark:text-gray-500" : "text-purple-600 dark:text-purple-400"} />
+                                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                                        <FileCheck size={16} className={facture.deleted_at ? "text-slate-400" : "text-indigo-600"} />
                                         {facture.reference || 'Sans Ref'}
                                     </h3>
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(facture.status || 'en_attente')}`}>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(facture.status || 'en_attente')}`}>
                                     {getStatusLabel(facture.status || 'en_attente')}
                                 </span>
                             </div>
 
                             {/* Info Client & Chantier */}
-                            <div className="space-y-3 mb-6">
-                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                    <User size={14} className="text-gray-400 dark:text-gray-500" />
-                                    <span className={facture.chantiers?.clients ? "" : "text-red-500 italic dark:text-red-400"}>
+                            <div className="space-y-2.5 mb-6 text-xs font-medium">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <User size={13} className="text-slate-400" />
+                                    <span className={facture.chantiers?.clients ? "font-semibold" : "text-rose-500 italic"}>
                                         {facture.chantiers?.clients?.name || 'Client supprimé'}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <MapPin size={14} className="text-gray-400 dark:text-gray-500" />
+                                <div className="flex items-center gap-2 text-slate-500">
+                                    <MapPin size={13} className="text-slate-400" />
                                     <span className="truncate">{facture.chantiers?.name || 'Chantier inconnu'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Calendar size={14} />
+                                <div className="flex items-center gap-2 text-slate-400">
+                                    <Calendar size={13} />
                                     <span>Émise le : {new Date(facture.date_emission).toLocaleDateString()}</span>
                                 </div>
                             </div>
 
                             {/* Actions Footer */}
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/5">
-                                <span className="font-bold text-gray-900 text-xl dark:text-white">
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                                <span className="font-black text-slate-900 text-lg">
                                     {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-'}
                                 </span>
 

@@ -138,40 +138,38 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
             {/* Grid / List via viewMode */}
             {viewMode === 'list' ? (
                 // TABLE VIEW
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md">
-                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300">
+                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                    <table className="w-full text-left text-sm text-slate-600">
+                        <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 font-medium">Référence & Nom</th>
-                                <th className="px-6 py-4 font-medium">Client</th>
-                                <th className="px-6 py-4 font-medium">Chantier</th>
-                                <th className="px-6 py-4 font-medium">Date de création</th>
-                                <th className="px-6 py-4 font-medium text-right">Montant TTC</th>
-                                <th className="px-6 py-4 font-medium text-right">Statut</th>
-                                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                <th className="px-6 py-4 font-semibold">Référence</th>
+                                <th className="px-6 py-4 font-semibold">Client</th>
+                                <th className="px-6 py-4 font-semibold">Chantier</th>
+                                <th className="px-6 py-4 font-semibold">Date de création</th>
+                                <th className="px-6 py-4 font-semibold text-right">Montant TTC</th>
+                                <th className="px-6 py-4 font-semibold text-right">Statut</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-slate-100">
                             {filteredDevis.map((devis) => (
-                                <tr key={devis.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
-                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                <tr key={devis.id} className="transition-colors hover:bg-slate-50/80">
+                                    <td className="px-6 py-4 font-bold text-slate-900">
                                         <div className="flex items-center gap-2">
-                                            <FileText size={16} className="text-blue-600 dark:text-blue-400" />
-                                            <div className="flex items-center gap-1">
-                                                <p className="text-xs text-gray-500 font-mono dark:text-gray-500">{devis.reference}</p>
-                                            </div>
+                                            <FileText size={15} className="text-indigo-600" />
+                                            <span className="font-mono text-xs text-slate-700">{devis.reference}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-900 hover:text-blue-600 transition-colors dark:text-white dark:hover:text-blue-400">
+                                    <td className="px-6 py-4 text-slate-800 font-medium hover:text-indigo-600 transition-colors">
                                         {devis.chantiers?.clients?.name || 'Inconnu'}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 text-slate-500">
                                         {devis.chantiers?.name || '-'}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 text-slate-500 text-xs">
                                         {new Date(devis.created_at).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                                    <td className="px-6 py-4 text-right font-black text-slate-900">
                                         {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -185,25 +183,25 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                                             {devis.status !== 'brouillon' && (
                                                 <button
                                                     onClick={() => handleConvertToFacture(devis.id)}
-                                                    className="p-2 rounded-lg text-pink-600 hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100 dark:text-pink-400 dark:hover:bg-pink-600/10 dark:hover:border-pink-600/20"
+                                                    className="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-100"
                                                     title="Transformer en facture"
                                                 >
-                                                    <FileText size={16} className="rotate-180" />
+                                                    <FileText size={15} className="rotate-180" />
                                                 </button>
                                             )}
                                             <Link
                                                 href={`/dashboard/devis/${devis.id}/edit`}
-                                                className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 dark:text-blue-400 dark:hover:bg-blue-600/10 dark:hover:border-blue-600/20"
+                                                className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all border border-transparent"
                                                 title="Ouvrir"
                                             >
-                                                <Edit size={16} />
+                                                <Edit size={15} />
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(devis.id)}
-                                                className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 dark:text-red-500 dark:hover:bg-red-500/10 dark:hover:border-red-500/20"
+                                                className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent"
                                                 title="Supprimer"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={15} />
                                             </button>
                                         </div>
                                     </td>
@@ -216,13 +214,13 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                 // GRID VIEW
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredDevis.map((devis) => (
-                        <div key={devis.id} className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md hover:-translate-y-1 dark:border-white/10 dark:bg-[#1e293b] dark:hover:border-white/20 dark:hover:bg-[#334155] dark:hover:shadow-black/20">
+                        <div key={devis.id} className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all hover:border-indigo-400 hover:shadow-md">
 
                             {/* Header Card */}
                             <div className="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2 dark:text-white">
-                                        <FileText size={18} className="text-blue-600 dark:text-blue-400" />
+                                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                                        <FileText size={16} className="text-indigo-600" />
                                         {devis.name || 'Sans Titre'}
                                     </h3>
                                     {devis.reference && (

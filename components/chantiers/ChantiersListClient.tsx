@@ -43,13 +43,13 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
     return (
         <div className="space-y-6">
             <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                 <input
                     type="text"
                     placeholder="Rechercher un chantier..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-gray-900 focus:border-blue-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
                 />
             </div>
 
@@ -68,7 +68,7 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
                         <Link
                             key={chantier.id}
                             href={`/dashboard/chantiers/${chantier.id}`} // Lien vers le détail
-                            className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-blue-500/50 hover:bg-gray-50 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 flex flex-col justify-between"
+                            className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all hover:border-indigo-400 hover:shadow-md flex flex-col justify-between"
                         >
                             <div>
                                 {/* Badge Status */}
@@ -82,27 +82,27 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
                                             chantier.status === 'etude' ? 'En étude' :
                                                 chantier.status === 'annule' ? 'Annulé' : 'Terminé'}
                                     </Badge>
-                                    <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-blue-600 group-hover:text-white transition-colors dark:bg-white/10 dark:text-gray-400">
-                                        <ArrowRight size={16} />
+                                    <div className="h-8 w-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors">
+                                        <ArrowRight size={15} />
                                     </div>
                                 </div>
 
                                 {/* Titre et Client */}
-                                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">{chantier.name}</h3>
-                                <p className="text-sm text-gray-500 mb-6 dark:text-gray-400">Client : <span className="text-gray-700 font-medium dark:text-gray-300">{chantier.clients?.name}</span></p>
+                                <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors leading-snug">{chantier.name}</h3>
+                                <p className="text-xs text-slate-400 mb-6 font-medium">Client : <span className="text-slate-700 font-semibold">{chantier.clients?.name}</span></p>
                             </div>
 
                             <div>
                                 {/* Automation Progress */}
                                 {hasAutomation && (
                                     <div className="mb-6">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span className="text-gray-500 dark:text-gray-400">Automatisation</span>
-                                            <span className={`font-semibold ${progress === 100 ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>{progress}%</span>
+                                        <div className="flex justify-between text-xs mb-1.5 font-medium">
+                                            <span className="text-slate-500">Automatisation</span>
+                                            <span className={`font-bold ${progress === 100 ? 'text-emerald-600' : 'text-indigo-600'}`}>{progress}%</span>
                                         </div>
-                                        <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden dark:bg-white/10">
+                                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                                             <div
-                                                className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'}`}
                                                 style={{ width: `${progress}%` }}
                                             />
                                         </div>
@@ -110,14 +110,14 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
                                 )}
 
                                 {/* Footer Infos */}
-                                <div className="flex items-center gap-4 border-t border-gray-100 pt-4 text-xs text-gray-500 dark:border-white/5 dark:text-gray-400">
-                                    <div className="flex items-center gap-1">
-                                        <MapPin size={14} />
-                                        <span className="truncate max-w-[120px]">{chantier.address_line1 || 'Non renseigné'}</span>
+                                <div className="flex items-center gap-4 border-t border-slate-100 pt-4 text-xs text-slate-400 font-medium">
+                                    <div className="flex items-center gap-1.5">
+                                        <MapPin size={13} className="text-slate-400" />
+                                        <span className="truncate max-w-[140px] text-slate-600">{chantier.address_line1 || 'Non renseigné'}</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <Calendar size={14} />
-                                        {chantier.date_debut || '--/--/----'}
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar size={13} className="text-slate-400" />
+                                        <span className="text-slate-600">{chantier.date_debut || '--/--/----'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -128,7 +128,7 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
 
             {/* Carte vide si aucun chantier */}
             {(!chantiers || chantiers.length === 0) && !isLoading && (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 py-12 text-gray-500 dark:border-white/10 dark:text-gray-400">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-12 text-slate-400 text-sm">
                     <p>Aucun chantier trouvé.</p>
                 </div>
             )}
@@ -137,7 +137,7 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
             {(hasMore || isLoading) && (
                 <div ref={loadMoreRef} className="h-10 w-full flex items-center justify-center p-4">
                     {isLoading && (
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
                     )}
                 </div>
             )}

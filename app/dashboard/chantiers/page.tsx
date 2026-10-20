@@ -27,8 +27,8 @@ export default async function ChantiersPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Chantiers en cours</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Suivez l'avancement et la rentabilité de vos projets.</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Chantiers en cours</h1>
+                    <p className="text-sm text-slate-500 font-medium">Suivez l'avancement et la rentabilité de vos projets.</p>
                 </div>
                 {/* On passe la liste des clients au composant client */}
                 <NewChantierModal clients={clients || []} />

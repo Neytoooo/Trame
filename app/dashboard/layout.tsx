@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import TopPillNavbar from '@/components/dashboard/TopPillNavbar'
-import ArchitecturalWave from '@/components/dashboard/ArchitecturalWave'
 
 export default async function DashboardLayout({
     children,
@@ -16,15 +15,25 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="relative min-h-screen bg-[#EEF3F8] text-slate-800 antialiased selection:bg-indigo-500 selection:text-white overflow-x-hidden font-sans">
-            {/* --- 3D ARCHITECTURAL WAVE ACCENT --- */}
-            <ArchitecturalWave />
+        <div className="relative min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white overflow-x-hidden font-sans">
+            {/* --- BESPOKE SAAS AMBIENT BACKGROUND (0 noise, ultra clean) --- */}
+            {/* Top soft ambient light */}
+            <div className="fixed top-0 inset-x-0 h-[480px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(99,102,241,0.07),transparent_70%)] pointer-events-none z-0" />
+            
+            {/* Very subtle architectural dot grid */}
+            <div 
+                className="fixed inset-0 pointer-events-none opacity-[0.4] z-0" 
+                style={{
+                    backgroundImage: 'radial-gradient(#94A3B8 0.75px, transparent 0.75px)',
+                    backgroundSize: '24px 24px'
+                }} 
+            />
 
             {/* --- TOP FLOATING PILL NAVBAR --- */}
             <TopPillNavbar user={user} />
 
             {/* --- MAIN WORKSPACE CONTAINER --- */}
-            <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 md:px-8 py-4">
+            <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 md:px-8 py-6">
                 {children}
             </main>
         </div>

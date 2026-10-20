@@ -34,8 +34,8 @@ export default async function DevisPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Devis</h1>
-                    <p className="text-slate-500 dark:text-gray-400">Gérez vos propositions commerciales</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Devis</h1>
+                    <p className="text-sm text-slate-500 font-medium">Gérez vos propositions commerciales et chiffrages BTP.</p>
                 </div>
 
                 <div className="flex items-center gap-3">

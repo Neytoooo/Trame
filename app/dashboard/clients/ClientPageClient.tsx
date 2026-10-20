@@ -118,13 +118,13 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
         <div className="flex flex-col h-[calc(100vh-140px)]">
             <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between mb-6 shrink-0">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                     <input
                         type="text"
                         placeholder="Rechercher un client..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-4 text-gray-900 focus:border-blue-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -132,34 +132,34 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                     <ImportHelpButton type="client" />
                     <button
                         onClick={() => setIsImportModalOpen(true)}
-                        className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                        className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition-all active:scale-95"
                     >
-                        <FileSpreadsheet size={16} />
+                        <FileSpreadsheet size={15} />
                         Importer (Excel)
                     </button>
                     <button
                         onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
-                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
+                        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all active:scale-95"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                         Nouveau Client
                     </button>
                 </div>
             </div>
 
             {/* Grid / List via viewMode */}
-            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md">
+            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
                 {clients.length === 0 && !isLoading ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-gray-600">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                             <User size={32} />
                         </div>
-                        <p className="text-gray-500 dark:text-gray-400">Aucun client trouvé.</p>
+                        <p className="text-slate-400 text-sm">Aucun client trouvé.</p>
                     </div>
                 ) : viewMode === 'list' ? (
                     <div className="flex flex-col h-full">
                         {/* Static Header */}
-                        <div className="flex items-center bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-300 py-4 px-6 font-medium border-b border-gray-200 dark:border-white/10 shrink-0">
+                        <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 py-3.5 px-6 font-semibold border-b border-slate-200 shrink-0">
                             <div className="flex-1 pr-4">Nom</div>
                             <div className="w-32">Type</div>
                             <div className="w-64">Contact</div>
@@ -181,7 +181,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                     </div>
                 ) : (
                     // GRID VIEW
-                    <div className="h-full p-4 bg-gray-50/50 dark:bg-transparent">
+                    <div className="h-full p-4 bg-transparent">
                         <VirtualizedGridAdapter items={clients} onEdit={(c: Client) => { setEditingClient(c); setIsModalOpen(true) }} onDelete={handleDelete} isProcessing={isProcessing} hasMore={hasMore} isLoading={isLoading} onEndReached={loadMore} />
                     </div>
                 )}
@@ -211,7 +211,7 @@ function VirtualizedGridAdapter({ items, onEdit, onDelete, isProcessing, hasMore
             {isScrolling ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2 pb-4">
                     {[...Array(chunk.length)].map((_, i) => (
-                        <div key={i} className="h-[200px] rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+                        <div key={i} className="h-[200px] rounded-2xl bg-slate-100 animate-pulse" />
                     ))}
                 </div>
             ) : (
@@ -239,17 +239,17 @@ function VirtualizedGridAdapter({ items, onEdit, onDelete, isProcessing, hasMore
 
 function ClientCard({ client, onEdit, onDelete, isProcessing }: { client: Client, onEdit: (client: Client) => void, onDelete: (id: string, name: string) => void, isProcessing: string | null }) {
     return (
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10 dark:hover:shadow-black/20 h-[200px] flex flex-col justify-between">
-            {/* Card Content ... (same as before) */}
+        <div className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all hover:border-indigo-400 hover:shadow-md h-[200px] flex flex-col justify-between">
+            {/* Card Content */}
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${client.type === 'professionnel' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
                         }`}>
-                        {client.type === 'professionnel' ? <Building2 size={20} /> : <User size={20} />}
+                        {client.type === 'professionnel' ? <Building2 size={19} /> : <User size={19} />}
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors dark:text-white dark:group-hover:text-blue-400 truncate max-w-[120px]">{client.name}</h3>
-                        <span className="text-xs text-gray-500 capitalize">{client.type}</span>
+                        <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate max-w-[140px] text-sm">{client.name}</h3>
+                        <span className="text-[11px] text-slate-400 capitalize font-medium">{client.type}</span>
                     </div>
                 </div>
 

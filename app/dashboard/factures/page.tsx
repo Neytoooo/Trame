@@ -45,8 +45,8 @@ export default async function FacturesPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Factures</h1>
-                    <p className="text-slate-500 dark:text-gray-400">Suivi des paiements et relances</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Factures</h1>
+                    <p className="text-sm text-slate-500 font-medium">Suivi des règlements, acomptes et situations de travaux.</p>
                 </div>
 
                 <Link
