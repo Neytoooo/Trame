@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, getCachedUser } from '@/utils/supabase/server'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import PillButton from '@/components/ui/PillButton'
@@ -7,9 +7,9 @@ import FactureList from '@/components/factures/FactureList'
 export default async function FacturesPage() {
     const supabase = await createClient()
 
-    // 1. Exécution en parallèle de l'auth, des factures et des paramètres entreprise
-    const [userRes, facturesRes, settingsRes] = await Promise.all([
-        supabase.auth.getUser(),
+    // 1. Exécution en parallèle de l'auth mémoïsée, des factures et des paramètres entreprise
+    const [user, facturesRes, settingsRes] = await Promise.all([
+        getCachedUser(),
         supabase
             .from('factures')
             .select(`
@@ -30,7 +30,6 @@ export default async function FacturesPage() {
             .maybeSingle()
     ])
 
-    const user = userRes.data?.user
     const factures = facturesRes.data
     const error = facturesRes.error
     const companySettings = settingsRes.data

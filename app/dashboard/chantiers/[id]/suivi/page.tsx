@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { getCachedUser } from '@/utils/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import SuiviGraph from '@/components/chantiers/SuiviGraph'
@@ -6,8 +6,7 @@ import SuiviGraph from '@/components/chantiers/SuiviGraph'
 export default async function ChantierSuiviPage({ params }: { params: Promise<{ id: string }> }) {
     // Await params for Next.js 15+
     const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
 
     return (
         <div className="h-screen flex flex-col p-6 space-y-6">

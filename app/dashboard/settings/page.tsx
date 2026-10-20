@@ -1,10 +1,10 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, getCachedUser } from '@/utils/supabase/server'
 import { Building2, MapPin, FileText, Save, Mail, Phone, Hash } from 'lucide-react'
 import { saveCompanySettings } from '@/app/actions/settings'
 
 export default async function SettingsPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
 
     let settings = null
     if (user) {

@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, getCachedUser } from '@/utils/supabase/server'
 import { Bell, ShoppingCart, Info, CheckCircle, AlertTriangle } from 'lucide-react'
 import NotificationList from './NotificationList'
 
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function AnnoncesPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
 
     // En production, utiliser l'action getNotifications, mais ici on peut fetch direct server-side
     console.log("🔍 [ANNONCES PAGE] Current User ID:", user?.id)

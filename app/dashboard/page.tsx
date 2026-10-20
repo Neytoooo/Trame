@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, getCachedUser } from '@/utils/supabase/server'
 import { ArrowUpRight, Plus, Wallet, Users, Hammer, FileText, FileCheck, Calendar, Activity, ChevronRight, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import PillButton from '@/components/ui/PillButton'
@@ -8,8 +8,8 @@ import SeedBtpBanner from '@/components/dashboard/SeedBtpBanner'
 export default async function DashboardPage() {
     const supabase = await createClient()
 
-    // 1. User Info
-    const { data: { user } } = await supabase.auth.getUser()
+    // 1. User Info (memoized via React.cache, 0 network latency)
+    const user = await getCachedUser()
     const displayName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Chef"
 
     // 2. Date Ranges for Revenue (Current Month vs Last Month)
