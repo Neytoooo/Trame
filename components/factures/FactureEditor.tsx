@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
-import { Plus, Trash2, Save, Calculator, Loader2, FileCheck, Calendar, Wallet, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Save, Calculator, Loader2, FileCheck, Calendar, Wallet, ChevronRight, Building2, User } from 'lucide-react'
 import ArticleSelector from '@/components/devis/ArticleSelector' // Reuse article selector
 import { saveFacture, deleteFactureItem } from '@/app/actions/factures'
+import PillButton from '@/components/ui/PillButton'
 
 type FactureItem = {
     id: string
@@ -25,7 +26,10 @@ export default function FactureEditor({
     initialStatus,
     initialDateEcheance,
     initialType,
-    initialSituationIndex
+    initialSituationIndex,
+    chantierName,
+    client,
+    dateEmission
 }: {
     initialItems: FactureItem[],
     factureId: string,
@@ -34,7 +38,10 @@ export default function FactureEditor({
     initialStatus: string,
     initialDateEcheance?: string,
     initialType: string,
-    initialSituationIndex?: number
+    initialSituationIndex?: number,
+    chantierName?: string,
+    client?: any,
+    dateEmission?: string
 }) {
     const [items, setItems] = useState<FactureItem[]>(initialItems)
     const [status, setStatus] = useState(initialStatus)
@@ -138,7 +145,7 @@ export default function FactureEditor({
 
 
     return (
-        <div className="space-y-6">
+        <div className="h-full flex flex-col">
             <ArticleSelector
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
@@ -146,188 +153,319 @@ export default function FactureEditor({
                 onSelect={handleSelectArticle}
             />
 
-            {/* --- METADATA HEADER (Status, Date) --- */}
-            <div className="grid gap-4 md:grid-cols-2">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                        <Wallet size={20} />
+            {/* --- LAYOUT SCINDÉ GAUCHE / DROITE (100% de la hauteur, sans scroll global) --- */}
+            <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3.5 min-h-0 items-start">
+
+                {/* ======================================================== */}
+                {/* COLONNE GAUCHE (8 colonnes) : ZONE DE FACTURE & LIGNES   */}
+                {/* ======================================================== */}
+                <div className="xl:col-span-8 h-full flex flex-col gap-2.5 min-h-0">
+
+                    {/* 1. EN-TÊTE RÉFÉRENCE FACTURE & CHANTIER */}
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-2.5 px-3.5 shadow-xs">
+                        <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                Facture N° {initialReference || 'Facture Provisoire'}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                                {items.length} {items.length > 1 ? 'lignes' : 'ligne'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">Chantier :</span>
+                            <span className="font-semibold text-slate-900 dark:text-white truncate">{chantierName || 'Chantier non spécifié'}</span>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                            Statut de paiement
-                        </label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="w-full bg-transparent font-medium text-white outline-none [&>option]:bg-gray-900"
+
+                    {/* 2. BARRE D'OUTILS D'AJOUT (PillButtons) */}
+                    <div className="shrink-0 flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+                        <PillButton
+                            onClick={handleAddLine}
+                            variant="primary"
+                            icon={<Plus size={13} />}
                         >
-                            <option value="en_attente">En attente</option>
-                            <option value="payee">Payée</option>
-                            <option value="retard">En retard</option>
-                        </select>
+                            Ajouter une ligne
+                        </PillButton>
                     </div>
-                </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center">
-                        <Calendar size={20} />
-                    </div>
-                    <div className="flex-1">
-                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                            Date d'échéance
-                        </label>
-                        <input
-                            type="date"
-                            value={dateEcheance}
-                            onChange={(e) => setDateEcheance(e.target.value)}
-                            className="w-full bg-transparent font-medium text-white outline-none"
-                        />
-                    </div>
-                </div>
-            </div>
-
-
-            {/* BARRE D'OUTILS */}
-            <div className="flex items-center gap-3">
-                <button
-                    onClick={handleAddLine}
-                    className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all active:scale-95"
-                >
-                    <Plus size={16} />
-                    Ajouter une ligne
-                </button>
-
-                <div className="flex-1" />
-
-                <button
-                    onClick={() => handleSave()}
-                    disabled={loading}
-                    className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-400 hover:bg-green-500/20 transition-all active:scale-95 disabled:opacity-50"
-                >
-                    {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                    {loading ? 'Enregistrement...' : 'Enregistrer'}
-                </button>
-            </div>
-
-            {/* TABLEAU (Reuse styles) */}
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
-                <table className="w-full text-left text-sm text-gray-300">
-                    <thead className="bg-black/20 text-xs uppercase text-gray-500">
-                        <tr>
-                            <th className="px-4 py-3 font-medium">Description</th>
-                            <th className="px-4 py-3 font-medium w-24">Qté</th>
-                            <th className="px-4 py-3 font-medium w-24">Unité</th>
-                            <th className="px-4 py-3 font-medium w-32 text-right">PU HT</th>
-                            {initialType === 'situation' && <th className="px-4 py-3 font-medium w-24 text-center">Avanc. %</th>}
-                            <th className="px-4 py-3 font-medium w-20 text-right">TVA</th>
-                            <th className="px-4 py-3 font-medium w-32 text-right">Total HT</th>
-                            <th className="px-4 py-3 w-10"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {items.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} className="py-12 text-center text-gray-500 italic">
-                                    Cette facture est vide.
-                                </td>
-                            </tr>
-                        ) : (
-                            items.map((item) => (
-                                <Fragment key={item.id}>
-                                    <tr className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-4 py-2">
-                                            <div className="flex items-center gap-2">
-                                                {item.components && item.components.length > 0 && (
-                                                    <button
-                                                        onClick={() => toggleExpand(item.id)}
-                                                        className="text-gray-500 hover:text-white transition-colors"
-                                                    >
-                                                        <ChevronRight
-                                                            size={16}
-                                                            className={`transition-transform duration-200 ${expandedItems.has(item.id) ? 'rotate-90' : ''}`}
-                                                        />
-                                                    </button>
-                                                )}
-                                                <input
-                                                    type="text"
-                                                    value={item.description}
-                                                    onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                    className="w-full bg-transparent p-1 outline-none focus:border-b focus:border-purple-500"
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <input type="text" value={item.unit} onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)} className="w-full bg-transparent p-1 outline-none text-center focus:border-b focus:border-purple-500" />
-                                        </td>
-                                        <td className="px-4 py-2 text-right">
-                                            <input type="number" value={item.unit_price} onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)} className="w-full bg-transparent p-1 outline-none text-right font-medium text-emerald-400 focus:border-b focus:border-emerald-500" />
-                                        </td>
+                    {/* 3. TABLEAU DES PRESTATIONS DE LA FACTURE (Scroll interne exclusif) */}
+                    <div className="flex-1 min-h-0 overflow-hidden rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] flex flex-col shadow-xs">
+                        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
+                            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
+                                    <tr>
+                                        <th className="px-3 py-2">Description des prestations</th>
+                                        <th className="px-3 py-2 w-20 text-center">Qté</th>
+                                        <th className="px-3 py-2 w-14 text-center">Unité</th>
+                                        <th className="px-3 py-2 w-20 text-right">PU HT</th>
                                         {initialType === 'situation' && (
-                                            <td className="px-4 py-2">
-                                                <div className='flex items-center justify-center'>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={item.progress_percentage ?? 0}
-                                                        onChange={(e) => handleItemChange(item.id, 'progress_percentage', parseFloat(e.target.value) || 0)}
-                                                        className="w-16 bg-white/10 rounded-lg p-1 outline-none text-center font-bold text-orange-400 focus:ring-2 focus:ring-orange-500"
-                                                    />
-                                                </div>
-                                            </td>
+                                            <th className="px-3 py-2 w-20 text-center">Avanc. %</th>
                                         )}
-                                        <td className="px-4 py-2 text-right text-gray-500">{item.tva}%</td>
-                                        <td className="px-4 py-2 text-right font-bold text-white">
-                                            {((item.quantity * item.unit_price) * ((initialType === 'situation' ? (item.progress_percentage ?? 0) : 100) / 100)).toFixed(2)} €
-                                        </td>
-                                        <td className="px-4 py-2 text-center">
-                                            <button onClick={() => handleDeleteLine(item.id)} className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
-                                        </td>
+                                        <th className="px-3 py-2 w-14 text-right">TVA</th>
+                                        <th className="px-3 py-2 w-24 text-right">Total HT</th>
+                                        <th className="px-3 py-2 w-12 text-center">Actions</th>
                                     </tr>
-                                    {/* EXPANDED ROW */}
-                                    {item.components && expandedItems.has(item.id) && (
-                                        <tr className="bg-white/[0.02] border-b border-white/5">
-                                            <td colSpan={7} className="px-4 py-3 pl-14">
-                                                <div className="text-xs uppercase text-gray-500 mb-2 font-semibold tracking-wider flex items-center gap-2">
-                                                    <span>📦 Composition de l'ouvrage</span>
-                                                    <span className="h-px flex-1 bg-white/5"></span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {item.components.map((comp, idx) => (
-                                                        <div key={idx} className="flex items-center gap-4 text-sm text-gray-400">
-                                                            <div className="w-16 text-right font-medium text-gray-500">{comp.quantity} {comp.unit}</div>
-                                                            <div className="text-gray-300">{comp.name}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                                    {items.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={initialType === 'situation' ? 8 : 7} className="py-12 text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                                                Cette facture est vide. Commencez par ajouter une ligne de prestation.
                                             </td>
                                         </tr>
+                                    ) : (
+                                        items.map((item) => (
+                                            <Fragment key={item.id}>
+                                                <tr className="hover:bg-slate-50/80 dark:hover:bg-[#162032] transition-colors group relative border-b border-slate-100 dark:border-slate-800/60">
+                                                    <td className="px-3 py-1.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            {item.components && item.components.length > 0 && (
+                                                                <button
+                                                                    onClick={() => toggleExpand(item.id)}
+                                                                    className="text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer"
+                                                                >
+                                                                    <ChevronRight
+                                                                        size={13}
+                                                                        className={`transition-transform duration-200 ${expandedItems.has(item.id) ? 'rotate-90' : ''}`}
+                                                                    />
+                                                                </button>
+                                                            )}
+                                                            <input
+                                                                type="text"
+                                                                value={item.description}
+                                                                onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                                                                className="w-full bg-transparent p-0.5 outline-none font-medium focus:border-b focus:border-indigo-500 text-xs text-slate-900 dark:text-white"
+                                                                placeholder="Description de la prestation"
+                                                            />
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-3 py-1.5">
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={item.quantity}
+                                                            onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                                            className="w-14 bg-transparent p-0.5 outline-none text-center font-medium focus:border-b focus:border-indigo-500 text-xs text-slate-900 dark:text-white"
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-3 py-1.5">
+                                                        <input
+                                                            type="text"
+                                                            value={item.unit}
+                                                            onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
+                                                            className="w-full bg-transparent p-0.5 outline-none text-center font-mono text-[10px] text-slate-500 focus:border-b focus:border-indigo-500"
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={item.unit_price}
+                                                            onChange={(e) => handleItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                            className="w-full bg-transparent p-0.5 outline-none text-right font-semibold text-xs text-emerald-600 focus:border-b focus:border-emerald-500 dark:text-emerald-400"
+                                                        />
+                                                    </td>
+
+                                                    {initialType === 'situation' && (
+                                                        <td className="px-3 py-1.5">
+                                                            <div className="flex items-center justify-center">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    value={item.progress_percentage ?? 0}
+                                                                    onChange={(e) => handleItemChange(item.id, 'progress_percentage', parseFloat(e.target.value) || 0)}
+                                                                    className="w-12 rounded bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 text-center font-bold text-xs text-amber-700 dark:text-amber-400 outline-none"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    )}
+
+                                                    <td className="px-3 py-1.5 text-right text-slate-400 dark:text-slate-500 text-[10px]">
+                                                        {item.tva}%
+                                                    </td>
+
+                                                    <td className="px-3 py-1.5 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                                        {((item.quantity * item.unit_price) * ((initialType === 'situation' ? (item.progress_percentage ?? 0) : 100) / 100)).toFixed(2)} €
+                                                    </td>
+
+                                                    <td className="px-3 py-1.5 text-center">
+                                                        <button
+                                                            onClick={() => handleDeleteLine(item.id)}
+                                                            className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                                                            title="Supprimer"
+                                                        >
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+
+                                                {/* EXPANDED ROW */}
+                                                {item.components && expandedItems.has(item.id) && (
+                                                    <tr className="bg-slate-50/70 border-b border-slate-100 dark:bg-white/[0.02] dark:border-slate-800">
+                                                        <td colSpan={initialType === 'situation' ? 8 : 7} className="px-3.5 py-2 pl-10">
+                                                            <div className="text-[10px] uppercase text-slate-400 mb-1 font-semibold tracking-wider flex items-center gap-2">
+                                                                <span>📦 Composition de l'ouvrage</span>
+                                                                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+                                                            </div>
+                                                            <div className="space-y-0.5">
+                                                                {item.components.map((comp, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                                                        <div className="w-14 text-right font-medium text-slate-500">{comp.quantity} {comp.unit}</div>
+                                                                        <div className="text-slate-700 dark:text-slate-300">{comp.name}</div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </Fragment>
+                                        ))
                                     )}
-                                </Fragment>
-                            ))
+                                </tbody>
+                                <tfoot className="bg-slate-50/90 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    <tr>
+                                        <td colSpan={initialType === 'situation' ? 5 : 4} className="px-3 py-2 text-slate-400 dark:text-slate-500 text-[10px] font-normal">
+                                            {items.length} prestation(s)
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400 text-[10px]">
+                                            Total HT
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                            {totalHT.toFixed(2)} €
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ======================================================== */}
+                {/* COLONNE DROITE (4 colonnes) : CHANTIER, CLIENT, TOTAUX, ACTIONS */}
+                {/* ======================================================== */}
+                <div className="xl:col-span-4 h-full overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+
+                    {/* 1. INFORMATIONS CHANTIER & CLIENT (EN HAUT, COMME DANS DEVIS) */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Informations Facture
+                            </span>
+                            <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                {initialReference}
+                            </span>
+                        </div>
+
+                        {/* Chantier */}
+                        <div className="space-y-1 text-xs">
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Chantier</span>
+                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-xs">
+                                {chantierName || 'Chantier associé'}
+                            </p>
+                        </div>
+
+                        {/* Client */}
+                        {client && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1 text-xs">
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Client Facturé</span>
+                                <p className="font-semibold text-slate-900 dark:text-white">{client.name}</p>
+                                {client.address_line1 && <p className="text-[11px] text-slate-500 dark:text-slate-400">{client.address_line1}</p>}
+                                {(client.zip_code || client.city) && (
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{client.zip_code} {client.city}</p>
+                                )}
+                            </div>
                         )}
-                    </tbody>
-                    <tfoot className="bg-black/20 font-medium">
-                        <tr>
-                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-3 text-right text-gray-400">Total HT</td>
-                            <td className="px-4 py-3 text-right text-white text-lg">{totalHT.toFixed(2)} €</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-1 text-right text-gray-500 text-xs">TVA</td>
-                            <td className="px-4 py-1 text-right text-gray-400 text-xs">{totalTVA.toFixed(2)} €</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td colSpan={initialType === 'situation' ? 6 : 5} className="px-4 py-4 text-right text-white font-bold">Net à payer TTC</td>
-                            <td className="px-4 py-4 text-right text-purple-400 font-bold text-xl">{totalTTC.toFixed(2)} €</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
+
+                        {/* Paramètres de paiement (Statut & Échéance) */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <label className="block text-[9px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-0.5">Statut</label>
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                                >
+                                    <option value="en_attente">En attente</option>
+                                    <option value="payee">Payée</option>
+                                    <option value="retard">En retard</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-0.5">Échéance</label>
+                                <input
+                                    type="date"
+                                    value={dateEcheance}
+                                    onChange={(e) => setDateEcheance(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs font-medium text-slate-900 dark:text-white outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {dateEmission && (
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                                Émission : {new Date(dateEmission).toLocaleDateString('fr-FR')}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 2. RÉCAPITULATIF FINANCIER */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                            Montants Facturés
+                        </span>
+
+                        {/* Grand Total TTC */}
+                        <div className="rounded-xl p-2.5 bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-transparent border border-indigo-500/25">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                                Net à payer TTC
+                            </span>
+                            <div className="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                                {totalTTC.toFixed(2)} €
+                            </div>
+                        </div>
+
+                        {/* Total HT & TVA */}
+                        <div className="space-y-1 text-xs pt-0.5 border-t border-slate-100 dark:border-slate-800/80">
+                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-300 text-xs">
+                                <span>Total HT brut</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{totalHT.toFixed(2)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center text-slate-400 dark:text-slate-500 text-[10px]">
+                                <span>TVA estimée</span>
+                                <span className="font-mono">{totalTVA.toFixed(2)} €</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. ACTIONS FACTURE */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Actions Facture
+                            </span>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize">
+                                {status}
+                            </span>
+                        </div>
+
+                        <PillButton
+                            onClick={() => handleSave()}
+                            disabled={loading}
+                            loading={loading}
+                            variant="primary"
+                            icon={<Save size={13} />}
+                            className="w-full text-xs py-1.5"
+                        >
+                            Enregistrer la facture
+                        </PillButton>
+                    </div>
+                </div>
+
             </div>
         </div>
     )

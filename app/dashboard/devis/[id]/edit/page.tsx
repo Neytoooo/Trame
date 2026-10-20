@@ -104,32 +104,34 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
     })
 
     return (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="h-[calc(100vh-105px)] flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
 
             {/* HEADER NAVIGATION */}
-            <div className="flex items-center justify-between">
-                <Link href={`/dashboard/chantiers/${devis.chantiers.id}`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors dark:text-slate-300 dark:hover:text-white shadow-xs hover:border-slate-300 dark:hover:border-slate-700">
+            <div className="flex items-center justify-between shrink-0">
+                <Link href={`/dashboard/chantiers/${devis.chantiers.id}`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] px-3.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors dark:text-slate-300 dark:hover:text-white shadow-xs hover:border-slate-300 dark:hover:border-slate-700">
                     <ArrowLeft size={14} />
                     Retour au chantier
                 </Link>
-                <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
                     Mode Édition Pro BTP
                 </span>
             </div>
 
-            {/* L'ÉDITEUR INTERACTIF */}
-            <DevisEditor
-                initialItems={mappedItems}
-                devisId={devis.id}
-                articles={allArticles || []}
-                initialName={devis.name || ''}
-                initialStatus={devis.status || 'brouillon'}
-                // Nouvelles props pour le Header intégré
-                reference={devis.reference}
-                dateEmission={devis.date_emission}
-                chantierName={devis.chantiers.name}
-                client={client}
-            />
+            {/* L'ÉDITEUR INTERACTIF (Prend tout l'espace restant sans dépasser) */}
+            <div className="flex-1 min-h-0">
+                <DevisEditor
+                    initialItems={mappedItems}
+                    devisId={devis.id}
+                    articles={allArticles || []}
+                    initialName={devis.name || ''}
+                    initialStatus={devis.status || 'brouillon'}
+                    // Nouvelles props pour le Header intégré
+                    reference={devis.reference}
+                    dateEmission={devis.date_emission}
+                    chantierName={devis.chantiers.name}
+                    client={client}
+                />
+            </div>
 
         </div>
     )

@@ -81,69 +81,41 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
     const client = facture.chantiers?.clients
 
     return (
-        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+        <div className="h-[calc(100vh-105px)] flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
 
             {/* HEADER NAVIGATION */}
-            <div className="flex items-center justify-between">
-                <Link href={`/dashboard/factures`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-                    <ArrowLeft size={16} />
+            <div className="flex items-center justify-between shrink-0">
+                <Link href={`/dashboard/factures`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] px-3.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors dark:text-slate-300 dark:hover:text-white shadow-xs hover:border-slate-300 dark:hover:border-slate-700">
+                    <ArrowLeft size={14} />
                     Retour aux factures
                 </Link>
-                <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-400 border border-purple-500/20 uppercase tracking-wide">
-                        Facture
+                <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-3 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                        Facture {facture.type ? `(${facture.type})` : ''}
                     </span>
                     {facture.status === 'payee' && (
-                        <span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-bold text-green-400 border border-green-500/20 uppercase tracking-wide">
+                        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
                             Payée
                         </span>
                     )}
                 </div>
             </div>
 
-            {/* EN-TÊTE FACTURE */}
-            <div className="grid gap-6 md:grid-cols-2">
-
-                {/* Côté Gauche : Titre et Chantier */}
-                <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">
-                        {facture.reference || 'Facture Provisoire'}
-                    </h1>
-                    <p className="flex items-center gap-2 text-gray-400">
-                        <FileText size={16} />
-                        Chantier : <span className="text-gray-300">{facture.chantiers.name}</span>
-                    </p>
-                </div>
-
-                {/* Côté Droit : Info Client */}
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                    <div className="flex items-start gap-3">
-                        <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
-                            <User size={16} />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-white">{client?.name}</p>
-                            <p className="text-sm text-gray-400">{client?.address_line1}</p>
-                            <p className="text-sm text-gray-400">{client?.zip_code} {client?.city}</p>
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 border-t border-white/5 pt-3 text-xs text-gray-500">
-                        <Calendar size={12} />
-                        Date d'émission : {new Date(facture.date_emission).toLocaleDateString('fr-FR')}
-                    </div>
-                </div>
+            {/* L'ÉDITEUR PREND LE RELAIS (Prend tout l'espace disponible sans dépasser) */}
+            <div className="flex-1 min-h-0">
+                <FactureEditor
+                    initialItems={enrichedItems}
+                    factureId={facture.id}
+                    articles={allArticles || []}
+                    initialReference={facture.reference}
+                    initialStatus={facture.status}
+                    initialDateEcheance={facture.date_echeance}
+                    initialType={facture.type || 'standard'} // Default to standard if null
+                    chantierName={facture.chantiers?.name}
+                    client={client}
+                    dateEmission={facture.date_emission}
+                />
             </div>
-
-            {/* L'ÉDITEUR PREND LE RELAIS */}
-            <FactureEditor
-                initialItems={enrichedItems}
-                factureId={facture.id}
-                articles={allArticles || []}
-                initialReference={facture.reference}
-                initialStatus={facture.status}
-                initialDateEcheance={facture.date_echeance}
-                initialType={facture.type || 'standard'} // Default to standard if null
-            />
 
         </div>
     )

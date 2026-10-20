@@ -265,21 +265,21 @@ export default function DevisEditor({
                 onSave={handleDetailSave}
             />
 
-            {/* --- LAYOUT SCINDÉ GAUCHE / DROITE --- */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+            {/* --- LAYOUT SCINDÉ GAUCHE / DROITE (100% de la hauteur, sans scroll global) --- */}
+            <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3.5 min-h-0 items-start">
 
                 {/* ======================================================== */}
                 {/* COLONNE GAUCHE (8 colonnes) : ZONE DE SAISIE DU DEVIS    */}
                 {/* ======================================================== */}
-                <div className="xl:col-span-8 space-y-3.5">
+                <div className="xl:col-span-8 h-full flex flex-col gap-2.5 min-h-0">
 
                     {/* 1. NOM DU DEVIS (Libellé principal des travaux) */}
-                    <div className="rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
-                        <div className="flex items-center justify-between mb-1">
-                            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-2.5 px-3.5 shadow-xs">
+                        <div className="flex items-center justify-between mb-0.5">
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 Nom du devis (Libellé principal des travaux)
                             </label>
-                            <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                            <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
                                 {items.length} {items.length > 1 ? 'lignes' : 'ligne'}
                             </span>
                         </div>
@@ -288,16 +288,16 @@ export default function DevisEditor({
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ex: RAVALEMENT SIMPLE DES 5 BÂTIMENTS"
-                            className="w-full bg-transparent text-lg md:text-xl font-bold text-slate-900 placeholder-slate-400 outline-none border-none p-0 focus:ring-0 dark:text-white dark:placeholder-slate-600"
+                            className="w-full bg-transparent text-base md:text-lg font-bold text-slate-900 placeholder-slate-400 outline-none border-none p-0 focus:ring-0 dark:text-white dark:placeholder-slate-600"
                         />
                     </div>
 
                     {/* 2. BARRE D'OUTILS D'AJOUT DE LIGNES (PillButtons) */}
-                    <div className="flex items-center gap-2.5 overflow-x-auto pb-0.5 scrollbar-none">
+                    <div className="shrink-0 flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
                         <PillButton
                             onClick={handleAddLine}
                             variant="primary"
-                            icon={<Plus size={14} />}
+                            icon={<Plus size={13} />}
                         >
                             Ajouter ligne
                         </PillButton>
@@ -305,7 +305,7 @@ export default function DevisEditor({
                         <PillButton
                             onClick={handleAddSection}
                             variant="secondary"
-                            icon={<Layout size={14} />}
+                            icon={<Layout size={13} />}
                         >
                             Chapitre
                         </PillButton>
@@ -313,7 +313,7 @@ export default function DevisEditor({
                         <PillButton
                             onClick={handleAddSubSection}
                             variant="secondary"
-                            icon={<FolderPlus size={14} />}
+                            icon={<FolderPlus size={13} />}
                         >
                             Sous-chapitre
                         </PillButton>
@@ -321,32 +321,32 @@ export default function DevisEditor({
                         <PillButton
                             onClick={() => setIsSelectorOpen(true)}
                             variant="ai"
-                            icon={<Calculator size={14} />}
+                            icon={<Calculator size={13} />}
                         >
                             Bibliothèque
                         </PillButton>
                     </div>
 
-                    {/* 3. TABLEAU DES PRESTATIONS DU DEVIS (Scroll interne fluide) */}
-                    <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
-                        <div className="overflow-x-auto max-h-[calc(100vh-270px)] overflow-y-auto">
+                    {/* 3. TABLEAU DES PRESTATIONS DU DEVIS (Scroll interne exclusif) */}
+                    <div className="flex-1 min-h-0 overflow-hidden rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] flex flex-col shadow-xs">
+                        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
                             <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
                                     <tr>
-                                        <th className="px-3.5 py-3 w-20">Réf.</th>
-                                        <th className="px-3.5 py-3">Désignation des travaux</th>
-                                        <th className="px-3.5 py-3 w-24 text-center">Qté</th>
-                                        <th className="px-3.5 py-3 w-16 text-center">Unité</th>
-                                        <th className="px-3.5 py-3 w-24 text-right">PU HT</th>
-                                        <th className="px-3.5 py-3 w-16 text-right">TVA</th>
-                                        <th className="px-3.5 py-3 w-24 text-right">Montant HT</th>
-                                        <th className="px-3.5 py-3 w-16 text-center">Actions</th>
+                                        <th className="px-3 py-2 w-16">Réf.</th>
+                                        <th className="px-3 py-2">Désignation des travaux</th>
+                                        <th className="px-3 py-2 w-20 text-center">Qté</th>
+                                        <th className="px-3 py-2 w-14 text-center">Unité</th>
+                                        <th className="px-3 py-2 w-20 text-right">PU HT</th>
+                                        <th className="px-3 py-2 w-14 text-right">TVA</th>
+                                        <th className="px-3 py-2 w-24 text-right">Montant HT</th>
+                                        <th className="px-3 py-2 w-14 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="py-14 text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                                            <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 italic text-xs">
                                                 Ce devis est vide. Commencez par ajouter des chapitres ou des prestations depuis la bibliothèque.
                                             </td>
                                         </tr>
@@ -356,9 +356,9 @@ export default function DevisEditor({
                                             if (item.item_type === 'section') {
                                                 return (
                                                     <tr key={item.id} className="bg-slate-100/80 border-t-2 border-slate-300 hover:bg-slate-200/80 transition-colors group dark:bg-blue-950/40 dark:border-blue-500/30 dark:hover:bg-blue-900/40">
-                                                        <td colSpan={7} className="px-3.5 py-2.5">
-                                                            <div className="flex items-center gap-2.5">
-                                                                <span className="flex h-5 w-5 items-center justify-center rounded bg-indigo-600 text-white font-mono text-[11px] font-bold shadow-xs">
+                                                        <td colSpan={7} className="px-3 py-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="flex h-4.5 w-4.5 items-center justify-center rounded bg-indigo-600 text-white font-mono text-[10px] font-bold shadow-xs">
                                                                     §
                                                                 </span>
                                                                 <input
@@ -370,13 +370,13 @@ export default function DevisEditor({
                                                                 />
                                                             </div>
                                                         </td>
-                                                        <td className="px-3.5 py-2 text-center">
+                                                        <td className="px-3 py-1.5 text-center">
                                                             <button
                                                                 onClick={() => handleDeleteLine(item.id)}
                                                                 className="text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                                                 title="Supprimer ce chapitre"
                                                             >
-                                                                <Trash2 size={15} />
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -387,9 +387,9 @@ export default function DevisEditor({
                                             if (item.item_type === 'sub_section') {
                                                 return (
                                                     <tr key={item.id} className="bg-slate-50/60 border-t border-dashed border-slate-200 hover:bg-slate-100/60 transition-colors group dark:bg-white/[0.02] dark:border-slate-800 dark:hover:bg-white/[0.04]">
-                                                        <td colSpan={7} className="px-3.5 py-2 pl-7">
-                                                            <div className="flex items-center gap-2">
-                                                                <FolderPlus size={14} className="text-indigo-500 shrink-0" />
+                                                        <td colSpan={7} className="px-3 py-1.5 pl-6">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <FolderPlus size={13} className="text-indigo-500 shrink-0" />
                                                                 <input
                                                                     type="text"
                                                                     value={item.description}
@@ -399,13 +399,13 @@ export default function DevisEditor({
                                                                 />
                                                             </div>
                                                         </td>
-                                                        <td className="px-3.5 py-2 text-center">
+                                                        <td className="px-3 py-1.5 text-center">
                                                             <button
                                                                 onClick={() => handleDeleteLine(item.id)}
                                                                 className="text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                                                 title="Supprimer ce sous-chapitre"
                                                             >
-                                                                <Trash2 size={14} />
+                                                                <Trash2 size={13} />
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -419,14 +419,14 @@ export default function DevisEditor({
                                                         item.dont_totalize ? 'opacity-70 bg-amber-50/30 dark:bg-amber-500/5' : ''
                                                     }`}>
                                                         {/* Référence */}
-                                                        <td className="px-3.5 py-2">
-                                                            <span className="font-mono text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/50">
+                                                        <td className="px-3 py-1.5">
+                                                            <span className="font-mono text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded border border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/50">
                                                                 {item.reference || '-'}
                                                             </span>
                                                         </td>
 
                                                         {/* Désignation & Complément */}
-                                                        <td className="px-3.5 py-2">
+                                                        <td className="px-3 py-1.5">
                                                             <div className="flex flex-col">
                                                                 <div className="flex items-center gap-1.5">
                                                                     {item.components && item.components.length > 0 && (
@@ -435,7 +435,7 @@ export default function DevisEditor({
                                                                             className="text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer"
                                                                         >
                                                                             <ChevronRight
-                                                                                size={14}
+                                                                                size={13}
                                                                                 className={`transition-transform duration-200 ${expandedItems.has(item.id) ? 'rotate-90' : ''}`}
                                                                             />
                                                                         </button>
@@ -448,13 +448,13 @@ export default function DevisEditor({
                                                                         placeholder="Description des travaux"
                                                                     />
                                                                     {item.dont_totalize && (
-                                                                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-300 px-1 py-0.5 rounded">
+                                                                        <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-300 px-1 py-0.2 rounded">
                                                                             Option
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                                 {item.complement && (
-                                                                    <div className="text-[11px] text-slate-400 dark:text-slate-500 pl-1 italic">
+                                                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 pl-1 italic">
                                                                         {item.complement}
                                                                     </div>
                                                                 )}
@@ -462,37 +462,37 @@ export default function DevisEditor({
                                                         </td>
 
                                                         {/* Quantité */}
-                                                        <td className="px-3.5 py-2 relative group/qty">
-                                                            <div className="flex items-center gap-1 justify-center">
+                                                        <td className="px-3 py-1.5 relative group/qty">
+                                                            <div className="flex items-center gap-0.5 justify-center">
                                                                 <input
                                                                     type="number"
                                                                     step="0.01"
                                                                     value={item.quantity}
                                                                     onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                                                    className="w-16 bg-transparent p-0.5 outline-none text-center font-medium focus:border-b focus:border-indigo-500 text-xs text-slate-900 dark:text-white"
+                                                                    className="w-14 bg-transparent p-0.5 outline-none text-center font-medium focus:border-b focus:border-indigo-500 text-xs text-slate-900 dark:text-white"
                                                                 />
                                                                 <button
                                                                     onClick={() => openCalculator(item.id)}
-                                                                    className="text-slate-400 hover:text-violet-500 opacity-0 group-hover/qty:opacity-100 transition-opacity absolute right-0.5 cursor-pointer"
+                                                                    className="text-slate-400 hover:text-violet-500 opacity-0 group-hover/qty:opacity-100 transition-opacity absolute right-0 cursor-pointer"
                                                                     title="Minute de métré"
                                                                 >
-                                                                    <Calculator size={12} />
+                                                                    <Calculator size={11} />
                                                                 </button>
                                                             </div>
                                                         </td>
 
                                                         {/* Unité */}
-                                                        <td className="px-3.5 py-2">
+                                                        <td className="px-3 py-1.5">
                                                             <input
                                                                 type="text"
                                                                 value={item.unit}
                                                                 onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                                                                className="w-full bg-transparent p-0.5 outline-none text-center font-mono text-[11px] text-slate-500 focus:border-b focus:border-indigo-500"
+                                                                className="w-full bg-transparent p-0.5 outline-none text-center font-mono text-[10px] text-slate-500 focus:border-b focus:border-indigo-500"
                                                             />
                                                         </td>
 
                                                         {/* PU HT */}
-                                                        <td className="px-3.5 py-2 text-right">
+                                                        <td className="px-3 py-1.5 text-right">
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
@@ -503,31 +503,31 @@ export default function DevisEditor({
                                                         </td>
 
                                                         {/* TVA */}
-                                                        <td className="px-3.5 py-2 text-right text-slate-400 dark:text-slate-500 text-[11px]">
+                                                        <td className="px-3 py-1.5 text-right text-slate-400 dark:text-slate-500 text-[10px]">
                                                             {item.tva || 10}%
                                                         </td>
 
                                                         {/* Montant HT */}
-                                                        <td className="px-3.5 py-2 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                                        <td className="px-3 py-1.5 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
                                                             {(item.quantity * item.unit_price * (1 - (item.discount_pct || 0) / 100)).toFixed(2)} €
                                                         </td>
 
                                                         {/* Actions */}
-                                                        <td className="px-3.5 py-2 text-center">
+                                                        <td className="px-3 py-1.5 text-center">
                                                             <div className="flex items-center justify-center gap-1">
                                                                 <button
                                                                     onClick={() => openDetailModal(item)}
                                                                     className="rounded-lg p-1 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 transition-colors cursor-pointer"
                                                                     title="Étude de prix, déboursé & options BTP"
                                                                 >
-                                                                    <Sliders size={14} />
+                                                                    <Sliders size={13} />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeleteLine(item.id)}
                                                                     className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors cursor-pointer"
                                                                     title="Supprimer"
                                                                 >
-                                                                    <Trash2 size={14} />
+                                                                    <Trash2 size={13} />
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -536,12 +536,12 @@ export default function DevisEditor({
                                                     {/* EXPANDED OUVRAGE */}
                                                     {item.components && expandedItems.has(item.id) && (
                                                         <tr className="bg-slate-50/70 border-b border-slate-100 dark:bg-white/[0.02] dark:border-slate-800">
-                                                            <td colSpan={8} className="px-4 py-2.5 pl-12">
-                                                                <div className="text-[10px] uppercase text-slate-400 mb-1.5 font-semibold tracking-wider flex items-center gap-2">
+                                                            <td colSpan={8} className="px-3.5 py-2 pl-10">
+                                                                <div className="text-[10px] uppercase text-slate-400 mb-1 font-semibold tracking-wider flex items-center gap-2">
                                                                     <span>📦 Composition de l'ouvrage</span>
                                                                     <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
                                                                 </div>
-                                                                <div className="space-y-1">
+                                                                <div className="space-y-0.5">
                                                                     {item.components.map((comp, idx) => (
                                                                         <div key={idx} className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                                                                             <div className="w-14 text-right font-medium text-slate-500">{comp.quantity} {comp.unit}</div>
@@ -556,10 +556,10 @@ export default function DevisEditor({
                                                     {/* DISPLAY DETAILS (Métré) if present */}
                                                     {item.details && item.details.length > 0 && (
                                                         <tr className="bg-violet-50/60 border-b border-violet-100 dark:bg-violet-950/20 dark:border-violet-900/30">
-                                                            <td colSpan={8} className="px-4 py-1.5 pl-12 text-[11px] text-violet-700 font-mono dark:text-violet-300">
-                                                                <span className="mr-2 opacity-70">Minute de calcul :</span>
+                                                            <td colSpan={8} className="px-3.5 py-1.5 pl-10 text-[10px] text-violet-700 font-mono dark:text-violet-300">
+                                                                <span className="mr-2 opacity-70">Minute :</span>
                                                                 {item.details.map((d: any, i: number) => (
-                                                                    <span key={i} className="mr-3">
+                                                                    <span key={i} className="mr-2.5">
                                                                         {d.label ? <span className="text-violet-600 dark:text-violet-400">{d.label}: </span> : ''}
                                                                         {d.expression} = {d.result}
                                                                     </span>
@@ -575,13 +575,13 @@ export default function DevisEditor({
                                 {/* Pied de tableau : Récapitulatif rapide HT */}
                                 <tfoot className="bg-slate-50/90 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
                                     <tr>
-                                        <td colSpan={4} className="px-3.5 py-2.5 text-slate-400 dark:text-slate-500 text-[11px] font-normal">
+                                        <td colSpan={4} className="px-3 py-2 text-slate-400 dark:text-slate-500 text-[10px] font-normal">
                                             {calculableItems.length} prestation(s) chiffrée(s)
                                         </td>
-                                        <td colSpan={2} className="px-3.5 py-2.5 text-right text-slate-500 dark:text-slate-400 text-[11px]">
+                                        <td colSpan={2} className="px-3 py-2 text-right text-slate-500 dark:text-slate-400 text-[10px]">
                                             Total HT
                                         </td>
-                                        <td className="px-3.5 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                        <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
                                             {totalHT.toFixed(2)} €
                                         </td>
                                         <td></td>
@@ -593,17 +593,158 @@ export default function DevisEditor({
                 </div>
 
                 {/* ======================================================== */}
-                {/* COLONNE DROITE (4 colonnes) : ACTIONS, TOTAUX & BTP INFO */}
+                {/* COLONNE DROITE (4 colonnes) : BTP INFO, TOTAUX & ACTIONS  */}
                 {/* ======================================================== */}
-                <div className="xl:col-span-4 space-y-3.5 xl:sticky xl:top-4">
+                <div className="xl:col-span-4 h-full overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
 
-                    {/* 1. ACTIONS DE VALIDATION DU DEVIS (PillButtons) */}
-                    <div className="rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none space-y-3">
+                    {/* 1. CARTE INFOS CHANTIER & PRO BTP (EN HAUT À LA DEMANDE DE L'UTILISATEUR) */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Informations Chantier
+                            </span>
+                            <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                {reference || `D26-${devisId.slice(0, 8).toUpperCase()}`}
+                            </span>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs">
+                            <div>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Chantier</span>
+                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-xs">
+                                    {chantierName || 'RESIDENCE LES JASMINS'}
+                                </p>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                                    Émission : {dateEmission ? new Date(dateEmission).toLocaleDateString('fr-FR') : '15/10/2026'}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 pt-0.5">
+                                <div>
+                                    <label className="block text-[9px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-0.5">Métier</label>
+                                    <select
+                                        value={metier}
+                                        onChange={(e) => setMetier(e.target.value)}
+                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                                    >
+                                        <option value="RAVALEMENT">RAVALEMENT</option>
+                                        <option value="MAÇONNERIE">MAÇONNERIE</option>
+                                        <option value="PEINTURE">PEINTURE</option>
+                                        <option value="COUVERTURE">COUVERTURE</option>
+                                        <option value="ISOLATION">ISOLATION</option>
+                                        <option value="ÉLECTRICITÉ">ÉLECTRICITÉ</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-0.5">Type mission</label>
+                                    <input
+                                        type="text"
+                                        value={missionType}
+                                        onChange={(e) => setMissionType(e.target.value)}
+                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs font-medium text-slate-900 dark:text-white outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payeur / Syndic */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                    <Building2 size={11} className="text-blue-500" /> Payeur (Syndic)
+                                </span>
+                                <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono dark:bg-blue-500/10 dark:text-blue-400">
+                                    Copro
+                                </span>
+                            </div>
+                            <input
+                                type="text"
+                                value={payeurName}
+                                onChange={(e) => setPayeurName(e.target.value)}
+                                placeholder="Nom du Syndic"
+                                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                            />
+                            <input
+                                type="text"
+                                value={payeurAddress}
+                                onChange={(e) => setPayeurAddress(e.target.value)}
+                                placeholder="Adresse"
+                                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 text-[10px] text-slate-600 dark:text-slate-300 outline-none"
+                            />
+                        </div>
+
+                        {/* Responsables */}
+                        <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2 text-[10px]">
+                            <div>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase block">Technicien</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">{technicien}</span>
+                            </div>
+                            <div>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase block">Commercial</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">{commercial}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2. CARTE FINANCIÈRE RÉCAPITULATIVE (Totaux & Acompte) */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                            Récapitulatif Financier
+                        </span>
+
+                        {/* Grand Total TTC */}
+                        <div className="rounded-xl p-2.5 bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-transparent border border-indigo-500/25">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                                Montant Total TTC
+                            </span>
+                            <div className="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                                {totalTTC.toFixed(2)} €
+                            </div>
+                        </div>
+
+                        {/* Total HT & TVA */}
+                        <div className="space-y-1 text-xs pt-0.5 border-t border-slate-100 dark:border-slate-800/80">
+                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-300 text-xs">
+                                <span>Total HT brut</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{totalHT.toFixed(2)} €</span>
+                            </div>
+                            <div className="flex justify-between items-center text-slate-400 dark:text-slate-500 text-[10px]">
+                                <span>TVA estimée (10%)</span>
+                                <span className="font-mono">{totalTVA.toFixed(2)} €</span>
+                            </div>
+                        </div>
+
+                        {/* Acompte contractuel */}
+                        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-2 flex items-center justify-between">
+                            <div>
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                                    Acompte contractuel
+                                </span>
+                                <div className="text-sm font-extrabold text-amber-800 dark:text-amber-300 font-mono">
+                                    {acompteMontant.toFixed(2)} €
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={acomptePct}
+                                    onChange={(e) => setAcomptePct(parseFloat(e.target.value) || 0)}
+                                    className="w-10 rounded-lg border border-amber-300 dark:border-amber-500/30 bg-white dark:bg-black/40 px-1 py-0.5 text-center font-bold text-xs text-amber-900 dark:text-amber-200 outline-none"
+                                />
+                                <span className="text-xs font-bold text-amber-700 dark:text-amber-400">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. ACTIONS DE VALIDATION DU DEVIS (PillButtons - EN BAS DE LA COLONNE DROITE) */}
+                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 Actions Devis
                             </span>
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize">
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize">
                                 {initialStatus}
                             </span>
                         </div>
@@ -618,8 +759,8 @@ export default function DevisEditor({
                                 disabled={loading}
                                 loading={loading}
                                 variant="primary"
-                                icon={<Save size={14} />}
-                                className="flex-1"
+                                icon={<Save size={13} />}
+                                className="flex-1 text-xs py-1.5"
                             >
                                 Enregistrer
                             </PillButton>
@@ -642,21 +783,22 @@ export default function DevisEditor({
                                 }}
                                 disabled={loading}
                                 variant="success"
-                                icon={<CheckCircle2 size={14} />}
+                                icon={<CheckCircle2 size={13} />}
+                                className="text-xs py-1.5"
                             >
                                 Approbation
                             </PillButton>
                         </div>
 
                         {/* Actions secondaires en ligne compacte */}
-                        <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                        <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
                             <button
                                 onClick={() => handleSave('brouillon')}
                                 disabled={loading}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="flex-1 inline-flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
                                 title="Enregistrer comme brouillon"
                             >
-                                <FileText size={13} />
+                                <FileText size={12} />
                                 Brouillon
                             </button>
 
@@ -675,10 +817,10 @@ export default function DevisEditor({
                                     }
                                 }}
                                 disabled={loading}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="flex-1 inline-flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors disabled:opacity-50 cursor-pointer"
                                 title="Créer une facture d'acompte"
                             >
-                                <Wallet size={13} />
+                                <Wallet size={12} />
                                 Acompte
                             </button>
 
@@ -696,153 +838,12 @@ export default function DevisEditor({
                                     }
                                 }}
                                 disabled={loading}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="flex-1 inline-flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors disabled:opacity-50 cursor-pointer"
                                 title="Créer une facture de situation"
                             >
-                                <Calendar size={13} />
+                                <Calendar size={12} />
                                 Situation
                             </button>
-                        </div>
-                    </div>
-
-                    {/* 2. CARTE FINANCIÈRE RÉCAPITULATIVE (Totaux & Acompte) */}
-                    <div className="rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none space-y-3">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                            Récapitulatif Financier
-                        </span>
-
-                        {/* Grand Total TTC */}
-                        <div className="rounded-xl p-3.5 bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-transparent border border-indigo-500/25">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                                Montant Total TTC
-                            </span>
-                            <div className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
-                                {totalTTC.toFixed(2)} €
-                            </div>
-                        </div>
-
-                        {/* Total HT & TVA */}
-                        <div className="space-y-1.5 text-xs pt-1 border-t border-slate-100 dark:border-slate-800/80">
-                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                                <span>Total HT brut</span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-white">{totalHT.toFixed(2)} €</span>
-                            </div>
-                            <div className="flex justify-between items-center text-slate-400 dark:text-slate-500 text-[11px]">
-                                <span>TVA estimée (10%)</span>
-                                <span className="font-mono">{totalTVA.toFixed(2)} €</span>
-                            </div>
-                        </div>
-
-                        {/* Acompte contractuel */}
-                        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 flex items-center justify-between">
-                            <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
-                                    Acompte contractuel
-                                </span>
-                                <div className="text-base font-extrabold text-amber-800 dark:text-amber-300 font-mono">
-                                    {acompteMontant.toFixed(2)} €
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={acomptePct}
-                                    onChange={(e) => setAcomptePct(parseFloat(e.target.value) || 0)}
-                                    className="w-12 rounded-lg border border-amber-300 dark:border-amber-500/30 bg-white dark:bg-black/40 px-1.5 py-1 text-center font-bold text-xs text-amber-900 dark:text-amber-200 outline-none"
-                                />
-                                <span className="text-xs font-bold text-amber-700 dark:text-amber-400">%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 3. CARTE INFOS CHANTIER & PRO BTP (Issu de Batiecom) */}
-                    <div className="rounded-[20px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none space-y-3">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Informations Chantier
-                            </span>
-                            <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                                {reference || `D26-${devisId.slice(0, 8).toUpperCase()}`}
-                            </span>
-                        </div>
-
-                        <div className="space-y-2 text-xs">
-                            <div>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold">Chantier</span>
-                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                                    {chantierName || 'RESIDENCE LES JASMINS'}
-                                </p>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                    Émission : {dateEmission ? new Date(dateEmission).toLocaleDateString('fr-FR') : '15/10/2026'}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 pt-1">
-                                <div>
-                                    <label className="block text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-1">Métier</label>
-                                    <select
-                                        value={metier}
-                                        onChange={(e) => setMetier(e.target.value)}
-                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1.5 text-xs font-semibold text-slate-900 dark:text-white outline-none"
-                                    >
-                                        <option value="RAVALEMENT">RAVALEMENT</option>
-                                        <option value="MAÇONNERIE">MAÇONNERIE</option>
-                                        <option value="PEINTURE">PEINTURE</option>
-                                        <option value="COUVERTURE">COUVERTURE</option>
-                                        <option value="ISOLATION">ISOLATION</option>
-                                        <option value="ÉLECTRICITÉ">ÉLECTRICITÉ</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 mb-1">Type mission</label>
-                                    <input
-                                        type="text"
-                                        value={missionType}
-                                        onChange={(e) => setMissionType(e.target.value)}
-                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2 py-1.5 text-xs font-medium text-slate-900 dark:text-white outline-none"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Payeur / Syndic */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                    <Building2 size={12} className="text-blue-500" /> Payeur (Syndic)
-                                </span>
-                                <span className="text-[9px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono dark:bg-blue-500/10 dark:text-blue-400">
-                                    Copro
-                                </span>
-                            </div>
-                            <input
-                                type="text"
-                                value={payeurName}
-                                onChange={(e) => setPayeurName(e.target.value)}
-                                placeholder="Nom du Syndic"
-                                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none"
-                            />
-                            <input
-                                type="text"
-                                value={payeurAddress}
-                                onChange={(e) => setPayeurAddress(e.target.value)}
-                                placeholder="Adresse"
-                                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-[11px] text-slate-600 dark:text-slate-300 outline-none"
-                            />
-                        </div>
-
-                        {/* Responsables */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2 text-[11px]">
-                            <div>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase block">Technicien</span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">{technicien}</span>
-                            </div>
-                            <div>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase block">Commercial</span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">{commercial}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
