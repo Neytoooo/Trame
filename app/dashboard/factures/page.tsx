@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import PillButton from '@/components/ui/PillButton'
 import FactureList from '@/components/factures/FactureList'
 
 export default async function FacturesPage() {
@@ -49,13 +50,12 @@ export default async function FacturesPage() {
                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Suivi des règlements, acomptes et situations de travaux.</p>
                 </div>
 
-                <Link
+                <PillButton
                     href="/dashboard/chantiers"
-                    className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all active:scale-95"
+                    icon={<Plus size={14} />}
                 >
-                    <Plus size={18} />
                     Nouvelle Facture
-                </Link>
+                </PillButton>
             </div>
 
             <FactureList initialFactures={factures || []} companySettings={companySettings} />

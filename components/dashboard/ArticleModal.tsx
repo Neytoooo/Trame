@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, X, Loader2, Search, Trash2, Box, Layers } from 'lucide-react'
 import { createArticle, searchArticles } from '@/app/actions/articles'
+import PillButton from '@/components/ui/PillButton'
 
 export default function ArticleModal() {
     const [isOpen, setIsOpen] = useState(false)
@@ -80,13 +81,12 @@ export default function ArticleModal() {
 
     return (
         <>
-            <button
+            <PillButton
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition-all hover:scale-105"
+                icon={<Plus size={14} />}
             >
-                <Plus size={18} />
                 Nouvel Article
-            </button>
+            </PillButton>
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

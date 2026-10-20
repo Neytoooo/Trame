@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, X, Check, AlertCircle, FileSpreadsheet, Loader2 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { importArticlesAction } from '@/app/actions/articles'
+import PillButton from '@/components/ui/PillButton'
 
 export default function ArticleImportModal() {
     const [isOpen, setIsOpen] = useState(false)
@@ -122,13 +123,13 @@ export default function ArticleImportModal() {
 
     return (
         <>
-            <button
+            <PillButton
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                variant="success"
+                icon={<FileSpreadsheet size={14} />}
             >
-                <FileSpreadsheet size={16} />
                 Importer (Excel)
-            </button>
+            </PillButton>
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">

@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { ArrowUpRight, Plus, Wallet, Users, Hammer, FileText, FileCheck, Calendar, Activity, ChevronRight, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import PillButton from '@/components/ui/PillButton'
 import ActiveAutomations from '@/components/dashboard/ActiveAutomations'
 import SeedBtpBanner from '@/components/dashboard/SeedBtpBanner'
 
@@ -143,20 +144,20 @@ export default async function DashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Link
+                    <PillButton
                         href="/dashboard/planning"
-                        className="flex items-center gap-2 bg-white/95 dark:bg-[#131B2A] hover:bg-white dark:hover:bg-[#1A2438] border border-slate-200/80 dark:border-slate-800 rounded-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:shadow-md transition-all active:scale-95"
+                        variant="secondary"
+                        icon={<Calendar size={14} className="text-indigo-600 dark:text-indigo-400" />}
                     >
-                        <Calendar size={14} className="text-indigo-600 dark:text-indigo-400" />
                         Planning Hebdo
-                    </Link>
-                    <Link
+                    </PillButton>
+                    <PillButton
                         href="/dashboard/chantiers"
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 rounded-full px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition-all active:scale-95"
+                        variant="primary"
+                        icon={<Plus size={14} />}
                     >
-                        <Plus size={14} />
                         Nouveau Projet
-                    </Link>
+                    </PillButton>
                 </div>
             </div>
 

@@ -8,6 +8,7 @@ import ImportHelpButton from '@/components/dashboard/ImportHelpButton' // Helper
 import ViewToggle from '@/components/ui/ViewToggle'
 import { deleteClientAction, fetchClientsAction } from '@/app/actions/clients'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
+import PillButton from '@/components/ui/PillButton'
 import VirtualizedList from '@/components/ui/VirtualizedList' // Added Import
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 
@@ -130,20 +131,20 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                 <div className="flex items-center gap-2">
                     <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                     <ImportHelpButton type="client" />
-                    <button
+                    <PillButton
                         onClick={() => setIsImportModalOpen(true)}
-                        className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition-all active:scale-95"
+                        variant="success"
+                        icon={<FileSpreadsheet size={14} />}
                     >
-                        <FileSpreadsheet size={15} />
                         Importer (Excel)
-                    </button>
-                    <button
+                    </PillButton>
+                    <PillButton
                         onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
-                        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all active:scale-95"
+                        variant="primary"
+                        icon={<Plus size={14} />}
                     >
-                        <Plus size={16} />
                         Nouveau Client
-                    </button>
+                    </PillButton>
                 </div>
             </div>
 

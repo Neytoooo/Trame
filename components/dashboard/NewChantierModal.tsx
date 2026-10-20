@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, X, Loader2, MapPin, User, Calendar } from 'lucide-react'
 import { createChantier } from '@/app/actions/chantiers'
+import PillButton from '@/components/ui/PillButton'
 
 // On définit à quoi ressemble un client pour TypeScript
 type ClientLight = { id: string, name: string }
@@ -20,13 +21,12 @@ export default function NewChantierModal({ clients }: { clients: ClientLight[] }
 
     return (
         <>
-            <button
+            <PillButton
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 transition-all"
+                icon={<Plus size={14} />}
             >
-                <Plus size={18} />
                 Nouveau Chantier
-            </button>
+            </PillButton>
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

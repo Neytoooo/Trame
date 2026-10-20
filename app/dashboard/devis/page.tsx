@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import PillButton from '@/components/ui/PillButton'
 import DevisList from '@/components/devis/DevisList'
 import AiDevisButton from '@/components/devis/AiDevisButton'
 
@@ -41,13 +42,12 @@ export default async function DevisPage() {
                 <div className="flex items-center gap-3">
                     <AiDevisButton />
                     
-                    <Link
+                    <PillButton
                         href="/dashboard/chantiers"
-                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                        icon={<Plus size={14} />}
                     >
-                        <Plus size={18} />
                         Nouveau Devis
-                    </Link>
+                    </PillButton>
                 </div>
             </div>
 
