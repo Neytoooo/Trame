@@ -4,13 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
     MapPin, Calendar, User, Phone, Mail, FileText, Plus,
-    ArrowLeft, Briefcase, TrendingUp, CheckCircle, Clock
+    ArrowLeft, Briefcase, TrendingUp, CheckCircle, Clock,
+    ArrowUpRight, Building2, ExternalLink, ShieldCheck
 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ChantierStatusSelect from '@/components/chantiers/ChantierStatusSelect'
 import ArticleStockListener from '@/components/chantiers/ArticleStockListener'
-import Image from 'next/image'
+import PillButton from '@/components/ui/PillButton'
 
 interface ChantierDashboardProps {
     chantier: any
@@ -34,226 +35,381 @@ export default function ChantierDashboard({
     const totalFactures = facturesList.reduce((acc, curr) => acc + (Number(curr.total_ttc) || 0), 0)
     const pendingDevisCount = devisList.filter(d => d.status === 'en_attente').length
     const paidFacturesCount = facturesList.filter(f => f.status === 'payee').length
+    const conversionRate = devisList.length > 0
+        ? Math.min(100, Math.round((facturesList.length / devisList.length) * 100))
+        : 0
+
+    const clientInitials = chantier.clients?.name
+        ? chantier.clients.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+        : 'CL'
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <ArticleStockListener chantierId={chantier.id} />
 
-            {/* --- HEADER --- */}
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <Link href="/dashboard/chantiers" className="mb-2 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors dark:text-gray-400 dark:hover:text-white">
-                        <ArrowLeft size={16} />
+            {/* --- 1. HEADER ÉPURÉ & BOUTONS ACTION --- */}
+            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between pt-1">
+                <div className="space-y-2">
+                    {/* Back Breadcrumb Pill */}
+                    <Link
+                        href="/dashboard/chantiers"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#131B2A] border border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-95"
+                    >
+                        <ArrowLeft size={13} className="text-slate-400 dark:text-slate-500" />
                         Retour aux chantiers
                     </Link>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{chantier.name}</h1>
+
+                    {/* Chantier Title & Status Select */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                            {chantier.name}
+                        </h1>
                         <ChantierStatusSelect id={chantier.id} currentStatus={chantier.status} />
                     </div>
-                    <div className="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1"><MapPin size={14} /> {chantier.address_line1 || 'Adresse non renseignée'}</span>
-                        <span className="flex items-center gap-1"><Calendar size={14} /> Début : {chantier.date_debut || 'Non planifié'}</span>
+
+                    {/* Metadata Pill Tags */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-[#131B2A] px-3 py-1 rounded-full border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <MapPin size={13} className="text-indigo-600 dark:text-indigo-400" />
+                            {chantier.address_line1 || 'Adresse non renseignée'}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-[#131B2A] px-3 py-1 rounded-full border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <Calendar size={13} className="text-indigo-600 dark:text-indigo-400" />
+                            Début : {chantier.date_debut ? new Date(chantier.date_debut).toLocaleDateString('fr-FR') : 'Non planifié'}
+                        </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Link
+                {/* Top Action Buttons (Unified PillButtons) */}
+                <div className="flex items-center gap-2.5 shrink-0 self-start md:self-center">
+                    <PillButton
                         href={`/dashboard/chantiers/${chantier.id}/suivi`}
-                        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                        variant="secondary"
+                        icon={<Briefcase size={14} className="text-indigo-600 dark:text-indigo-400" />}
                     >
-                        <Briefcase size={18} />
                         Voir le Suivi
-                    </Link>
+                    </PillButton>
                     <form action={async () => await createEmptyDevisAction(chantier.id)}>
-                        <button type="submit" className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition-all hover:scale-105">
-                            <Plus size={18} />
+                        <PillButton
+                            type="submit"
+                            variant="primary"
+                            icon={<Plus size={14} />}
+                        >
                             Créer un Devis
-                        </button>
+                        </PillButton>
                     </form>
                 </div>
             </div>
 
-            {/* --- TABS --- */}
-            <div className="border-b border-gray-200 dark:border-white/10">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            {/* --- 2. SEGMENTED PILL TABS --- */}
+            <div className="flex items-center">
+                <div className="inline-flex p-1 bg-slate-100 dark:bg-[#0E1524] border border-slate-200/80 dark:border-slate-800 rounded-full">
                     <button
                         onClick={() => setActiveTab('overview')}
-                        className={`
-                            whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors
-                            ${activeTab === 'overview'
-                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}
-                        `}
+                        className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all select-none ${
+                            activeTab === 'overview'
+                                ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
                     >
                         Vue d'ensemble
                     </button>
                     <button
                         onClick={() => setActiveTab('devis')}
-                        className={`
-                            whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors
-                            ${activeTab === 'devis'
-                                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}
-                        `}
+                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all select-none ${
+                            activeTab === 'devis'
+                                ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
                     >
-                        Devis ({devisList.length})
+                        <span>Devis</span>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                            activeTab === 'devis'
+                                ? 'bg-indigo-100 dark:bg-white/20 text-indigo-700 dark:text-white'
+                                : 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
+                            {devisList.length}
+                        </span>
                     </button>
                     <button
                         onClick={() => setActiveTab('factures')}
-                        className={`
-                            whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors
-                            ${activeTab === 'factures'
-                                ? 'border-green-500 text-green-600 dark:text-green-400'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}
-                        `}
+                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all select-none ${
+                            activeTab === 'factures'
+                                ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
                     >
-                        Factures ({facturesList.length})
+                        <span>Factures</span>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                            activeTab === 'factures'
+                                ? 'bg-indigo-100 dark:bg-white/20 text-indigo-700 dark:text-white'
+                                : 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
+                            {facturesList.length}
+                        </span>
                     </button>
-                </nav>
+                </div>
             </div>
 
-            {/* --- CONTENT --- */}
+            {/* --- 3. TAB CONTENTS --- */}
 
-            {/* OVERVIEW TAB */}
+            {/* TAB 1: OVERVIEW */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
-                    {/* STATS ROW */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-white/5 dark:border-white/10">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Devis</p>
-                                <div className="p-2 bg-purple-50 rounded-lg text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
-                                    <FileText size={18} />
-                                </div>
+                    {/* BENTO STATS ROW (3 Cards Solides & Épurées) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {/* KPI 1: Total Devis */}
+                        <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none hover:shadow-md transition-all">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    Total Devis Chiffrés
+                                </span>
+                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40">
+                                    <FileText size={15} />
+                                </span>
                             </div>
-                            <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{totalDevis.toFixed(2)} €</p>
-                            <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <span className="font-medium text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full mr-2 dark:bg-purple-500/20 dark:text-purple-300">{pendingDevisCount} en attente</span>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-white/5 dark:border-white/10">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Facturé</p>
-                                <div className="p-2 bg-green-50 rounded-lg text-green-600 dark:bg-green-500/10 dark:text-green-400">
-                                    <TrendingUp size={18} />
-                                </div>
-                            </div>
-                            <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{totalFactures.toFixed(2)} €</p>
-                            <div className="mt-1 flex items-center text-xs text-gray-500">
-                                <span className="font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full mr-2 dark:bg-green-500/20 dark:text-green-300">{paidFacturesCount} payées</span>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-5 shadow-md text-white">
-                            <div className="flex items-center justify-between">
-                                <p className="text-blue-100 text-sm font-medium">Conversion</p>
-                                <div className="p-2 bg-white/10 rounded-lg text-white">
-                                    <Briefcase size={18} />
-                                </div>
-                            </div>
-                            <p className="mt-2 text-2xl font-bold">
-                                {devisList.length > 0
-                                    ? Math.round((facturesList.length / devisList.length) * 100)
-                                    : 0}%
+                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {totalDevis.toFixed(2)} €
                             </p>
-                            <p className="mt-1 text-xs text-blue-100">Taux devis → facture</p>
+                            <div className="mt-3 flex items-center gap-2">
+                                <span className="inline-flex items-center text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-0.5 rounded-full border border-purple-100 dark:border-purple-900/40">
+                                    {pendingDevisCount} en attente
+                                </span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                    {devisList.length} devis au total
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* KPI 2: Total Factures */}
+                        <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none hover:shadow-md transition-all">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    Total Facturé
+                                </span>
+                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40">
+                                    <TrendingUp size={15} />
+                                </span>
+                            </div>
+                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {totalFactures.toFixed(2)} €
+                            </p>
+                            <div className="mt-3 flex items-center gap-2">
+                                <span className="inline-flex items-center text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/40">
+                                    {paidFacturesCount} réglée{paidFacturesCount > 1 ? 's' : ''}
+                                </span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                    {facturesList.length} facture{facturesList.length > 1 ? 's' : ''}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* KPI 3: Conversion Commerciale (Épurée) */}
+                        <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none hover:shadow-md transition-all">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    Conversion Devis → Facture
+                                </span>
+                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40">
+                                    <ShieldCheck size={15} />
+                                </span>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                    {conversionRate}%
+                                </p>
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                    ratio de transformation
+                                </span>
+                            </div>
+                            {/* Visual Progress Bar */}
+                            <div className="mt-4 w-full h-2 rounded-full bg-slate-100 dark:bg-[#0E1524] overflow-hidden">
+                                <div
+                                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-700"
+                                    style={{ width: `${conversionRate}%` }}
+                                />
+                            </div>
                         </div>
                     </div>
 
+                    {/* TWO-COLUMN DETAILS GRID */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* CLIENT CARD */}
-                        <div className="lg:col-span-1 h-fit">
-                            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900">
-                                <div className="absolute top-0 w-full h-24 bg-gradient-to-r from-blue-500 to-purple-600 opacity-10"></div>
-                                <div className="p-6 relative">
-                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-blue-100 text-2xl font-bold text-blue-600 shadow-sm dark:border-gray-800 dark:bg-blue-900 dark:text-blue-200">
-                                        {chantier.clients?.name?.charAt(0) || 'C'}
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{chantier.clients?.name || 'Client Inconnu'}</h3>
-                                    <Badge variant="outline" className="mt-2">{chantier.clients?.type === 'professionnel' ? 'Entreprise' : 'Particulier'}</Badge>
 
-                                    <div className="mt-6 space-y-3">
-                                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-white/5">
-                                                <Mail size={16} />
-                                            </div>
-                                            <span className="truncate">{chantier.clients?.email || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-white/5">
-                                                <Phone size={16} />
-                                            </div>
-                                            <span className="truncate">{chantier.clients?.phone_mobile || chantier.clients?.phone_fixe || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-white/5">
-                                                <MapPin size={16} />
-                                            </div>
-                                            <span className="truncate">
-                                                {chantier.clients?.city ? `${chantier.clients.zip_code} ${chantier.clients.city}` : 'N/A'}
-                                            </span>
-                                        </div>
+                        {/* LEFT COLUMN: CLIENT PROFILE CARD */}
+                        <div className="lg:col-span-1">
+                            <div className="rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black text-base flex items-center justify-center shadow-xs">
+                                        {clientInitials}
                                     </div>
+                                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                                        chantier.clients?.type === 'professionnel'
+                                            ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/50'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    }`}>
+                                        {chantier.clients?.type === 'professionnel' ? 'Entreprise' : 'Particulier'}
+                                    </span>
+                                </div>
+
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-snug">
+                                    {chantier.clients?.name || 'Client Inconnu'}
+                                </h3>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    Maître d'ouvrage associé
+                                </p>
+
+                                <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800/80 space-y-3.5">
+                                    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+                                        <div className="w-7 h-7 shrink-0 rounded-lg bg-slate-100 dark:bg-[#0E1524] text-slate-500 dark:text-slate-400 flex items-center justify-center">
+                                            <Mail size={13} />
+                                        </div>
+                                        <a
+                                            href={chantier.clients?.email ? `mailto:${chantier.clients.email}` : undefined}
+                                            className="truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium"
+                                        >
+                                            {chantier.clients?.email || 'Email non renseigné'}
+                                        </a>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+                                        <div className="w-7 h-7 shrink-0 rounded-lg bg-slate-100 dark:bg-[#0E1524] text-slate-500 dark:text-slate-400 flex items-center justify-center">
+                                            <Phone size={13} />
+                                        </div>
+                                        <a
+                                            href={chantier.clients?.phone_mobile ? `tel:${chantier.clients.phone_mobile}` : undefined}
+                                            className="truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium"
+                                        >
+                                            {chantier.clients?.phone_mobile || chantier.clients?.phone_fixe || 'Téléphone non renseigné'}
+                                        </a>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+                                        <div className="w-7 h-7 shrink-0 rounded-lg bg-slate-100 dark:bg-[#0E1524] text-slate-500 dark:text-slate-400 flex items-center justify-center">
+                                            <MapPin size={13} />
+                                        </div>
+                                        <span className="truncate font-medium">
+                                            {chantier.clients?.city
+                                                ? `${chantier.clients.zip_code || ''} ${chantier.clients.city}`.trim()
+                                                : 'Ville non renseignée'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                                    <Link
+                                        href="/dashboard/clients"
+                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                    >
+                                        Consulter la fiche client
+                                        <ArrowUpRight size={13} />
+                                    </Link>
                                 </div>
                             </div>
                         </div>
 
-                        {/* RECENT ACTIVITY */}
+                        {/* RIGHT COLUMN: RECENT DEVIS & FACTURES */}
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Latest Devis */}
-                            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+                            {/* Recent Devis */}
+                            <div className="rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">Derniers Devis</h3>
-                                    <button onClick={() => setActiveTab('devis')} className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">Voir tout</button>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 dark:text-white text-base">Derniers Devis</h3>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Chiffrages et offres associés à ce chantier</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setActiveTab('devis')}
+                                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 transition-colors"
+                                    >
+                                        Voir tout ({devisList.length})
+                                    </button>
                                 </div>
+
                                 {devisList.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {devisList.slice(0, 3).map(devis => (
-                                            <Link key={devis.id} href={`/dashboard/devis/${devis.id}/edit`} className="group flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all dark:bg-white/5 dark:hover:bg-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-all dark:bg-white/10">
-                                                        <FileText size={16} className="text-purple-600 dark:text-purple-400" />
+                                    <div className="space-y-2.5">
+                                        {devisList.slice(0, 3).map((devis) => (
+                                            <Link
+                                                key={devis.id}
+                                                href={`/dashboard/devis/${devis.id}/edit`}
+                                                className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0E1524] hover:bg-slate-100 dark:hover:bg-[#162032] border border-slate-200/60 dark:border-slate-800/80 transition-all"
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                                                        <FileText size={15} />
                                                     </div>
-                                                    <div>
-                                                        <p className="font-medium text-gray-900 dark:text-white">{devis.name || 'Sans Titre'}</p>
-                                                        <p className="text-xs text-gray-500">{new Date(devis.created_at).toLocaleDateString()}</p>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 dark:text-white text-xs truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                            {devis.name || 'Devis sans titre'}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                                            {new Date(devis.created_at).toLocaleDateString('fr-FR')} {devis.reference ? `• Réf: ${devis.reference}` : ''}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <StatusBadge status={devis.status || 'brouillon'} />
+                                                <div className="flex items-center gap-3 shrink-0 ml-4">
+                                                    <span className="text-xs font-black text-slate-900 dark:text-white">
+                                                        {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-- €'}
+                                                    </span>
+                                                    <StatusBadge status={devis.status || 'brouillon'} />
+                                                </div>
                                             </Link>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-500 italic">Aucun devis récent.</p>
+                                    <div className="text-center py-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1524]/50">
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Aucun devis créé pour ce chantier.</p>
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Latest Factures */}
-                            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+                            {/* Recent Factures */}
+                            <div className="rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-6 shadow-xs dark:shadow-none">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">Dernières Factures</h3>
-                                    <button onClick={() => setActiveTab('factures')} className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">Voir tout</button>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 dark:text-white text-base">Dernières Factures</h3>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Facturations et acomptes enregistrés</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setActiveTab('factures')}
+                                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 transition-colors"
+                                    >
+                                        Voir tout ({facturesList.length})
+                                    </button>
                                 </div>
+
                                 {facturesList.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {facturesList.slice(0, 3).map(facture => (
-                                            <Link key={facture.id} href={`/dashboard/factures/${facture.id}/edit`} className="group flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all dark:bg-white/5 dark:hover:bg-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-all dark:bg-white/10">
-                                                        <FileText size={16} className="text-green-600 dark:text-green-400" />
+                                    <div className="space-y-2.5">
+                                        {facturesList.slice(0, 3).map((facture) => (
+                                            <Link
+                                                key={facture.id}
+                                                href={`/dashboard/factures/${facture.id}/edit`}
+                                                className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0E1524] hover:bg-slate-100 dark:hover:bg-[#162032] border border-slate-200/60 dark:border-slate-800/80 transition-all"
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                                                        <FileText size={15} />
                                                     </div>
-                                                    <div>
-                                                        <p className="font-medium text-gray-900 dark:text-white">{facture.numero || 'Brouillon'}</p>
-                                                        <p className="text-xs text-gray-500">{new Date(facture.created_at).toLocaleDateString()}</p>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 dark:text-white text-xs truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                                            {facture.numero || 'Facture sans numéro'}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                                            {new Date(facture.created_at).toLocaleDateString('fr-FR')}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <StatusBadge status={facture.status || 'brouillon'} />
+                                                <div className="flex items-center gap-3 shrink-0 ml-4">
+                                                    <span className="text-xs font-black text-slate-900 dark:text-white">
+                                                        {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-- €'}
+                                                    </span>
+                                                    <StatusBadge status={facture.status || 'brouillon'} />
+                                                </div>
                                             </Link>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-500 italic">Aucune facture récente.</p>
+                                    <div className="text-center py-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1524]/50">
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Aucune facture enregistrée pour ce chantier.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -261,75 +417,118 @@ export default function ChantierDashboard({
                 </div>
             )}
 
-            {/* DEVIS TAB */}
+            {/* TAB 2: DEVIS LIST */}
             {activeTab === 'devis' && (
-                <div className="grid grid-cols-1 gap-4">
-                    {devisList.map((devis) => (
-                        <Link
-                            key={devis.id}
-                            href={`/dashboard/devis/${devis.id}/edit`}
-                            className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-purple-200 dark:border-white/10 dark:bg-white/5 dark:hover:border-purple-500/30"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
-                                    <FileText size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold text-gray-900 dark:text-white text-lg">{devis.name || 'Sans Titre'}</p>
+                <div className="space-y-4">
+                    {devisList.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3">
+                            {devisList.map((devis) => (
+                                <Link
+                                    key={devis.id}
+                                    href={`/dashboard/devis/${devis.id}/edit`}
+                                    className="group flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-5 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
+                                            <FileText size={18} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                                                {devis.name || 'Sans Titre'}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                                {devis.reference && (
+                                                    <span className="font-mono bg-slate-100 dark:bg-[#0E1524] px-2 py-0.5 rounded-full text-[11px] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-800">
+                                                        {devis.reference}
+                                                    </span>
+                                                )}
+                                                <span>Émis le {new Date(devis.created_at).toLocaleDateString('fr-FR')}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-0.5">
-                                        {devis.reference && <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs dark:bg-white/10">{devis.reference}</span>}
-                                        <span>{new Date(devis.created_at).toLocaleDateString()}</span>
-                                    </p>
-                                </div>
+
+                                    <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 dark:border-slate-800/80">
+                                        <div className="text-right">
+                                            <span className="text-base font-black text-slate-900 dark:text-white">
+                                                {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-- €'}
+                                            </span>
+                                            <p className="text-[10px] text-slate-400 font-medium">Montant TTC</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {linkedDevisIds.has(devis.id) && <StatusBadge status="automatise" showIcon={true} />}
+                                            <StatusBadge status={devis.status || 'brouillon'} />
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16 bg-white dark:bg-[#131B2A] rounded-[24px] border border-dashed border-slate-200 dark:border-slate-800 p-8 space-y-3">
+                            <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
+                                <FileText size={20} />
                             </div>
-                            <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
-                                <span className="text-lg font-bold text-gray-900 dark:text-white">{devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-- €'}</span>
-                                <div className="flex items-center gap-2">
-                                    {linkedDevisIds.has(devis.id) && <StatusBadge status="automatise" showIcon={true} />}
-                                    <StatusBadge status={devis.status || 'brouillon'} />
-                                </div>
+                            <h4 className="text-base font-bold text-slate-900 dark:text-white">Aucun devis pour ce chantier</h4>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto font-medium">
+                                Créez votre première proposition commerciale pour ce client afin de commencer à chiffrer.
+                            </p>
+                            <div className="pt-2">
+                                <form action={async () => await createEmptyDevisAction(chantier.id)}>
+                                    <PillButton type="submit" variant="primary" icon={<Plus size={14} />}>
+                                        Créer le premier Devis
+                                    </PillButton>
+                                </form>
                             </div>
-                        </Link>
-                    ))}
-                    {devisList.length === 0 && (
-                        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 dark:bg-white/5 dark:border-white/10">
-                            <p className="text-gray-500">Aucun devis pour le moment.</p>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* FACTURES TAB */}
+            {/* TAB 3: FACTURES LIST */}
             {activeTab === 'factures' && (
-                <div className="grid grid-cols-1 gap-4">
-                    {facturesList.map((facture) => (
-                        <Link
-                            key={facture.id}
-                            href={`/dashboard/factures/${facture.id}/edit`}
-                            className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-green-200 dark:border-white/10 dark:bg-white/5 dark:hover:border-green-500/30"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400">
-                                    <FileText size={20} />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white text-lg">{facture.numero || 'Brouillon'}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {new Date(facture.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
+                <div className="space-y-4">
+                    {facturesList.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3">
+                            {facturesList.map((facture) => (
+                                <Link
+                                    key={facture.id}
+                                    href={`/dashboard/factures/${facture.id}/edit`}
+                                    className="group flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-5 shadow-xs hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
+                                            <FileText size={18} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                                                {facture.numero || 'Facture sans numéro'}
+                                            </p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
+                                                Émise le {new Date(facture.created_at).toLocaleDateString('fr-FR')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 dark:border-slate-800/80">
+                                        <div className="text-right">
+                                            <span className="text-base font-black text-slate-900 dark:text-white">
+                                                {facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-- €'}
+                                            </span>
+                                            <p className="text-[10px] text-slate-400 font-medium">Montant TTC</p>
+                                        </div>
+                                        <StatusBadge status={facture.status || 'brouillon'} />
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16 bg-white dark:bg-[#131B2A] rounded-[24px] border border-dashed border-slate-200 dark:border-slate-800 p-8 space-y-3">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                                <FileText size={20} />
                             </div>
-                            <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
-                                <span className="text-lg font-bold text-gray-900 dark:text-white">{facture.total_ttc ? `${Number(facture.total_ttc).toFixed(2)} €` : '-- €'}</span>
-                                <StatusBadge status={facture.status || 'brouillon'} />
-                            </div>
-                        </Link>
-                    ))}
-                    {facturesList.length === 0 && (
-                        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 dark:bg-white/5 dark:border-white/10">
-                            <p className="text-gray-500">Aucune facture pour le moment.</p>
+                            <h4 className="text-base font-bold text-slate-900 dark:text-white">Aucune facture émise</h4>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto font-medium">
+                                Les factures et acomptes générés pour ce chantier apparaîtront ici.
+                            </p>
                         </div>
                     )}
                 </div>

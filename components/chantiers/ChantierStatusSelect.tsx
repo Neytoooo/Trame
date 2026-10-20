@@ -14,14 +14,18 @@ export default function ChantierStatusSelect({ id, currentStatus }: { id: string
         setIsUpdating(false)
     }
 
-    // Styles dynamiques selon le statut (un peu hacky pour un select natif, mais fonctionnel)
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'en_cours': return 'bg-green-500/10 text-green-400 border-green-500/20'
-            case 'etude': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-            case 'termine': return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-            case 'annule': return 'bg-red-500/10 text-red-400 border-red-500/20'
-            default: return 'bg-white/5 text-gray-400 border-white/10'
+            case 'en_cours':
+                return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+            case 'etude':
+                return 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800'
+            case 'termine':
+                return 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+            case 'annule':
+                return 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
+            default:
+                return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
         }
     }
 
@@ -31,15 +35,15 @@ export default function ChantierStatusSelect({ id, currentStatus }: { id: string
                 disabled={isUpdating}
                 value={currentStatus}
                 onChange={handleChange}
-                className={`appearance-none rounded-full border px-4 py-1.5 pr-8 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50 transition-colors cursor-pointer ${getStatusStyle(currentStatus)}`}
+                className={`appearance-none rounded-full border px-3.5 py-1 pr-8 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 transition-colors cursor-pointer select-none ${getStatusStyle(currentStatus)}`}
             >
-                <option value="etude" className="bg-[#1A1A1A] text-blue-400">En étude</option>
-                <option value="en_cours" className="bg-[#1A1A1A] text-green-400">En cours</option>
-                <option value="termine" className="bg-[#1A1A1A] text-gray-400">Terminé</option>
-                <option value="annule" className="bg-[#1A1A1A] text-red-400">Annulé</option>
+                <option value="etude" className="bg-white dark:bg-[#131B2A] text-slate-900 dark:text-white">En étude</option>
+                <option value="en_cours" className="bg-white dark:bg-[#131B2A] text-slate-900 dark:text-white">En cours</option>
+                <option value="termine" className="bg-white dark:bg-[#131B2A] text-slate-900 dark:text-white">Terminé</option>
+                <option value="annule" className="bg-white dark:bg-[#131B2A] text-slate-900 dark:text-white">Annulé</option>
             </select>
             <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-current opacity-70">
-                {isUpdating ? <Loader2 size={12} className="animate-spin" /> : <ChevronDown size={14} />}
+                {isUpdating ? <Loader2 size={12} className="animate-spin" /> : <ChevronDown size={13} />}
             </div>
         </div>
     )
