@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Node } from './DraggableNode'
 
 export type Edge = {
@@ -23,7 +24,7 @@ const getNodeColor = (type?: string) => {
     }
 }
 
-export default function GraphEdge({ edge, nodes }: { edge: Edge, nodes: Node[] }) {
+function GraphEdge({ edge, nodes }: { edge: Edge, nodes: Node[] }) {
     const startNode = nodes.find(n => n.id === edge.source)
     const endNode = nodes.find(n => n.id === edge.target)
 
@@ -96,3 +97,5 @@ export default function GraphEdge({ edge, nodes }: { edge: Edge, nodes: Node[] }
         </g>
     )
 }
+
+export default React.memo(GraphEdge)

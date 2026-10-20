@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, useDragControls } from 'framer-motion'
 import { Check, Trash2, FileText, Receipt, HardHat, Mail, CircleDashed, Calendar, MessageSquare, Layout, Play, Settings, Package, ClipboardCheck, Camera, MapPin, Palette, Sparkles } from 'lucide-react'
 import PulseLoader from '@/components/ui/PulseLoader'
@@ -35,7 +35,7 @@ type DraggableNodeProps = {
     isNext?: boolean
 }
 
-export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, onToggle, onConnectStart, onConnectEnd, onRename, isDeleteMode, onDelete, isLinkMode, isSource, onLinkClick, onEditData, isProcessing, isNext }: DraggableNodeProps) {
+function DraggableNode({ node, containerRef, onDrag, onDragEnd, onToggle, onConnectStart, onConnectEnd, onRename, isDeleteMode, onDelete, isLinkMode, isSource, onLinkClick, onEditData, isProcessing, isNext }: DraggableNodeProps) {
     const startPos = useRef({ x: 0, y: 0 })
     const isDragging = useRef(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -262,3 +262,5 @@ export default function DraggableNode({ node, containerRef, onDrag, onDragEnd, o
         </motion.div >
     )
 }
+
+export default React.memo(DraggableNode)

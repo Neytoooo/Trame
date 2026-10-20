@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
 // Config
@@ -15,41 +15,54 @@ type CursorData = {
     lastUpdate: number
 }
 
-type NodeDragData = {
-    nodeId: string
-    x: number
-    y: number
-    userId: string
-}
-
 const throttle = (func: Function, limit: number) => {
-    let inThrottle: boolean
+    let inThrottle = false
+    let lastArgs: any[] | null = null
     return function (this: any, ...args: any[]) {
         if (!inThrottle) {
             func.apply(this, args)
             inThrottle = true
-            setTimeout(() => inThrottle = false, limit)
+            setTimeout(() => {
+                inThrottle = false
+                if (lastArgs) {
+                    func.apply(this, lastArgs)
+                    lastArgs = null
+                }
+            }, limit)
+        } else {
+            lastArgs = args
         }
     }
 }
 
 export const useRealtimeGraph = (chantierId: string, user: any) => {
-    const supabase = createClient()
+    // Stable Supabase client instance across renders
+    const supabase = useMemo(() => createClient(), [])
     const [cursors, setCursors] = useState<Record<string, CursorData>>({})
     const [presenceState, setPresenceState] = useState<any>({})
     const [remoteNodePositions, setRemoteNodePositions] = useState<Record<string, { x: number, y: number }>>({})
 
-    // Assign random color to current user
+    const userRef = useRef(user)
+    userRef.current = user
+
+    // Assign random color to current user once
     const myColor = useRef(CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)]).current
     const channelRef = useRef<any>(null)
 
+    // Extract present users
+    const presentUsers = useMemo(() => Object.values(presenceState).flat() as any[], [presenceState])
+    const presentUsersRef = useRef<any[]>([])
+    presentUsersRef.current = presentUsers
+
+    const userId = user?.id
+
     useEffect(() => {
-        if (!user) return
+        if (!userId) return
 
         const channel = supabase.channel(`tracking_${chantierId}`, {
             config: {
                 presence: {
-                    key: user.id,
+                    key: userId,
                 },
             },
         })
@@ -61,7 +74,7 @@ export const useRealtimeGraph = (chantierId: string, user: any) => {
             })
             .on('broadcast', { event: 'cursor-move' }, (payload) => {
                 // Ignore self
-                if (payload.payload.userId === user.id) return
+                if (payload.payload.userId === userId) return
 
                 setCursors(prev => ({
                     ...prev,
@@ -73,7 +86,7 @@ export const useRealtimeGraph = (chantierId: string, user: any) => {
             })
             .on('broadcast', { event: 'node-drag' }, (payload) => {
                 // Ignore self
-                if (payload.payload.userId === user.id) return
+                if (payload.payload.userId === userId) return
 
                 const { nodeId, x, y } = payload.payload
                 setRemoteNodePositions(prev => ({
@@ -85,51 +98,83 @@ export const useRealtimeGraph = (chantierId: string, user: any) => {
                 if (status === 'SUBSCRIBED') {
                     await channel.track({
                         online_at: new Date().toISOString(),
-                        email: user.email,
+                        email: userRef.current?.email || '',
                         color: myColor
                     })
                 }
             })
 
         return () => {
+            channelRef.current = null
             supabase.removeChannel(channel)
         }
-    }, [chantierId, user, supabase])
+    }, [chantierId, userId, supabase, myColor])
+
+    // Auto-prune inactive cursors (remove ghosts older than 4 seconds)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now()
+            setCursors(prev => {
+                let changed = false
+                const next: Record<string, CursorData> = {}
+                for (const [id, c] of Object.entries(prev)) {
+                    if (now - c.lastUpdate < 4000) {
+                        next[id] = c
+                    } else {
+                        changed = true
+                    }
+                }
+                return changed ? next : prev
+            })
+        }, 2000)
+        return () => clearInterval(interval)
+    }, [])
 
     // Broadcast Emitters
-    // Throttled emitter for cursor
-    const emitCursorMove = useCallback(throttle((x: number, y: number) => {
-        if (!channelRef.current || !user) return
-        channelRef.current.send({
-            type: 'broadcast',
-            event: 'cursor-move',
-            payload: {
-                x,
-                y,
-                userId: user.id,
-                email: user.email,
-                color: myColor
-            }
-        })
-    }, 30), [user])
+    // Throttled emitter for cursor - only sends if there are other users present
+    const emitCursorMove = useCallback(
+        throttle((x: number, y: number) => {
+            const currentUser = userRef.current
+            if (!channelRef.current || !currentUser) return
+            // Don't flood websocket if user is alone
+            if (presentUsersRef.current.length <= 1) return
+
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'cursor-move',
+                payload: {
+                    x,
+                    y,
+                    userId: currentUser.id,
+                    email: currentUser.email,
+                    color: myColor
+                }
+            })
+        }, 40),
+        [myColor]
+    )
 
     // Throttled emitter for node drag
-    const emitNodeDrag = useCallback(throttle((nodeId: string, x: number, y: number) => {
-        if (!channelRef.current || !user) return
-        channelRef.current.send({
-            type: 'broadcast',
-            event: 'node-drag',
-            payload: {
-                nodeId,
-                x,
-                y,
-                userId: user.id
-            }
-        })
-    }, 16), [user]) // ~60fps for smoother node drag? Or stick to 30ms? 16ms is 60fps.
+    const emitNodeDrag = useCallback(
+        throttle((nodeId: string, x: number, y: number) => {
+            const currentUser = userRef.current
+            if (!channelRef.current || !currentUser) return
+            // Don't flood websocket if user is alone
+            if (presentUsersRef.current.length <= 1) return
 
-    // Extract present users
-    const presentUsers = Object.values(presenceState).flat() as any[]
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'node-drag',
+                payload: {
+                    nodeId,
+                    x,
+                    y,
+                    userId: currentUser.id
+                }
+            })
+        }, 30),
+        []
+    )
 
     return {
         cursors,

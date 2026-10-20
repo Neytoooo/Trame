@@ -23,18 +23,6 @@ type CursorData = {
     lastUpdate: number
 }
 
-// Throttle helper
-const throttle = (func: Function, limit: number) => {
-    let inThrottle: boolean
-    return function (this: any, ...args: any[]) {
-        if (!inThrottle) {
-            func.apply(this, args)
-            inThrottle = true
-            setTimeout(() => inThrottle = false, limit)
-        }
-    }
-}
-
 export default function CollaborativeCursors({
     cursors,
     presentUsers,
@@ -44,25 +32,30 @@ export default function CollaborativeCursors({
     presentUsers: any[]
     viewPos: { x: number, y: number }
 }) {
+    const cursorList = Object.values(cursors)
+    if (presentUsers.length === 0 && cursorList.length === 0) return null
+
     return (
         <div className="pointer-events-none absolute inset-0 z-[100] overflow-hidden">
             {/* AVATARS LIST (Top Right) */}
-            <div className="absolute top-6 right-6 flex items-center -space-x-2 bg-black/50 p-2 rounded-full border border-white/10 backdrop-blur-md">
-                {presentUsers.map((u: any, i) => (
-                    <div
-                        key={u.presence_ref || i}
-                        className="relative h-8 w-8 rounded-full border-2 border-black flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                        style={{ backgroundColor: u.color || '#888' }}
-                        title={u.email}
-                    >
-                        {u.email?.[0].toUpperCase()}
-                    </div>
-                ))}
-            </div>
+            {presentUsers.length > 0 && (
+                <div className="absolute top-6 right-6 flex items-center -space-x-2 bg-black/50 p-2 rounded-full border border-white/10 backdrop-blur-md">
+                    {presentUsers.map((u: any, i) => (
+                        <div
+                            key={u.presence_ref || i}
+                            className="relative h-8 w-8 rounded-full border-2 border-black flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                            style={{ backgroundColor: u.color || '#888' }}
+                            title={u.email}
+                        >
+                            {u.email?.[0]?.toUpperCase() || '?'}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* CURSORS */}
             <AnimatePresence>
-                {Object.values(cursors).map(cursor => (
+                {cursorList.map(cursor => (
                     <Cursor
                         key={cursor.userId}
                         cursor={cursor}

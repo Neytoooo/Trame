@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import DraggableNode, { Node } from './DraggableNode'
 import GraphEdge, { Edge } from './GraphEdge'
@@ -17,7 +17,8 @@ import CollaborativeCursors from './CollaborativeCursors'
 import { useRealtimeGraph } from '@/hooks/useRealtimeGraph'
 
 export default function SuiviGraph({ chantierId, user }: { chantierId: string, user: any }) {
-    const supabase = createClient()
+    // Stable Supabase client instance across renders
+    const supabase = useMemo(() => createClient(), [])
     const containerRef = useRef<HTMLDivElement>(null)
     const [nodes, setNodes] = useState<Node[]>([])
     const [edges, setEdges] = useState<Edge[]>([])
@@ -28,6 +29,8 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
 
     // Local Drag State (Ephemeral, prevents thrashing main state)
     const [draggingNode, setDraggingNode] = useState<{ id: string, x: number, y: number } | null>(null)
+    const draggingNodeRef = useRef<{ id: string, x: number, y: number } | null>(null)
+    draggingNodeRef.current = draggingNode
 
     // Helper: Get display position (merged local drag + remote drag + committed state)
     const getNodePosition = (node: Node) => {
@@ -44,18 +47,12 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
     }
 
     // Derived state for Edges: They need the "Visible" positions to update in realtime
-    const visibleNodes = nodes.map(node => {
-        const pos = getNodePosition(node)
-        return { ...node, position_x: pos.x, position_y: pos.y }
-    })
-
-    // ... (rest of code) ...
-
-    {
-        edges.map(edge => (
-            <GraphEdge key={edge.id} edge={edge} nodes={visibleNodes} />
-        ))
-    }
+    const visibleNodes = useMemo(() => {
+        return nodes.map(node => {
+            const pos = getNodePosition(node)
+            return { ...node, position_x: pos.x, position_y: pos.y }
+        })
+    }, [nodes, draggingNode, remoteNodePositions])
 
     // Data Modal State
     const [dataModalNode, setDataModalNode] = useState<Node | null>(null)
@@ -81,20 +78,25 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
     const [viewPos, setViewPos] = useState({ x: 0, y: 0 })
     const [isPanning, setIsPanning] = useState(false)
     const lastPanPos = useRef({ x: 0, y: 0 })
+    const panRafRef = useRef<number | null>(null)
 
-    // Data Fetching
+    // Data Fetching (Runs only when chantierId changes)
     useEffect(() => {
+        let isMounted = true
         const fetchData = async () => {
             const [nodesRes, edgesRes] = await Promise.all([
                 supabase.from('chantier_nodes').select('*').eq('chantier_id', chantierId),
                 supabase.from('chantier_edges').select('*').eq('chantier_id', chantierId)
             ])
 
-            if (nodesRes.data) setNodes(nodesRes.data as unknown as Node[])
-            if (edgesRes.data) setEdges(edgesRes.data)
-            setLoading(false)
+            if (isMounted) {
+                if (nodesRes.data) setNodes(nodesRes.data as unknown as Node[])
+                if (edgesRes.data) setEdges(edgesRes.data)
+                setLoading(false)
+            }
         }
         fetchData()
+        return () => { isMounted = false }
     }, [chantierId, supabase])
 
     // Subscription Realtime (DB Changes only - Cursors/Nodes handled by hook)
@@ -116,7 +118,19 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
                             return [...prev, payload.new as Node]
                         })
                     } else if (payload.eventType === 'UPDATE') {
-                        setNodes((prev) => prev.map((n) => (n.id === payload.new.id ? (payload.new as Node) : n)))
+                        setNodes((prev) => prev.map((n) => {
+                            if (n.id !== payload.new.id) return n
+                            // Prevent snap-back: if currently dragging this node locally, preserve current coords
+                            const isCurrentlyDragging = draggingNodeRef.current && draggingNodeRef.current.id === n.id
+                            if (isCurrentlyDragging) {
+                                return {
+                                    ...(payload.new as Node),
+                                    position_x: n.position_x,
+                                    position_y: n.position_y
+                                }
+                            }
+                            return payload.new as Node
+                        }))
                     } else if (payload.eventType === 'DELETE') {
                         setNodes((prev) => prev.filter((n) => n.id !== payload.old.id))
                     }
@@ -401,12 +415,18 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
             emitCursorMove(gridX, gridY)
         }
 
-        // Panning Logic
+        // Panning Logic (cadencé avec requestAnimationFrame)
         if (isPanning) {
             const dx = e.clientX - lastPanPos.current.x
             const dy = e.clientY - lastPanPos.current.y
-            setViewPos(prev => ({ x: prev.x + dx, y: prev.y + dy }))
             lastPanPos.current = { x: e.clientX, y: e.clientY }
+
+            if (!panRafRef.current) {
+                panRafRef.current = requestAnimationFrame(() => {
+                    setViewPos(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+                    panRafRef.current = null
+                })
+            }
         }
 
         // Connection Line Logic
@@ -431,11 +451,19 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
     }
 
     const handleMouseUp = () => {
+        if (panRafRef.current) {
+            cancelAnimationFrame(panRafRef.current)
+            panRafRef.current = null
+        }
         setIsPanning(false)
         setConnectingNodeId(null) // Cancel connection if dropped on empty space
     }
 
     const handleMouseLeave = () => {
+        if (panRafRef.current) {
+            cancelAnimationFrame(panRafRef.current)
+            panRafRef.current = null
+        }
         setIsPanning(false)
         setConnectingNodeId(null)
     }
@@ -534,7 +562,7 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
                 >
 
                     {/* SVG Connections Layer */}
-                    <svg className="absolute top-0 left-0 w-[20000px] h-[20000px] pointer-events-none overflow-visible">
+                    <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible">
                         <defs>
                             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
                                 <polygon points="0 0, 10 3.5, 0 7" fill="rgba(255,255,255,0.4)" />
