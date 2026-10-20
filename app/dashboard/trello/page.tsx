@@ -30,6 +30,7 @@ export default async function TrelloPage() {
             'photo_report'
         ])
         .order('created_at', { ascending: false })
+        .limit(100)
 
     if (error) {
         console.error("Error fetching nodes for Trello:", error)

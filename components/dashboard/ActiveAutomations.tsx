@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { Activity, ArrowRight, Loader2, PlayCircle, CheckCircle2 } from 'lucide-react'
@@ -15,76 +15,96 @@ type Automation = {
 }
 
 export default function ActiveAutomations() {
-    const supabase = createClient()
+    // Stable Supabase client
+    const supabase = useMemo(() => createClient(), [])
     const [automations, setAutomations] = useState<Automation[]>([])
     const [loading, setLoading] = useState(true)
+    const isFetchingRef = useRef(false)
 
-    // Data Fetching
-    const fetchData = async () => {
-        // Fetch active chantiers
-        const { data: chantiers } = await supabase
-            .from('chantiers')
-            .select('*')
-            .eq('status', 'en_cours')
+    // Single nested query instead of N+1 separate queries
+    const fetchData = useCallback(async () => {
+        if (isFetchingRef.current) return
+        isFetchingRef.current = true
 
-        if (!chantiers || chantiers.length === 0) {
-            setAutomations([])
-            setLoading(false)
-            return
-        }
+        try {
+            const { data: chantiers } = await supabase
+                .from('chantiers')
+                .select(`
+                    id,
+                    name,
+                    status,
+                    created_at,
+                    chantier_nodes (
+                        id,
+                        label,
+                        status,
+                        type,
+                        action_type
+                    )
+                `)
+                .eq('status', 'en_cours')
+                .order('created_at', { ascending: false })
+                .limit(10)
 
-        // For each chantier, fetch nodes to calculate progress and current step
-        const proms = chantiers.map(async (c) => {
-            const { data: nodes } = await supabase
-                .from('chantier_nodes')
-                .select('*')
-                .eq('chantier_id', c.id)
-
-            if (!nodes || nodes.length === 0) return null
-
-            // 1. Check strict Launch Node (Play button)
-            const playNode = nodes.find((n: any) => n.action_type === 'play')
-
-            // STRICT FILTER: If no Launch node OR Launch node not done, we hide it.
-            if (!playNode || playNode.status !== 'done') return null
-
-            // Calc Progress (Exclude 'play' node from steps count to avoid skewing)
-            const steps = nodes.filter((n: any) => n.action_type !== 'play' && n.type === 'step')
-
-            const done = steps.filter((n: any) => n.status === 'done').length
-            const total = steps.length
-            const progress = total === 0 ? 0 : Math.round((done / total) * 100)
-
-            // Find Current Step (First pending step)
-            const pendingSteps = steps.filter((n: any) => n.status === 'pending')
-            const currentStepNode = pendingSteps.length > 0 ? pendingSteps[0] : null
-            const currentStepName = currentStepNode ? currentStepNode.label : (progress === 100 ? 'Terminé' : 'En attente')
-
-            return {
-                chantier_id: c.id,
-                chantier_name: c.name,
-                created_at: c.created_at,
-                current_step: currentStepName,
-                progress,
-                status: c.status
+            if (!chantiers || chantiers.length === 0) {
+                setAutomations([])
+                setLoading(false)
+                isFetchingRef.current = false
+                return
             }
-        })
 
-        const results = await Promise.all(proms)
-        // Set automations filtering out nulls
-        setAutomations(results.filter((r): r is Automation => r !== null))
-        setLoading(false)
-    }
+            const results: Automation[] = []
+
+            for (const c of chantiers) {
+                const nodes = (c.chantier_nodes as any[]) || []
+                if (nodes.length === 0) continue
+
+                // 1. Check strict Launch Node (Play button)
+                const playNode = nodes.find((n: any) => n.action_type === 'play')
+                if (!playNode || playNode.status !== 'done') continue
+
+                // Calc Progress
+                const steps = nodes.filter((n: any) => n.action_type !== 'play' && n.type === 'step')
+                const done = steps.filter((n: any) => n.status === 'done').length
+                const total = steps.length
+                const progress = total === 0 ? 0 : Math.round((done / total) * 100)
+
+                // Find Current Step (First pending step)
+                const pendingSteps = steps.filter((n: any) => n.status === 'pending')
+                const currentStepNode = pendingSteps.length > 0 ? pendingSteps[0] : null
+                const currentStepName = currentStepNode ? currentStepNode.label : (progress === 100 ? 'Terminé' : 'En attente')
+
+                results.push({
+                    chantier_id: c.id,
+                    chantier_name: c.name,
+                    created_at: c.created_at,
+                    current_step: currentStepName,
+                    progress,
+                    status: c.status
+                })
+            }
+
+            setAutomations(results)
+        } catch (err) {
+            console.error("Error fetching active automations:", err)
+        } finally {
+            setLoading(false)
+            isFetchingRef.current = false
+        }
+    }, [supabase])
 
     useEffect(() => {
         fetchData()
 
-        // Realtime Subscription
-        // Listen to ALL node changes. 
-        // Note: This listens to global changes on 'chantier_nodes'. 
-        // Ideally we filter by the list of chantier IDs, but "in" filter isn't supported in realtime string syntax easily on all chantiers.
-        // But since we are on dashboard, user cares about THEIR chantiers.
-        // RLS will filter events so we only receive events for chantiers we can see.
+        // Debounce realtime updates
+        let timeout: NodeJS.Timeout | null = null
+        const debouncedFetch = () => {
+            if (timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+                fetchData()
+            }, 400)
+        }
+
         const channel = supabase
             .channel('dashboard_automations')
             .on(
@@ -94,18 +114,15 @@ export default function ActiveAutomations() {
                     schema: 'public',
                     table: 'chantier_nodes'
                 },
-                () => {
-                    // Refresh data on any node change
-                    // Could be optimized to only update specific entry but refetch is safer for consistency
-                    fetchData()
-                }
+                debouncedFetch
             )
             .subscribe()
 
         return () => {
+            if (timeout) clearTimeout(timeout)
             supabase.removeChannel(channel)
         }
-    }, [])
+    }, [fetchData, supabase])
 
     if (loading) return (
         <div className="rounded-[28px] border border-slate-200/70 dark:border-slate-800 bg-white/95 dark:bg-[#131B2A] p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md flex justify-center py-12">

@@ -18,6 +18,7 @@ export default async function AnnoncesPage() {
         // .eq('user_id', user?.id)  <-- REMOVED to show ALL notifications
         .neq('status', 'archived')
         .order('created_at', { ascending: false })
+        .limit(50)
 
     if (error) console.error("❌ [ANNONCES PAGE] Fetch Error:", error)
     console.log("🔍 [ANNONCES PAGE] Fetched Notifications:", notifications?.length)

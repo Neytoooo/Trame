@@ -7,8 +7,8 @@ import FactureList from '@/components/factures/FactureList'
 export default async function FacturesPage() {
     const supabase = await createClient()
 
-    // 1. Exécution en parallèle de l'auth et de la requête des factures
-    const [userRes, facturesRes] = await Promise.all([
+    // 1. Exécution en parallèle de l'auth, des factures et des paramètres entreprise
+    const [userRes, facturesRes, settingsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase
             .from('factures')
@@ -22,18 +22,18 @@ export default async function FacturesPage() {
                 )
             `)
             .order('date_emission', { ascending: false })
-            .limit(10)
+            .limit(10),
+        supabase
+            .from('company_settings')
+            .select('*')
+            .limit(1)
+            .maybeSingle()
     ])
 
     const user = userRes.data?.user
     const factures = facturesRes.data
     const error = facturesRes.error
-
-    const { data: companySettings } = user?.id ? await supabase
-        .from('company_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single() : { data: null }
+    const companySettings = settingsRes.data
 
     // Si erreur (table n'existe pas encore), on gère proprement
     if (error && error.code === '42P01') { // undefined_table

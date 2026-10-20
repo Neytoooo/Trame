@@ -26,8 +26,8 @@ export default async function DashboardPage() {
         clientsCountResult,
         currentMonthRevenue,
         lastMonthRevenue,
-        pendingQuotes,
-        ongoingProjects,
+        allDevisRes,
+        chantiersRes,
         recentDevis,
         recentFactures
     ] = await Promise.all([
@@ -52,17 +52,16 @@ export default async function DashboardPage() {
             .gte('date_emission', startOfLastMonth)
             .lte('date_emission', endOfLastMonth),
 
-        // C. Pending Quotes (Count & Amount)
+        // C. All Quotes (for pending sum, market total, and top quotes)
         supabase
             .from('devis')
-            .select('total_ht', { count: 'exact' })
-            .in('status', ['en_attente', 'en_attente_approbation']),
+            .select('id, reference, client:clients(name), total_ht, status')
+            .order('total_ht', { ascending: false }),
 
-        // D. Ongoing Projects (Count)
+        // D. Chantiers (for status breakdown & cities)
         supabase
             .from('chantiers')
-            .select('id', { count: 'exact', head: true })
-            .eq('status', 'en_cours'),
+            .select('id, name, status'),
 
         // E. Recent Activity - Quotes (Last 5)
         supabase
@@ -100,12 +99,22 @@ export default async function DashboardPage() {
     }
     const trendLabel = `+${trendPercent.toFixed(0)}% vs m-1`
 
-    // Pending Quotes
-    const pendingQuotesCount = pendingQuotes.count || 2
-    const pendingQuotesAmount = pendingQuotes.data?.reduce((acc, curr) => acc + (curr.total_ht || 0), 0) || 208601.95
+    // Chantiers breakdown
+    const allChantiers = chantiersRes.data || []
+    const ongoingCount = allChantiers.filter(c => c.status === 'en_cours').length
+    const etudeCount = allChantiers.filter(c => c.status === 'etude').length
+    const termineCount = allChantiers.filter(c => c.status === 'termine').length
+    const totalChantiers = allChantiers.length
+    const chantierCities = allChantiers.map(c => c.name).slice(0, 3).join(', ') || 'Poissy, Saint-Mandé, Conflans'
 
-    // Ongoing Projects
-    const ongoingProjectsCount = ongoingProjects.count || 2
+    // Pending Quotes & Total Marché
+    const allDevis = allDevisRes.data || []
+    const pendingQuotesList = allDevis.filter(d => d.status === 'en_attente' || d.status === 'en_attente_approbation')
+    const pendingQuotesCount = pendingQuotesList.length || 2
+    const pendingQuotesAmount = pendingQuotesList.reduce((acc, curr) => acc + (curr.total_ht || 0), 0) || 208601.95
+    const totalMarcheVote = allDevis.reduce((acc, curr) => acc + (curr.total_ht || 0), 0) || 229270
+    const topPendingQuotes = pendingQuotesList.slice(0, 3)
+
     const clientsCount = clientsCountResult.count || 0
 
     // Recent Activity Feed
@@ -182,7 +191,7 @@ export default async function DashboardPage() {
                     <div className="flex items-end justify-between mt-2">
                         <div>
                             <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-                                03
+                                {totalChantiers > 0 ? (totalChantiers < 10 ? `0${totalChantiers}` : totalChantiers) : '03'}
                             </span>
                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
                                 Chantiers suivis
@@ -193,21 +202,21 @@ export default async function DashboardPage() {
                         <div className="text-right space-y-1 text-xs">
                             <div className="flex items-center justify-end gap-1.5 text-slate-600 dark:text-slate-300">
                                 <span className="text-[11px] text-slate-400 dark:text-slate-500">En production</span>
-                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">02</span>
+                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">{ongoingCount < 10 ? `0${ongoingCount}` : ongoingCount}</span>
                             </div>
                             <div className="flex items-center justify-end gap-1.5 text-slate-600 dark:text-slate-300">
                                 <span className="text-[11px] text-slate-400 dark:text-slate-500">En étude / AG</span>
-                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">01</span>
+                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">{etudeCount < 10 ? `0${etudeCount}` : etudeCount}</span>
                             </div>
                             <div className="flex items-center justify-end gap-1.5 text-slate-600 dark:text-slate-300">
                                 <span className="text-[11px] text-slate-400 dark:text-slate-500">Terminés</span>
-                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">00</span>
+                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-[#0E1524] border border-transparent dark:border-slate-800 px-2 py-0.5 rounded-md">{termineCount < 10 ? `0${termineCount}` : termineCount}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                        <span className="text-slate-400 dark:text-slate-500">Poissy, Saint-Mandé, Conflans</span>
+                        <span className="text-slate-400 dark:text-slate-500 truncate max-w-[200px]">{chantierCities}</span>
                         <Link href="/dashboard/chantiers" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-0.5">
                             Voir chantiers <ChevronRight size={13} />
                         </Link>
@@ -238,7 +247,7 @@ export default async function DashboardPage() {
 
                         <div className="text-right">
                             <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                229 270 €
+                                {formatCurrency(totalMarcheVote)}
                             </p>
                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                                 Total Marché voté
@@ -285,20 +294,30 @@ export default async function DashboardPage() {
                                 {formatCurrency(pendingQuotesAmount)}
                             </span>
                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
-                                Devis D26100199 en attente
+                                {pendingQuotesCount} devis en attente
                             </p>
                         </div>
 
                         <div className="text-right space-y-1 text-xs">
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                LAMY : <span className="font-bold text-slate-900 dark:text-white">208 601 €</span>
-                            </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                BARBEY : <span className="font-bold text-slate-900 dark:text-white">41 689 €</span>
-                            </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                FONCIA : <span className="font-bold text-slate-900 dark:text-white">74 207 €</span>
-                            </div>
+                            {topPendingQuotes.length > 0 ? (
+                                topPendingQuotes.map((q) => (
+                                    <div key={q.id} className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[170px]">
+                                        {(q.client as any)?.name?.split('-')[0]?.trim() || q.reference || 'Devis'} : <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(q.total_ht || 0)}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                        LAMY : <span className="font-bold text-slate-900 dark:text-white">208 601 €</span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                        BARBEY : <span className="font-bold text-slate-900 dark:text-white">41 689 €</span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                        FONCIA : <span className="font-bold text-slate-900 dark:text-white">74 207 €</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
