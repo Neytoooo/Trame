@@ -11,6 +11,7 @@ import PillButton from '@/components/ui/PillButton'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { deleteClientAction, fetchClientsAction } from '@/app/actions/clients'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export type Client = {
     id: string
@@ -30,6 +31,7 @@ export type Client = {
 }
 
 export default function ClientPageClient({ initialClients }: { initialClients: any[] }) {
+    const confirm = useConfirm()
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-clients', 'list')
     const [typeFilter, setTypeFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
@@ -117,7 +119,14 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
     })
 
     const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer ${name} ?\n\nATTENTION :\n- Ses DEVIS seront SUPPRIMÉS DÉFINITIVEMENT.\n- Ses FACTURES seront ARCHIVÉES dans la corbeille.`)) return
+        const ok = await confirm({
+            title: `Supprimer le client ${name} ?`,
+            message: `Êtes-vous sûr de vouloir supprimer définitivement ${name} ?\n\n⚠️ Conséquences importantes :\n• Tous ses devis seront supprimés définitivement.\n• Toutes ses factures seront archivées dans la corbeille.`,
+            confirmText: "Oui, supprimer le client",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        })
+        if (!ok) return
 
         setIsProcessing(id)
         const res = await deleteClientAction(id)
@@ -131,9 +140,9 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
     }
 
     return (
-        <div className="space-y-6">
-            {/* Filter Bar (Identique au module Factures) */}
-            <div className="flex flex-col gap-4">
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* Filter Bar (Fixed) */}
+            <div className="shrink-0 pb-4">
                 <FilterBar
                     placeholder="Rechercher un client (nom, email, ville, SIRET)..."
                     searchValue={searchQuery}
@@ -168,31 +177,32 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
                 </FilterBar>
             </div>
 
-            {/* Content: Table View OR Grid View (Même design exact que FactureList) */}
-            {filteredClients.length === 0 && !isLoading ? (
-                <div className="text-center py-16 bg-white dark:bg-[#131B2A] rounded-[24px] border border-dashed border-slate-200 dark:border-slate-800 p-8 space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto">
-                        <User size={22} />
+            {/* Content: Table View OR Grid View (Scrollable) */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 space-y-4">
+                {filteredClients.length === 0 && !isLoading ? (
+                    <div className="text-center py-16 bg-white dark:bg-[#131B2A] rounded-[24px] border border-dashed border-slate-200 dark:border-slate-800 p-8 space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto">
+                            <User size={22} />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white">Aucun client trouvé</h3>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto font-medium">
+                            {searchQuery ? "Aucun résultat ne correspond à votre recherche." : "Ajoutez votre premier client ou importez votre fichier Excel pour démarrer."}
+                        </p>
+                        <div className="pt-2">
+                            <PillButton
+                                onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
+                                variant="primary"
+                                icon={<Plus size={14} />}
+                            >
+                                Nouveau Client
+                            </PillButton>
+                        </div>
                     </div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Aucun client trouvé</h3>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto font-medium">
-                        {searchQuery ? "Aucun résultat ne correspond à votre recherche." : "Ajoutez votre premier client ou importez votre fichier Excel pour démarrer."}
-                    </p>
-                    <div className="pt-2">
-                        <PillButton
-                            onClick={() => { setEditingClient(null); setIsModalOpen(true) }}
-                            variant="primary"
-                            icon={<Plus size={14} />}
-                        >
-                            Nouveau Client
-                        </PillButton>
-                    </div>
-                </div>
-            ) : viewMode === 'list' ? (
-                /* --- 1. TABLE VIEW (Copie conforme du tableau de Factures) --- */
-                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
-                    <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                        <thead className="bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+                ) : viewMode === 'list' ? (
+                    /* --- 1. TABLE VIEW (Copie conforme du tableau de Factures) --- */
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
+                        <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Client / Entreprise</th>
                                 <th className="px-6 py-4 font-semibold">Type</th>
@@ -419,6 +429,7 @@ export default function ClientPageClient({ initialClients }: { initialClients: a
 
             {/* Infinite Scroll Trigger */}
             <div ref={loadMoreRef} className="h-4 w-full" />
+            </div>
 
             {/* Modales */}
             <NewClientModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} clientToEdit={editingClient} />

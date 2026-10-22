@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
-import { Plus, Trash2, Save, Calculator, Loader2, FileCheck, Calendar, Wallet, ChevronRight, Building2, User } from 'lucide-react'
+import { Plus, Trash2, Save, Box, Loader2, FileCheck, Calendar, Wallet, ChevronRight, Building2, User, Download } from 'lucide-react'
 import ArticleSelector from '@/components/devis/ArticleSelector' // Reuse article selector
 import { saveFacture, deleteFactureItem } from '@/app/actions/factures'
+import { generateFacturePDF } from '@/utils/generatePdf'
 import PillButton from '@/components/ui/PillButton'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 type FactureItem = {
     id: string
@@ -43,6 +45,7 @@ export default function FactureEditor({
     client?: any,
     dateEmission?: string
 }) {
+    const confirm = useConfirm()
     const [items, setItems] = useState<FactureItem[]>(initialItems)
     const [status, setStatus] = useState(initialStatus)
     const [dateEcheance, setDateEcheance] = useState(initialDateEcheance ? new Date(initialDateEcheance).toISOString().split('T')[0] : '')
@@ -88,6 +91,17 @@ export default function FactureEditor({
     }
 
     const handleDeleteLine = async (id: string) => {
+        const itemToDelete = items.find(i => i.id === id)
+        const itemDesc = itemToDelete?.description ? `la prestation « ${itemToDelete.description.trim().slice(0, 30)}${itemToDelete.description.length > 30 ? '...' : ''} »` : "cette ligne"
+        const ok = await confirm({
+            title: "Supprimer cette ligne de facture ?",
+            message: `Êtes-vous sûr de vouloir supprimer ${itemDesc} de la facture ? Cette action est irréversible.`,
+            confirmText: "Oui, supprimer",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        })
+        if (!ok) return
+
         const previousItems = items
         setItems(items.filter(i => i.id !== id))
 
@@ -142,10 +156,40 @@ export default function FactureEditor({
 
     const totalTTC = totalHT + totalTVA
 
+    const [downloadingPdf, setDownloadingPdf] = useState(false)
+
+    const handleDownloadPdf = async () => {
+        try {
+            setDownloadingPdf(true)
+            const factureData = {
+                id: factureId,
+                reference: initialReference,
+                status: status,
+                type: initialType,
+                situation_index: initialSituationIndex,
+                date_emission: dateEmission,
+                date_echeance: dateEcheance,
+                total_ht: totalHT,
+                total_ttc: totalTTC,
+                factures_items: items,
+                chantiers: {
+                    name: chantierName,
+                    clients: client
+                }
+            }
+            await generateFacturePDF(factureData)
+        } catch (err: any) {
+            console.error("Erreur téléchargement facture:", err)
+            alert("Erreur lors de la génération du PDF: " + (err?.message || err))
+        } finally {
+            setDownloadingPdf(false)
+        }
+    }
+
 
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col min-h-0">
             <ArticleSelector
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
@@ -154,7 +198,7 @@ export default function FactureEditor({
             />
 
             {/* --- LAYOUT SCINDÉ GAUCHE / DROITE (100% de la hauteur, sans scroll global) --- */}
-            <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3.5 min-h-0 items-start">
+            <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3.5">
 
                 {/* ======================================================== */}
                 {/* COLONNE GAUCHE (8 colonnes) : ZONE DE FACTURE & LIGNES   */}
@@ -185,6 +229,22 @@ export default function FactureEditor({
                             icon={<Plus size={13} />}
                         >
                             Ajouter une ligne
+                        </PillButton>
+                        <PillButton
+                            onClick={() => setIsSelectorOpen(true)}
+                            variant="ai"
+                            icon={<Box size={13} />}
+                        >
+                            Bibliothèque
+                        </PillButton>
+                        <PillButton
+                            onClick={handleDownloadPdf}
+                            disabled={downloadingPdf}
+                            loading={downloadingPdf}
+                            variant="secondary"
+                            icon={<Download size={13} />}
+                        >
+                            Télécharger PDF
                         </PillButton>
                     </div>
 
@@ -326,21 +386,22 @@ export default function FactureEditor({
                                         ))
                                     )}
                                 </tbody>
-                                <tfoot className="bg-slate-50/90 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                    <tr>
-                                        <td colSpan={initialType === 'situation' ? 5 : 4} className="px-3 py-2 text-slate-400 dark:text-slate-500 text-[10px] font-normal">
-                                            {items.length} prestation(s)
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400 text-[10px]">
-                                            Total HT
-                                        </td>
-                                        <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
-                                            {totalHT.toFixed(2)} €
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
                             </table>
+                        </div>
+
+                        {/* PIED DE CARTE FIXÉ EN BAS (Toujours ancré en bas, exactement comme demandé) */}
+                        <div className="shrink-0 bg-slate-50/95 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                                {items.length} prestation(s)
+                            </span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Total HT
+                                </span>
+                                <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                                    {totalHT.toFixed(2)} €
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -348,10 +409,10 @@ export default function FactureEditor({
                 {/* ======================================================== */}
                 {/* COLONNE DROITE (4 colonnes) : CHANTIER, CLIENT, TOTAUX, ACTIONS */}
                 {/* ======================================================== */}
-                <div className="xl:col-span-4 h-full overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+                <div className="xl:col-span-4 h-full flex flex-col gap-2.5 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
 
                     {/* 1. INFORMATIONS CHANTIER & CLIENT (EN HAUT, COMME DANS DEVIS) */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 Informations Facture
@@ -414,7 +475,7 @@ export default function FactureEditor({
                     </div>
 
                     {/* 2. RÉCAPITULATIF FINANCIER */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                    <div className="flex-1 min-h-fit rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs flex flex-col justify-between space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                             Montants Facturés
                         </span>
@@ -443,7 +504,7 @@ export default function FactureEditor({
                     </div>
 
                     {/* 3. ACTIONS FACTURE */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 Actions Facture
@@ -462,6 +523,17 @@ export default function FactureEditor({
                             className="w-full text-xs py-1.5"
                         >
                             Enregistrer la facture
+                        </PillButton>
+
+                        <PillButton
+                            onClick={handleDownloadPdf}
+                            disabled={downloadingPdf}
+                            loading={downloadingPdf}
+                            variant="secondary"
+                            icon={<Download size={13} />}
+                            className="w-full text-xs py-1.5"
+                        >
+                            Télécharger le PDF
                         </PillButton>
                     </div>
                 </div>

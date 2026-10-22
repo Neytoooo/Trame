@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { FileText, Plus, Search, MoreVertical, Edit, User, MapPin, Calendar, Trash2 } from 'lucide-react'
+import { FileText, Plus, Search, MoreVertical, Edit, User, MapPin, Calendar, Trash2, Printer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import FilterBar from '@/components/dashboard/FilterBar'
 import ViewToggle from '@/components/ui/ViewToggle'
@@ -10,11 +10,22 @@ import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { fetchDevisAction } from '@/app/actions/devis'
+import UserAvatarBadge, { getAuthorInfo } from '@/components/ui/UserAvatarBadge'
+import { INITIAL_TEAM_MEMBERS } from '@/lib/teamData'
+import DevisPdfExportModal from '@/components/devis/DevisPdfExportModal'
+import { generateCustomDevisPDF } from '@/utils/generatePdf'
+import { DevisPdfColumnConfig } from '@/types/pdfExport'
+import { createClient } from '@/utils/supabase/client'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initialDevis: any[], linkedDevisIds?: string[] }) {
+    const confirm = useConfirm()
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-devis', 'grid')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
+    const [authorFilter, setAuthorFilter] = useState('all')
+    const [selectedDevisForPdf, setSelectedDevisForPdf] = useState<any | null>(null)
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
     const router = useRouter()
 
     const {
@@ -74,19 +85,82 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
         return true
     }
 
+    const authorOptions = INITIAL_TEAM_MEMBERS.map(m => ({
+        label: `${m.prenom} ${m.nom}`,
+        value: m.id
+    }))
+
     const filteredDevis = devisList.filter((devis: any) => {
         // 1. Search Term (Server handled, but we can double check locally for relations)
         // 2. Status Filter
         if (statusFilter !== 'all' && devis.status !== statusFilter) return false
         // 3. Date Filter
         if (!isWithinDateRange(devis.created_at, dateFilter)) return false
+        // 4. Author Filter
+        if (authorFilter !== 'all') {
+            const devisAuthor = devis.created_by || 'user-alexandre'
+            if (devisAuthor !== authorFilter) return false
+        }
         return true
     })
 
+    const handleOpenPdfModal = (devis: any) => {
+        setSelectedDevisForPdf(devis)
+        setIsPdfModalOpen(true)
+    }
 
+    const handleExportPdf = async (columnConfig: DevisPdfColumnConfig) => {
+        if (!selectedDevisForPdf) return
+        try {
+            const supabase = createClient()
+            const { data: items } = await supabase
+                .from('devis_items')
+                .select('*')
+                .eq('devis_id', selectedDevisForPdf.id)
+                .order('position', { ascending: true })
+
+            const { data: settings } = await supabase
+                .from('company_settings')
+                .select('*')
+                .maybeSingle()
+
+            let client = selectedDevisForPdf.chantiers?.clients
+            if (selectedDevisForPdf.chantiers?.client_id && (!client || !client.address)) {
+                const { data: fullClient } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .eq('id', selectedDevisForPdf.chantiers.client_id)
+                    .maybeSingle()
+                if (fullClient) client = fullClient
+            }
+
+            const devisData = {
+                ...selectedDevisForPdf,
+                devis_items: items || selectedDevisForPdf.devis_items || [],
+                chantiers: {
+                    ...selectedDevisForPdf.chantiers,
+                    clients: client || selectedDevisForPdf.chantiers?.clients
+                }
+            }
+            await generateCustomDevisPDF(devisData, columnConfig, settings)
+        } catch (err) {
+            console.error("Erreur génération PDF:", err)
+            alert("Une erreur est survenue lors de la génération du PDF.")
+        } finally {
+            setIsPdfModalOpen(false)
+            setSelectedDevisForPdf(null)
+        }
+    }
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Supprimer définitivement ce devis ?")) return
+        const ok = await confirm({
+            title: "Supprimer définitivement ce devis ?",
+            message: "Êtes-vous sûr de vouloir supprimer ce devis ? Toutes ses prestations seront effacées et cette action est irréversible.",
+            confirmText: "Oui, supprimer",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        })
+        if (!ok) return
 
         // Optimistic update
         setDevisList(prev => prev.filter(d => d.id !== id))
@@ -101,7 +175,14 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
     }
 
     const handleConvertToFacture = async (devisId: string) => {
-        if (!confirm("Voulez-vous transformer ce devis en facture ?")) return
+        const ok = await confirm({
+            title: "Transformer en facture ?",
+            message: "Êtes-vous sûr de vouloir transformer ce devis en facture ? Une nouvelle facture sera automatiquement créée.",
+            confirmText: "Oui, transformer",
+            cancelText: "Non, annuler",
+            variant: "info"
+        })
+        if (!ok) return
 
         // Import dynamique pour éviter les dépendances circulaires
         const { convertDevisToFacture } = await import('@/app/actions/factures')
@@ -115,36 +196,45 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
     }
 
     return (
-        <div className="space-y-6">
-            <FilterBar
-                placeholder="Rechercher un devis..."
-                searchValue={searchQuery}
-                onSearchChange={setSearchQuery}
-                statusValue={statusFilter}
-                onStatusChange={setStatusFilter}
-                dateRangeValue={dateFilter}
-                onDateRangeChange={setDateFilter}
-                statusOptions={[
-                    { label: 'Brouillon', value: 'brouillon' },
-                    { label: 'En préparation', value: 'en_attente' },
-                    { label: 'Approbation', value: 'en_attente_approbation' },
-                    { label: 'Validé', value: 'valide' },
-                    { label: 'Refusé', value: 'refuse' },
-                ]}
-            >
-                <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-            </FilterBar>
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* FilterBar (Fixed) */}
+            <div className="shrink-0 pb-4">
+                <FilterBar
+                    placeholder="Rechercher un devis..."
+                    searchValue={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    statusValue={statusFilter}
+                    onStatusChange={setStatusFilter}
+                    dateRangeValue={dateFilter}
+                    onDateRangeChange={setDateFilter}
+                    authorValue={authorFilter}
+                    onAuthorChange={setAuthorFilter}
+                    authorOptions={authorOptions}
+                    statusOptions={[
+                        { label: 'Brouillon', value: 'brouillon' },
+                        { label: 'En préparation', value: 'en_attente' },
+                        { label: 'Approbation', value: 'en_attente_approbation' },
+                        { label: 'Validé', value: 'valide' },
+                        { label: 'Refusé', value: 'refuse' },
+                    ]}
+                >
+                    <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+                </FilterBar>
+            </div>
 
-            {/* Grid / List via viewMode */}
-            {viewMode === 'list' ? (
-                // TABLE VIEW
-                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
-                    <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                        <thead className="bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            {/* Scrollable Container (Only content scrolls) */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 space-y-4">
+                {/* Grid / List via viewMode */}
+                {viewMode === 'list' ? (
+                    // TABLE VIEW
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
+                        <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Référence</th>
                                 <th className="px-6 py-4 font-semibold">Client</th>
                                 <th className="px-6 py-4 font-semibold">Chantier</th>
+                                <th className="px-6 py-4 font-semibold">Créé par</th>
                                 <th className="px-6 py-4 font-semibold">Date de création</th>
                                 <th className="px-6 py-4 font-semibold text-right">Montant TTC</th>
                                 <th className="px-6 py-4 font-semibold text-right">Statut</th>
@@ -166,11 +256,19 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                                         {devis.chantiers?.name || '-'}
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <UserAvatarBadge createdById={devis.created_by} createdAt={devis.created_at} size="sm" />
+                                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 hidden xl:inline">
+                                                {getAuthorInfo(devis.created_by).name}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
                                         {new Date(devis.created_at).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4 text-right font-black text-slate-900 dark:text-white">
-                                        {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
+                                        {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : (devis.total_ht ? `${(Number(devis.total_ht) * 1.2).toFixed(2)} €` : '-')}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -180,6 +278,13 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleOpenPdfModal(devis)}
+                                                className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all border border-transparent"
+                                                title="Exporter PDF (personnaliser colonnes)"
+                                            >
+                                                <Printer size={15} />
+                                            </button>
                                             {devis.status !== 'brouillon' && (
                                                 <button
                                                     onClick={() => handleConvertToFacture(devis.id)}
@@ -230,6 +335,7 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <UserAvatarBadge createdById={devis.created_by} createdAt={devis.created_at} size="sm" />
                                     {linkedIdsSet.has(devis.id) && <StatusBadge status="automatise" showIcon={true} />}
                                     <StatusBadge status={devis.status || 'brouillon'} />
                                 </div>
@@ -245,19 +351,32 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                                     <MapPin size={14} className="text-slate-400 dark:text-slate-500" />
                                     <span className="truncate">{devis.chantiers?.name || 'Chantier inconnu'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                                    <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
-                                    <span>{new Date(devis.created_at).toLocaleDateString()}</span>
+                                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
+                                        <span>{new Date(devis.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <span className="text-xs text-slate-400 font-medium">
+                                        Par {getAuthorInfo(devis.created_by).name.split(' ')[0]}
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Actions Footer */}
                             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80">
                                 <span className="font-bold text-slate-900 dark:text-white">
-                                    {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-'}
+                                    {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : (devis.total_ht ? `${(Number(devis.total_ht) * 1.2).toFixed(2)} €` : '-')}
                                 </span>
 
                                 <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleOpenPdfModal(devis)}
+                                        className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-all"
+                                        title="Exporter PDF (personnaliser colonnes)"
+                                    >
+                                        <Printer size={14} />
+                                    </button>
+
                                     <button
                                         onClick={() => handleDelete(devis.id)}
                                         className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all dark:bg-rose-500/10 dark:text-rose-400"
@@ -297,6 +416,21 @@ export default function DevisList({ initialDevis, linkedDevisIds = [] }: { initi
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
                     )}
                 </div>
+            )}
+            </div>
+
+            {/* Modal d'export PDF personnalisé */}
+            {selectedDevisForPdf && (
+                <DevisPdfExportModal
+                    isOpen={isPdfModalOpen}
+                    onClose={() => {
+                        setIsPdfModalOpen(false)
+                        setSelectedDevisForPdf(null)
+                    }}
+                    onGenerate={handleExportPdf}
+                    devisReference={selectedDevisForPdf.reference || 'DEVIS'}
+                    clientName={selectedDevisForPdf.chantiers?.clients?.name || 'Client'}
+                />
             )}
         </div>
     )

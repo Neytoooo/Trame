@@ -48,12 +48,12 @@ export default async function FacturesPage() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+            {/* Header (Always Fixed) */}
+            <div className="shrink-0 flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Factures</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Suivi des règlements, acomptes et situations de travaux.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Factures</h1>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Suivi des règlements, acomptes et situations de travaux.</p>
                 </div>
 
                 <PillButton
@@ -64,7 +64,9 @@ export default async function FacturesPage() {
                 </PillButton>
             </div>
 
-            <FactureList initialFactures={factures || []} companySettings={companySettings} />
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <FactureList initialFactures={factures || []} companySettings={companySettings} />
+            </div>
         </div>
     )
 }

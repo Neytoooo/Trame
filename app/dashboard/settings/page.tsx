@@ -17,16 +17,17 @@ export default async function SettingsPage() {
     }
 
     return (
-        <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Paramètres Entreprise</h1>
-                <p className="text-slate-500 dark:text-gray-400">Ces informations apparaîtront sur vos devis et factures.</p>
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+            {/* Header (Fixed) */}
+            <div className="shrink-0 pb-4">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Paramètres Entreprise</h1>
+                <p className="text-xs md:text-sm text-slate-500 dark:text-gray-400">Ces informations apparaîtront sur vos devis et factures.</p>
             </div>
 
             <form action={async (formData) => {
                 'use server'
                 await saveCompanySettings(formData)
-            }} className="space-y-6">
+            }} className="flex-1 min-h-0 overflow-y-auto no-scrollbar max-w-4xl space-y-6 pb-10">
 
                 {/* Section Identité */}
                 <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] backdrop-blur-md space-y-6">

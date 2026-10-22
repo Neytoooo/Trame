@@ -15,8 +15,10 @@ import TemplateListModal from './TemplateListModal'
 import NewNodeQuoteModal from './NewNodeQuoteModal'
 import CollaborativeCursors from './CollaborativeCursors'
 import { useRealtimeGraph } from '@/hooks/useRealtimeGraph'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export default function SuiviGraph({ chantierId, user }: { chantierId: string, user: any }) {
+    const confirm = useConfirm()
     // Stable Supabase client instance across renders
     const supabase = useMemo(() => createClient(), [])
     const containerRef = useRef<HTMLDivElement>(null)
@@ -245,6 +247,17 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
 
     // Delete Node
     const deleteNode = async (id: string) => {
+        const targetNode = nodes.find(n => n.id === id)
+        const label = targetNode?.label || "cette étape"
+        const ok = await confirm({
+            title: `Supprimer l'étape « ${label} » ?`,
+            message: `Êtes-vous sûr de vouloir supprimer cette étape du suivi de chantier ? Ses liaisons seront également supprimées.`,
+            confirmText: "Oui, supprimer",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        })
+        if (!ok) return
+
         // Optimistic update
         setNodes(prev => prev.filter(n => n.id !== id))
         setEdges(prev => prev.filter(e => e.source !== id && e.target !== id))
@@ -273,7 +286,14 @@ export default function SuiviGraph({ chantierId, user }: { chantierId: string, u
 
         // If we are toggling the Play node OFF -> Reset EVERYTHING
         if (targetNode.action_type === 'play' && currentStatus === 'done') {
-            if (!confirm("⚠️ Désactiver le lancement va réinitialiser toutes les étapes. Continuer ?")) return
+            const ok = await confirm({
+                title: "Désactiver le lancement ?",
+                message: "⚠️ Attention : Désactiver le lancement va réinitialiser toutes les étapes du chantier au statut « en attente ». Voulez-vous continuer ?",
+                confirmText: "Oui, réinitialiser",
+                cancelText: "Non, annuler",
+                variant: "warning"
+            })
+            if (!ok) return
 
             setProcessingNodeId(id)
             setNodes(prev => prev.map(n => ({ ...n, status: 'pending' }))) // Reset all locally

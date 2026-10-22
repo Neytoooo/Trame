@@ -256,9 +256,9 @@ export default function TechnicianSchedule() {
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="h-full flex flex-col overflow-hidden space-y-3 animate-in fade-in duration-300">
             {/* --- HEADER BAR (Issu de la capture Batiecom Photo 2) --- */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md">
+            <div className="shrink-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md">
                 <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 shadow-xs">
                         <CalendarIcon size={24} />
@@ -314,9 +314,9 @@ export default function TechnicianSchedule() {
             </div>
 
             {/* --- GRILLE DU PLANNING HEBDOMADAIRE (Batiecom BLUE SELECT Style) --- */}
-            <div className="rounded-[24px] border border-slate-200/80 bg-white shadow-xs overflow-hidden dark:border-slate-800 dark:bg-[#131B2A]">
+            <div className="flex-1 min-h-0 flex flex-col rounded-[24px] border border-slate-200/80 bg-white shadow-xs overflow-hidden dark:border-slate-800 dark:bg-[#131B2A]">
                 {/* Header Jours */}
-                <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center dark:border-slate-800 dark:bg-[#0E1524]">
+                <div className="shrink-0 grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center dark:border-slate-800 dark:bg-[#0E1524]">
                     <div className="p-3 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
                         <Clock size={14} className="mr-1" /> Heure
                     </div>
@@ -334,7 +334,7 @@ export default function TechnicianSchedule() {
                 </div>
 
                 {/* Corps de la grille horaire */}
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/80 font-mono text-xs">
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar divide-y divide-slate-100 dark:divide-slate-800/80 font-mono text-xs">
                     {TIME_SLOTS.map((slot) => {
                         const slotHour = parseInt(slot.split(':')[0])
 
@@ -389,7 +389,7 @@ export default function TechnicianSchedule() {
                 </div>
 
                 {/* Footer avec compteur journalier (comme dans Batiecom) */}
-                <div className="grid grid-cols-7 border-t border-gray-200 bg-gray-50/90 text-center dark:border-white/10 dark:bg-black/30 py-2.5 font-bold text-xs">
+                <div className="shrink-0 grid grid-cols-7 border-t border-gray-200 bg-gray-50/90 text-center dark:border-white/10 dark:bg-black/30 py-2.5 font-bold text-xs">
                     <div className="text-gray-500 uppercase tracking-wider text-[11px]">Interventions</div>
                     {DAYS.map((_, dayIndex) => {
                         const count = filtered.filter(i => i.dayIndex === dayIndex).length

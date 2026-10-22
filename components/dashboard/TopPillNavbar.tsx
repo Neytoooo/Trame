@@ -13,6 +13,7 @@ import {
     Calendar,
     Layout,
     Box,
+    Award,
     Search,
     Bell,
     Settings,
@@ -106,11 +107,17 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
             href: "/dashboard/articles",
             icon: <Box size={14} />,
             active: isLinkActive('/dashboard/articles')
+        },
+        {
+            name: "Équipe",
+            href: "/dashboard/equipe",
+            icon: <Users size={14} />,
+            active: isLinkActive('/dashboard/equipe')
         }
     ]
 
     return (
-        <header className="sticky top-3 z-50 w-full px-4 md:px-8">
+        <header className="relative z-50 w-full px-4 md:px-8">
             <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
 
                 {/* --- 1. USER PROFILE PILL (Left) --- */}

@@ -38,15 +38,17 @@ export default async function TrelloPage() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-2rem)]">
-            <div className="flex items-center justify-between mb-6">
+        <div className="h-full flex flex-col overflow-hidden">
+            <div className="shrink-0 flex items-center justify-between pb-3">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Tableau de Bord Tâches</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Gérez l'avancement de vos interventions via une vue Kanban interactive.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Tableau de Bord Tâches</h1>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Gérez l'avancement de vos interventions via une vue Kanban interactive.</p>
                 </div>
             </div>
 
-            <KanbanBoard nodes={nodes || []} />
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <KanbanBoard nodes={nodes || []} />
+            </div>
         </div>
     )
 }

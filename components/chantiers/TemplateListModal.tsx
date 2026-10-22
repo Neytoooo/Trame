@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, FolderOpen, Loader2, ArrowRight } from 'lucide-react'
 import { getTemplates, loadTemplate } from '@/app/actions/templates'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface TemplateListModalProps {
     isOpen: boolean
@@ -12,6 +13,7 @@ interface TemplateListModalProps {
 }
 
 export default function TemplateListModal({ isOpen, onClose, chantierId }: TemplateListModalProps) {
+    const confirm = useConfirm()
     const [templates, setTemplates] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeId, setActiveId] = useState<string | null>(null)
@@ -28,7 +30,14 @@ export default function TemplateListModal({ isOpen, onClose, chantierId }: Templ
     }, [isOpen])
 
     const handleImport = async (templateId: string) => {
-        if (!confirm("⚠️ Attention : Charger un modèle va remplacer le graphe actuel. Continuer ?")) return
+        const ok = await confirm({
+            title: "Appliquer ce modèle de chantier ?",
+            message: "⚠️ Attention : Charger ce modèle va effacer et remplacer l'intégralité des étapes et liaisons du graphe actuel. Souhaitez-vous continuer ?",
+            confirmText: "Oui, appliquer le modèle",
+            cancelText: "Non, annuler",
+            variant: "warning"
+        })
+        if (!ok) return
 
         setImporting(true)
         const res = await loadTemplate(chantierId, templateId)

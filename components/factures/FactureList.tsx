@@ -13,8 +13,10 @@ import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { fetchFacturesAction } from '@/app/actions/factures'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export default function FactureList({ initialFactures, companySettings }: { initialFactures: any[], companySettings: any }) {
+    const confirm = useConfirm()
     const [viewMode, setViewMode] = usePersistentViewMode('view-mode-factures', 'grid')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
@@ -101,7 +103,20 @@ export default function FactureList({ initialFactures, companySettings }: { init
     })
 
     const handleDelete = async (id: string, permanent: boolean = false) => {
-        if (!confirm(permanent ? "Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette facture ? Cette action est irréversible." : "Voulez-vous déplacer cette facture dans la corbeille ?")) return
+        const ok = await confirm(permanent ? {
+            title: "Supprimer définitivement cette facture ?",
+            message: "Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette facture ? Toutes les données associées seront effacées et cette action est irréversible.",
+            confirmText: "Oui, supprimer définitivement",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        } : {
+            title: "Mettre la facture à la corbeille ?",
+            message: "Êtes-vous sûr de vouloir déplacer cette facture dans la corbeille ? Vous pourrez la restaurer ultérieurement si nécessaire.",
+            confirmText: "Oui, déplacer",
+            cancelText: "Non, annuler",
+            variant: "warning"
+        })
+        if (!ok) return
 
         setIsProcessing(id)
         let res
@@ -135,8 +150,9 @@ export default function FactureList({ initialFactures, companySettings }: { init
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4">
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* FilterBar & Corbeille (Fixed) */}
+            <div className="shrink-0 space-y-4 pb-4">
                 <FilterBar
                     placeholder="Rechercher une facture..."
                     searchValue={searchQuery}
@@ -162,22 +178,24 @@ export default function FactureList({ initialFactures, companySettings }: { init
                         </button>
                     </div>
                 </FilterBar>
+
+                {/* Banner Corbeille */}
+                {showHistory && (
+                    <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300 text-xs font-medium">
+                        <AlertTriangle size={18} />
+                        <p>Vous visualisez les factures supprimées. Elles seront effacées définitivement après 30 jours.</p>
+                    </div>
+                )}
             </div>
 
-            {/* Banner Corbeille */}
-            {showHistory && (
-                <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-300 text-xs font-medium">
-                    <AlertTriangle size={18} />
-                    <p>Vous visualisez les factures supprimées. Elles seront effacées définitivement après 30 jours.</p>
-                </div>
-            )}
-
-            {/* Grid / List via viewMode */}
-            {viewMode === 'list' ? (
-                // TABLE VIEW
-                <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
-                    <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                        <thead className="bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            {/* Scrollable Container (Only content scrolls) */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 space-y-4">
+                {/* Grid / List via viewMode */}
+                {viewMode === 'list' ? (
+                    // TABLE VIEW
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
+                        <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Référence</th>
                                 <th className="px-6 py-4 font-semibold">Client</th>
@@ -237,7 +255,14 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                             ) : (
                                                 <>
                                                     <button
-                                                        onClick={() => generateFacturePDF(facture, companySettings)}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await generateFacturePDF(facture, companySettings)
+                                                            } catch (e: any) {
+                                                                console.error("Erreur PDF:", e)
+                                                                alert("Erreur lors de la génération du PDF")
+                                                            }
+                                                        }}
                                                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg dark:text-blue-400 dark:hover:bg-blue-500/10"
                                                         title="Télécharger PDF"
                                                     >
@@ -252,9 +277,16 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                                                 if (!manualEmail) return
                                                                 email = manualEmail
                                                             } else {
-                                                                if (!confirm(`Envoyer la facture par email à ${email} ?`)) return
+                                                                const ok = await confirm({
+                                                                    title: "Envoyer la facture par email ?",
+                                                                    message: `Êtes-vous sûr de vouloir envoyer cette facture par email à l'adresse suivante :\n${email} ?`,
+                                                                    confirmText: "Oui, envoyer",
+                                                                    cancelText: "Non, annuler",
+                                                                    variant: "info"
+                                                                })
+                                                                if (!ok) return
                                                             }
-                                                            const pdfBase64 = generateFacturePDF(facture, companySettings, true)
+                                                            const pdfBase64 = (await generateFacturePDF(facture, companySettings, true)) as string
                                                             // @ts-ignore
                                                             const res = await sendFactureEmail(facture, email, pdfBase64)
                                                             if (res?.success) {
@@ -347,7 +379,14 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                     ) : (
                                         <>
                                             <button
-                                                onClick={() => generateFacturePDF(facture, companySettings)}
+                                                onClick={async () => {
+                                                    try {
+                                                        await generateFacturePDF(facture, companySettings)
+                                                    } catch (e: any) {
+                                                        console.error("Erreur PDF:", e)
+                                                        alert("Erreur lors de la génération du PDF")
+                                                    }
+                                                }}
                                                 className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500 hover:text-white"
                                                 title="Télécharger PDF"
                                             >
@@ -362,9 +401,16 @@ export default function FactureList({ initialFactures, companySettings }: { init
                                                         if (!manualEmail) return
                                                         email = manualEmail
                                                     } else {
-                                                        if (!confirm(`Envoyer la facture par email à ${email} ?`)) return
+                                                        const ok = await confirm({
+                                                            title: "Envoyer la facture par email ?",
+                                                            message: `Êtes-vous sûr de vouloir envoyer cette facture par email à l'adresse suivante :\n${email} ?`,
+                                                            confirmText: "Oui, envoyer",
+                                                            cancelText: "Non, annuler",
+                                                            variant: "info"
+                                                        })
+                                                        if (!ok) return
                                                     }
-                                                    const pdfBase64 = generateFacturePDF(facture, companySettings, true)
+                                                    const pdfBase64 = (await generateFacturePDF(facture, companySettings, true)) as string
                                                     // @ts-ignore
                                                     const res = await sendFactureEmail(facture, email, pdfBase64)
                                                     if (res?.success) {
@@ -416,6 +462,7 @@ export default function FactureList({ initialFactures, companySettings }: { init
                     )}
                 </div>
             )}
+            </div>
         </div>
 
     )

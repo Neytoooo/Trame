@@ -18,7 +18,7 @@ export async function seedProBtpDataAction() {
     const userId = user.id
 
     try {
-        // 1. CLEANUP ALL EXISTING DATA (in reverse dependency order)
+        // 1. CLEANUP (ne touche plus à la table articles pour préserver les imports utilisateurs)
         await supabase.from('factures_items').delete().neq('id', '00000000-0000-0000-0000-000000000000')
         await supabase.from('factures').delete().neq('id', '00000000-0000-0000-0000-000000000000')
         await supabase.from('devis_items').delete().neq('id', '00000000-0000-0000-0000-000000000000')
@@ -28,30 +28,36 @@ export async function seedProBtpDataAction() {
         await supabase.from('chantier_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000')
         await supabase.from('chantiers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
         await supabase.from('clients').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        await supabase.from('articles').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
-        // 2. SEED CLEAN BTP ARTICLES CATALOG (Bibliothèque fraîche)
-        const articlesPayload = BTP_PRESTATIONS_CATALOG.map(a => ({
-            name: `${a.name}${a.complement ? ' - ' + a.complement : ''}`,
-            category: a.category,
-            unit: a.unit,
-            price_ht: a.price_ht,
-            cost_ht: a.cost_ht,
-            reference: a.reference,
-            tva: a.tva,
-            stock: 50,
-            min_stock: 10,
-            supplier: `${a.metier} - ${a.famille}`,
-            created_by: userId
-        }))
+        // 2. SEED NON-DESTRUCTIF DU CATALOGUE BTP (n'insère que les articles manquants)
+        const { data: existingArts } = await supabase.from('articles').select('name, reference')
+        const existingNames = new Set((existingArts || []).map(a => a.name?.trim().toLowerCase()))
+        const existingRefs = new Set((existingArts || []).map(a => a.reference?.trim().toLowerCase()).filter(Boolean))
 
-        const { data: insertedArticles, error: artErr } = await supabase
-            .from('articles')
-            .insert(articlesPayload)
-            .select()
+        const missingArticles = BTP_PRESTATIONS_CATALOG.filter(a => {
+            const n1 = a.name.trim().toLowerCase()
+            const n2 = `${a.name}${a.complement ? ' - ' + a.complement : ''}`.trim().toLowerCase()
+            const ref = (a.reference || '').trim().toLowerCase()
+            return !existingNames.has(n1) && !existingNames.has(n2) && (!ref || !existingRefs.has(ref))
+        })
 
-        if (artErr) {
-            console.warn("Erreur insertion catalogue articles:", artErr)
+        if (missingArticles.length > 0) {
+            const articlesPayload = missingArticles.map(a => ({
+                name: `${a.name}${a.complement ? ' - ' + a.complement : ''}`,
+                category: a.category,
+                unit: a.unit,
+                price_ht: a.price_ht,
+                cost_ht: a.cost_ht,
+                reference: a.reference,
+                tva: a.tva,
+                stock: 50,
+                min_stock: 10,
+                supplier: `${a.metier} - ${a.famille}`,
+                created_by: userId
+            }))
+
+            const { error: artErr } = await supabase.from('articles').insert(articlesPayload)
+            if (artErr) console.warn("Erreur insertion catalogue articles:", artErr)
         }
 
         // 3. CREATE 3 CLIENTS (all with user email mattiskhn@gmail.com)
@@ -1297,7 +1303,7 @@ export async function seedProBtpDataAction() {
             summary: {
                 clients: insertedClients.length,
                 chantiers: insertedChantiers.length,
-                articles: insertedArticles?.length || 0,
+                articles: missingArticles.length,
                 devis: 3,
                 factures: 4,
                 nodes: allNodes.length,

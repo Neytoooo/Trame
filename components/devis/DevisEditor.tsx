@@ -1,17 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, useRef, useMemo, Fragment } from 'react'
 import {
     Plus, Trash2, Save, Calculator, Loader2, FileText, ChevronRight,
     Layout, GripVertical, Wallet, Calendar, Sliders, FolderPlus,
-    Building2, UserCheck, ShieldCheck, CheckCircle2, Tag
+    Building2, UserCheck, ShieldCheck, CheckCircle2, Tag, FileDown,
+    Image as ImageIcon, ArrowUp, ArrowDown, Upload, Box, BookmarkPlus
 } from 'lucide-react'
 import ArticleSelector from './ArticleSelector'
 import CalculatorPopover from './CalculatorPopover'
 import DevisLineDetailModal, { DevisLineData } from './DevisLineDetailModal'
+import DevisPdfExportModal from './DevisPdfExportModal'
+import ImportToLibraryModal from './ImportToLibraryModal'
 import { saveDevis, deleteDevisItem } from '@/app/actions/devis'
+import { generateCustomDevisPDF } from '@/utils/generatePdf'
+import { DevisPdfColumnConfig } from '@/types/pdfExport'
 import PillButton from '@/components/ui/PillButton'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 // On définit le format étendu d'une ligne de devis BTP
 export type DevisItem = {
@@ -23,8 +29,10 @@ export type DevisItem = {
     tva: number
     article_id?: string
     components?: { name: string, quantity: number, unit: string }[]
-    item_type?: 'item' | 'section' | 'sub_section'
+    item_type?: 'item' | 'section' | 'sub_section' | 'image'
     details?: any
+    image_url?: string
+    caption?: string
     // Champs BTP enrichis (issus de Batiecom)
     reference?: string
     complement?: string
@@ -63,6 +71,7 @@ export default function DevisEditor({
     chantierName?: string,
     client?: any
 }) {
+    const confirm = useConfirm()
     const [items, setItems] = useState<DevisItem[]>(initialItems)
     const [name, setName] = useState(initialName)
     const [loading, setLoading] = useState(false)
@@ -98,10 +107,198 @@ export default function DevisEditor({
         setName(initialName)
     }, [initialName])
 
+    const [isImportToBiblioOpen, setIsImportToBiblioOpen] = useState(false)
+    const [localArticles, setLocalArticles] = useState<any[]>(articles || [])
+
+    // Sync articles when prop updates
+    useEffect(() => {
+        setLocalArticles(articles || [])
+    }, [articles])
+
+    // Indexation des noms déjà présents en bibliothèque (zéro requête superflue, calcul instantané)
+    const existingNamesSet = useMemo(() => {
+        const set = new Set<string>()
+        for (const a of localArticles) {
+            if (a && a.name) {
+                set.add(a.name.trim().toLowerCase())
+            }
+        }
+        return set
+    }, [localArticles])
+
+    // Détection optimisée des lignes complètes non encore présentes en bibliothèque
+    const importableItems = useMemo(() => {
+        const seenNames = new Set<string>()
+        const candidates: DevisItem[] = []
+
+        for (const item of items) {
+            // Exclure les chapitres, sous-chapitres et photos
+            if (item.item_type === 'section' || item.item_type === 'sub_section' || item.item_type === 'image') {
+                continue
+            }
+            const desc = item.description?.trim() || ''
+            const unit = item.unit?.trim() || ''
+            const price = Number(item.unit_price) || 0
+
+            // Condition : la ligne doit être entièrement remplie (description, unité, prix > 0)
+            if (!desc || !unit || price <= 0) {
+                continue
+            }
+
+            // Exclure si déjà reliée à un article existant
+            if (item.article_id) {
+                continue
+            }
+
+            const normDesc = desc.toLowerCase()
+            // Exclure si déjà présente dans la bibliothèque
+            if (existingNamesSet.has(normDesc)) {
+                continue
+            }
+
+            // Éviter d'afficher plusieurs fois la même désignation
+            if (seenNames.has(normDesc)) {
+                continue
+            }
+            seenNames.add(normDesc)
+            candidates.push(item)
+        }
+
+        return candidates
+    }, [items, existingNamesSet])
+
+    const handleSavedToLibrary = (savedMappings: { lineId: string, articleId: string }[]) => {
+        const mappingMap = new Map(savedMappings.map(m => [m.lineId, m.articleId]))
+
+        // Lier immédiatement les lignes de devis avec leur nouvel article_id
+        setItems(prev => prev.map(it => {
+            if (mappingMap.has(it.id)) {
+                return { ...it, article_id: mappingMap.get(it.id) }
+            }
+            return it
+        }))
+
+        // Ajouter les nouveaux articles à la bibliothèque locale pour synchroniser en temps réel
+        const newlyCreated = items
+            .filter(it => mappingMap.has(it.id))
+            .map(it => ({
+                id: mappingMap.get(it.id),
+                name: it.description,
+                unit: it.unit,
+                price_ht: it.unit_price,
+                category: 'ouvrage'
+            }))
+        setLocalArticles(prev => [...prev, ...newlyCreated])
+    }
+
     const handleItemChange = (id: string, field: keyof DevisItem, value: any) => {
         setItems(prev => prev.map(item =>
             item.id === id ? { ...item, [field]: value } : item
         ))
+    }
+
+    // Référence pour l'upload d'image entre les lignes
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Drag & Drop et slide pour intervertir les lignes
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+    const moveItem = (index: number, direction: 'up' | 'down') => {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1
+        if (targetIndex < 0 || targetIndex >= items.length) return
+        setItems(prev => {
+            const next = [...prev]
+            const [moved] = next.splice(index, 1)
+            next.splice(targetIndex, 0, moved)
+            return next
+        })
+    }
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index)
+    }
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault()
+        if (dragOverIndex !== index) {
+            setDragOverIndex(index)
+        }
+    }
+
+    const handleDrop = (index: number) => {
+        if (draggedIndex === null || draggedIndex === index) {
+            setDraggedIndex(null)
+            setDragOverIndex(null)
+            return
+        }
+        setItems(prev => {
+            const next = [...prev]
+            const [moved] = next.splice(draggedIndex, 1)
+            next.splice(index, 0, moved)
+            return next
+        })
+        setDraggedIndex(null)
+        setDragOverIndex(null)
+    }
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null)
+        setDragOverIndex(null)
+    }
+
+    // Gestion de l'insertion et du remplacement d'image
+    const handleTriggerImageUpload = () => {
+        fileInputRef.current?.click()
+    }
+
+    const handleImageFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!file.type.startsWith('image/')) {
+            alert("Veuillez sélectionner un fichier image valide (PNG, JPG, WebP).")
+            return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+            const dataUrl = reader.result as string
+            const caption = file.name.replace(/\.[^/.]+$/, '')
+            const newImageItem: DevisItem = {
+                id: `new_${Date.now()}`,
+                description: caption,
+                quantity: 0,
+                unit: '',
+                unit_price: 0,
+                tva: 0,
+                item_type: 'image',
+                image_url: dataUrl,
+                caption: caption,
+                details: {
+                    is_image: true,
+                    image_url: dataUrl,
+                    caption: caption
+                }
+            }
+            setItems(prev => [...prev, newImageItem])
+        }
+        reader.readAsDataURL(file)
+        e.target.value = ''
+    }
+
+    const handleReplaceImage = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = () => {
+            const dataUrl = reader.result as string
+            setItems(prev => prev.map(it => it.id === id ? {
+                ...it,
+                image_url: dataUrl,
+                details: { ...it.details, image_url: dataUrl }
+            } : it))
+        }
+        reader.readAsDataURL(file)
+        e.target.value = ''
     }
 
     const handleAddLine = () => {
@@ -144,6 +341,22 @@ export default function DevisEditor({
     }
 
     const handleDeleteLine = async (id: string) => {
+        const itemToDelete = items.find(i => i.id === id)
+        let itemLabel = "cette ligne"
+        if (itemToDelete?.item_type === 'section') itemLabel = "ce chapitre"
+        else if (itemToDelete?.item_type === 'sub_section') itemLabel = "ce sous-chapitre"
+        else if (itemToDelete?.item_type === 'image') itemLabel = "cette photo"
+        else if (itemToDelete?.description) itemLabel = `la prestation « ${itemToDelete.description.trim().slice(0, 30)}${itemToDelete.description.length > 30 ? '...' : ''} »`
+
+        const ok = await confirm({
+            title: `Supprimer ${itemLabel} ?`,
+            message: `Êtes-vous sûr de vouloir supprimer ${itemLabel} du devis ? Cette action est irréversible.`,
+            confirmText: "Oui, supprimer",
+            cancelText: "Non, annuler",
+            variant: "danger"
+        })
+        if (!ok) return
+
         const previousItems = items
         setItems(items.filter(i => i.id !== id))
 
@@ -202,12 +415,12 @@ export default function DevisEditor({
         if (res?.success) {
             // Success
         } else {
-            alert("Erreur lors de l'enregistrement")
+            alert("Erreur lors de l'enregistrement" + (res?.error ? ` : ${res.error}` : ''))
         }
     }
 
-    // Calcul des totaux en temps réel (Exclure les sections, sous-sections et variantes non totalisées)
-    const calculableItems = items.filter(i => i.item_type !== 'section' && i.item_type !== 'sub_section' && !i.dont_totalize)
+    // Calcul des totaux en temps réel (Exclure les sections, sous-sections, images et variantes non totalisées)
+    const calculableItems = items.filter(i => i.item_type !== 'section' && i.item_type !== 'sub_section' && i.item_type !== 'image' && !i.dont_totalize)
     const totalHT = calculableItems.reduce((sum, item) => sum + (item.quantity * item.unit_price * (1 - (item.discount_pct || 0) / 100)), 0)
     const totalTVA = calculableItems.reduce((sum, item) => {
         const lineHT = item.quantity * item.unit_price * (1 - (item.discount_pct || 0) / 100)
@@ -215,6 +428,26 @@ export default function DevisEditor({
     }, 0)
     const totalTTC = totalHT + totalTVA
     const acompteMontant = (totalTTC * acomptePct) / 100
+
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
+
+    const handleGenerateCustomPdf = async (pdfConfig: DevisPdfColumnConfig) => {
+        const devisData = {
+            id: devisId,
+            name: name,
+            reference: reference,
+            status: initialStatus,
+            date_emission: dateEmission,
+            total_ht: totalHT,
+            total_ttc: totalTTC,
+            devis_items: items,
+            chantiers: {
+                name: chantierName,
+                clients: client
+            }
+        }
+        await generateCustomDevisPDF(devisData, pdfConfig)
+    }
 
     const currentItemDetails = items.find(i => i.id === currentCalcItem)?.details || []
 
@@ -241,14 +474,21 @@ export default function DevisEditor({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="h-full flex flex-col min-h-0">
 
             {/* --- MODALS --- */}
             <ArticleSelector
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
-                articles={articles}
+                articles={localArticles}
                 onSelect={handleSelectArticle}
+            />
+
+            <ImportToLibraryModal
+                isOpen={isImportToBiblioOpen}
+                onClose={() => setIsImportToBiblioOpen(false)}
+                candidateItems={importableItems}
+                onSuccess={handleSavedToLibrary}
             />
 
             <CalculatorPopover
@@ -265,8 +505,15 @@ export default function DevisEditor({
                 onSave={handleDetailSave}
             />
 
+            <DevisPdfExportModal
+                isOpen={isPdfModalOpen}
+                onClose={() => setIsPdfModalOpen(false)}
+                onGenerate={handleGenerateCustomPdf}
+                devisReference={reference || name || 'BTP'}
+            />
+
             {/* --- LAYOUT SCINDÉ GAUCHE / DROITE (100% de la hauteur, sans scroll global) --- */}
-            <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3.5 min-h-0 items-start">
+            <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3.5">
 
                 {/* ======================================================== */}
                 {/* COLONNE GAUCHE (8 colonnes) : ZONE DE SAISIE DU DEVIS    */}
@@ -319,11 +566,48 @@ export default function DevisEditor({
                         </PillButton>
 
                         <PillButton
+                            onClick={handleTriggerImageUpload}
+                            variant="secondary"
+                            icon={<ImageIcon size={13} />}
+                        >
+                            Insérer image
+                        </PillButton>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileSelected}
+                            className="hidden"
+                        />
+
+                        <PillButton
                             onClick={() => setIsSelectorOpen(true)}
                             variant="ai"
-                            icon={<Calculator size={13} />}
+                            icon={<Box size={13} />}
                         >
                             Bibliothèque
+                        </PillButton>
+
+                        <PillButton
+                            onClick={() => setIsImportToBiblioOpen(true)}
+                            disabled={importableItems.length === 0}
+                            variant="secondary"
+                            icon={<BookmarkPlus size={13} />}
+                            title={
+                                importableItems.length === 0
+                                    ? "Remplissez une nouvelle ligne (désignation, unité, prix) pour l'importer en bibliothèque"
+                                    : `Importer ${importableItems.length} nouvelle(s) prestation(s) dans la bibliothèque`
+                            }
+                        >
+                            Importer{importableItems.length > 0 ? ` (${importableItems.length})` : ''}
+                        </PillButton>
+
+                        <PillButton
+                            onClick={() => setIsPdfModalOpen(true)}
+                            variant="secondary"
+                            icon={<FileDown size={13} />}
+                        >
+                            Exporter PDF
                         </PillButton>
                     </div>
 
@@ -333,6 +617,7 @@ export default function DevisEditor({
                             <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                                 <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#0E1524] border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
                                     <tr>
+                                        <th className="px-2 py-2 w-12 text-center" title="Glisser ou cliquer pour intervertir">Ordre</th>
                                         <th className="px-3 py-2 w-16">Réf.</th>
                                         <th className="px-3 py-2">Désignation des travaux</th>
                                         <th className="px-3 py-2 w-20 text-center">Qté</th>
@@ -346,16 +631,62 @@ export default function DevisEditor({
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 italic text-xs">
-                                                Ce devis est vide. Commencez par ajouter des chapitres ou des prestations depuis la bibliothèque.
+                                            <td colSpan={9} className="py-12 text-center text-slate-400 dark:text-slate-500 italic text-xs">
+                                                Ce devis est vide. Commencez par ajouter des chapitres, des prestations ou des photos depuis la barre d'outils.
                                             </td>
                                         </tr>
                                     ) : (
-                                        items.map((item) => {
+                                        items.map((item, index) => {
+                                            // Handle drag & drop slide styles
+                                            const isDragged = draggedIndex === index
+                                            const isDragOver = dragOverIndex === index
+
                                             // 1. RENDER SECTION (CHAPITRE)
                                             if (item.item_type === 'section') {
                                                 return (
-                                                    <tr key={item.id} className="bg-slate-100/80 border-t-2 border-slate-300 hover:bg-slate-200/80 transition-colors group dark:bg-blue-950/40 dark:border-blue-500/30 dark:hover:bg-blue-900/40">
+                                                    <tr
+                                                        key={item.id}
+                                                        draggable
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDrop={() => handleDrop(index)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`bg-slate-100/80 border-t-2 border-slate-300 hover:bg-slate-200/80 transition-colors group dark:bg-blue-950/40 dark:border-blue-500/30 dark:hover:bg-blue-900/40 ${
+                                                            isDragged ? 'opacity-40' : ''
+                                                        } ${isDragOver ? 'border-t-4 border-indigo-600 bg-indigo-100/50' : ''}`}
+                                                    >
+                                                        {/* Poignée de réorganisation */}
+                                                        <td className="px-1 py-1.5 text-center">
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <span
+                                                                    className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                    title="Glisser pour déplacer ce chapitre"
+                                                                >
+                                                                    <GripVertical size={13} />
+                                                                </span>
+                                                                <div className="flex flex-col -space-y-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'up')}
+                                                                        disabled={index === 0}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Monter"
+                                                                    >
+                                                                        <ArrowUp size={9} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'down')}
+                                                                        disabled={index === items.length - 1}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Descendre"
+                                                                    >
+                                                                        <ArrowDown size={9} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
                                                         <td colSpan={7} className="px-3 py-2">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="flex h-4.5 w-4.5 items-center justify-center rounded bg-indigo-600 text-white font-mono text-[10px] font-bold shadow-xs">
@@ -386,8 +717,50 @@ export default function DevisEditor({
                                             // 2. RENDER SUB-SECTION (SOUS-CHAPITRE)
                                             if (item.item_type === 'sub_section') {
                                                 return (
-                                                    <tr key={item.id} className="bg-slate-50/60 border-t border-dashed border-slate-200 hover:bg-slate-100/60 transition-colors group dark:bg-white/[0.02] dark:border-slate-800 dark:hover:bg-white/[0.04]">
-                                                        <td colSpan={7} className="px-3 py-1.5 pl-6">
+                                                    <tr
+                                                        key={item.id}
+                                                        draggable
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDrop={() => handleDrop(index)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`bg-slate-50/60 border-t border-dashed border-slate-200 hover:bg-slate-100/60 transition-colors group dark:bg-white/[0.02] dark:border-slate-800 dark:hover:bg-white/[0.04] ${
+                                                            isDragged ? 'opacity-40' : ''
+                                                        } ${isDragOver ? 'border-t-4 border-indigo-600 bg-indigo-100/50' : ''}`}
+                                                    >
+                                                        {/* Poignée de réorganisation */}
+                                                        <td className="px-1 py-1.5 text-center">
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <span
+                                                                    className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                    title="Glisser pour déplacer ce sous-chapitre"
+                                                                >
+                                                                    <GripVertical size={13} />
+                                                                </span>
+                                                                <div className="flex flex-col -space-y-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'up')}
+                                                                        disabled={index === 0}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Monter"
+                                                                    >
+                                                                        <ArrowUp size={9} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'down')}
+                                                                        disabled={index === items.length - 1}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Descendre"
+                                                                    >
+                                                                        <ArrowDown size={9} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        <td colSpan={7} className="px-3 py-1.5 pl-4">
                                                             <div className="flex items-center gap-1.5">
                                                                 <FolderPlus size={13} className="text-indigo-500 shrink-0" />
                                                                 <input
@@ -412,12 +785,159 @@ export default function DevisEditor({
                                                 )
                                             }
 
-                                            // 3. RENDER STANDARD ITEM (LIGNE DE DEVIS BTP)
+                                            // 3. RENDER IMAGE (PHOTO / VISUEL ENTRE LES LIGNES)
+                                            if (item.item_type === 'image') {
+                                                return (
+                                                    <tr
+                                                        key={item.id}
+                                                        draggable
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDrop={() => handleDrop(index)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`bg-indigo-50/30 border-y-2 border-indigo-200/80 hover:bg-indigo-50/50 transition-colors group dark:bg-indigo-950/20 dark:border-indigo-800/60 ${
+                                                            isDragged ? 'opacity-40' : ''
+                                                        } ${isDragOver ? 'border-t-4 border-indigo-600 bg-indigo-100/50' : ''}`}
+                                                    >
+                                                        {/* Poignée de réorganisation */}
+                                                        <td className="px-1 py-2 text-center align-middle">
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <span
+                                                                    className="cursor-grab active:cursor-grabbing p-1 text-indigo-500 hover:text-indigo-700 rounded transition-colors"
+                                                                    title="Glisser pour déplacer cette photo"
+                                                                >
+                                                                    <GripVertical size={13} />
+                                                                </span>
+                                                                <div className="flex flex-col -space-y-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'up')}
+                                                                        disabled={index === 0}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Monter"
+                                                                    >
+                                                                        <ArrowUp size={9} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'down')}
+                                                                        disabled={index === items.length - 1}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Descendre"
+                                                                    >
+                                                                        <ArrowDown size={9} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Contenu photo pleine largeur */}
+                                                        <td colSpan={7} className="px-3 py-2.5">
+                                                            <div className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-[#131B2A] p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/50 shadow-xs">
+                                                                {/* Miniature photo */}
+                                                                <div className="relative group/photo shrink-0">
+                                                                    {item.image_url ? (
+                                                                        <img
+                                                                            src={item.image_url}
+                                                                            alt={item.description || 'Photo devis'}
+                                                                            className="h-20 w-32 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="h-20 w-32 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-400">
+                                                                            <ImageIcon size={20} />
+                                                                        </div>
+                                                                    )}
+                                                                    <label className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover/photo:opacity-100 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-opacity text-[10px] font-semibold gap-1">
+                                                                        <Upload size={13} />
+                                                                        Changer
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            onChange={(e) => handleReplaceImage(item.id, e)}
+                                                                            className="hidden"
+                                                                        />
+                                                                    </label>
+                                                                </div>
+
+                                                                {/* Légende modifiable */}
+                                                                <div className="flex-1 w-full space-y-1">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="flex items-center gap-1 text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 rounded border border-indigo-200/60 dark:border-indigo-800/40">
+                                                                            <ImageIcon size={10} /> Photo insérée entre les lignes
+                                                                        </span>
+                                                                    </div>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={item.description}
+                                                                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                                                                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-medium focus:border-indigo-500 outline-none"
+                                                                        placeholder="Légende / commentaire de la photo (ex: État des lieux initial)"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Supprimer photo */}
+                                                        <td className="px-3 py-1.5 text-center align-middle">
+                                                            <button
+                                                                onClick={() => handleDeleteLine(item.id)}
+                                                                className="text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                                                title="Supprimer cette photo"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            }
+
+                                            // 4. RENDER STANDARD ITEM (LIGNE DE DEVIS BTP)
                                             return (
                                                 <Fragment key={item.id}>
-                                                    <tr className={`hover:bg-slate-50/80 dark:hover:bg-[#162032] transition-colors group relative ${
-                                                        item.dont_totalize ? 'opacity-70 bg-amber-50/30 dark:bg-amber-500/5' : ''
-                                                    }`}>
+                                                    <tr
+                                                        draggable
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDrop={() => handleDrop(index)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`hover:bg-slate-50/80 dark:hover:bg-[#162032] transition-colors group relative ${
+                                                            item.dont_totalize ? 'opacity-70 bg-amber-50/30 dark:bg-amber-500/5' : ''
+                                                        } ${isDragged ? 'opacity-40' : ''} ${
+                                                            isDragOver ? 'border-t-4 border-indigo-600 bg-indigo-100/50' : ''
+                                                        }`}
+                                                    >
+                                                        {/* Poignée de réorganisation */}
+                                                        <td className="px-1 py-1.5 text-center">
+                                                            <div className="flex items-center justify-center gap-0.5">
+                                                                <span
+                                                                    className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                                                    title="Glisser pour déplacer cette prestation"
+                                                                >
+                                                                    <GripVertical size={13} />
+                                                                </span>
+                                                                <div className="flex flex-col -space-y-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'up')}
+                                                                        disabled={index === 0}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Monter"
+                                                                    >
+                                                                        <ArrowUp size={9} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => moveItem(index, 'down')}
+                                                                        disabled={index === items.length - 1}
+                                                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-20 p-0.5 cursor-pointer"
+                                                                        title="Descendre"
+                                                                    >
+                                                                        <ArrowDown size={9} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
                                                         {/* Référence */}
                                                         <td className="px-3 py-1.5">
                                                             <span className="font-mono text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded border border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/50">
@@ -536,7 +1056,7 @@ export default function DevisEditor({
                                                     {/* EXPANDED OUVRAGE */}
                                                     {item.components && expandedItems.has(item.id) && (
                                                         <tr className="bg-slate-50/70 border-b border-slate-100 dark:bg-white/[0.02] dark:border-slate-800">
-                                                            <td colSpan={8} className="px-3.5 py-2 pl-10">
+                                                            <td colSpan={9} className="px-3.5 py-2 pl-12">
                                                                 <div className="text-[10px] uppercase text-slate-400 mb-1 font-semibold tracking-wider flex items-center gap-2">
                                                                     <span>📦 Composition de l'ouvrage</span>
                                                                     <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
@@ -556,7 +1076,7 @@ export default function DevisEditor({
                                                     {/* DISPLAY DETAILS (Métré) if present */}
                                                     {item.details && item.details.length > 0 && (
                                                         <tr className="bg-violet-50/60 border-b border-violet-100 dark:bg-violet-950/20 dark:border-violet-900/30">
-                                                            <td colSpan={8} className="px-3.5 py-1.5 pl-10 text-[10px] text-violet-700 font-mono dark:text-violet-300">
+                                                            <td colSpan={9} className="px-3.5 py-1.5 pl-12 text-[10px] text-violet-700 font-mono dark:text-violet-300">
                                                                 <span className="mr-2 opacity-70">Minute :</span>
                                                                 {item.details.map((d: any, i: number) => (
                                                                     <span key={i} className="mr-2.5">
@@ -572,22 +1092,22 @@ export default function DevisEditor({
                                         })
                                     )}
                                 </tbody>
-                                {/* Pied de tableau : Récapitulatif rapide HT */}
-                                <tfoot className="bg-slate-50/90 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                    <tr>
-                                        <td colSpan={4} className="px-3 py-2 text-slate-400 dark:text-slate-500 text-[10px] font-normal">
-                                            {calculableItems.length} prestation(s) chiffrée(s)
-                                        </td>
-                                        <td colSpan={2} className="px-3 py-2 text-right text-slate-500 dark:text-slate-400 text-[10px]">
-                                            Total HT
-                                        </td>
-                                        <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
-                                            {totalHT.toFixed(2)} €
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
                             </table>
+                        </div>
+
+                        {/* PIED DE CARTE FIXÉ EN BAS (Toujours ancré en bas, exactement comme demandé) */}
+                        <div className="shrink-0 bg-slate-50/95 dark:bg-[#0E1524] border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                                {calculableItems.length} prestation(s) chiffrée(s)
+                            </span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Total HT
+                                </span>
+                                <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                                    {totalHT.toFixed(2)} €
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -595,10 +1115,10 @@ export default function DevisEditor({
                 {/* ======================================================== */}
                 {/* COLONNE DROITE (4 colonnes) : BTP INFO, TOTAUX & ACTIONS  */}
                 {/* ======================================================== */}
-                <div className="xl:col-span-4 h-full overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+                <div className="xl:col-span-4 h-full flex flex-col gap-2.5 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
 
                     {/* 1. CARTE INFOS CHANTIER & PRO BTP (EN HAUT À LA DEMANDE DE L'UTILISATEUR) */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2.5">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 Informations Chantier
@@ -687,7 +1207,7 @@ export default function DevisEditor({
                     </div>
 
                     {/* 2. CARTE FINANCIÈRE RÉCAPITULATIVE (Totaux & Acompte) */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                    <div className="flex-1 min-h-fit rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs flex flex-col justify-between space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                             Récapitulatif Financier
                         </span>
@@ -739,7 +1259,7 @@ export default function DevisEditor({
                     </div>
 
                     {/* 3. ACTIONS DE VALIDATION DU DEVIS (PillButtons - EN BAS DE LA COLONNE DROITE) */}
-                    <div className="rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
+                    <div className="shrink-0 rounded-[18px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-3 shadow-xs space-y-2">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 Actions Devis
@@ -768,7 +1288,14 @@ export default function DevisEditor({
                             {/* Approbation (Conversion facture) */}
                             <PillButton
                                 onClick={async () => {
-                                    if (!confirm("Valider ce devis et créer la facture correspondante ?")) return
+                                    const ok = await confirm({
+                                        title: "Valider le devis et facturer ?",
+                                        message: "Êtes-vous sûr de vouloir approuver ce devis et créer la facture correspondante ?",
+                                        confirmText: "Oui, valider et facturer",
+                                        cancelText: "Non, annuler",
+                                        variant: "info"
+                                    })
+                                    if (!ok) return
                                     setLoading(true)
                                     await handleSave('en_attente_approbation')
                                     const { convertDevisToFacture } = await import('@/app/actions/factures')
@@ -789,6 +1316,15 @@ export default function DevisEditor({
                                 Approbation
                             </PillButton>
                         </div>
+
+                        <PillButton
+                            onClick={() => setIsPdfModalOpen(true)}
+                            variant="secondary"
+                            icon={<FileDown size={13} />}
+                            className="w-full text-xs py-1.5"
+                        >
+                            Exporter PDF (Personnaliser...)
+                        </PillButton>
 
                         {/* Actions secondaires en ligne compacte */}
                         <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
@@ -826,7 +1362,14 @@ export default function DevisEditor({
 
                             <button
                                 onClick={async () => {
-                                    if (!confirm("Créer une situation de travaux pour ce devis ?")) return
+                                    const ok = await confirm({
+                                        title: "Créer une situation de travaux ?",
+                                        message: "Êtes-vous sûr de vouloir créer une situation de travaux pour ce devis ?",
+                                        confirmText: "Oui, créer la situation",
+                                        cancelText: "Non, annuler",
+                                        variant: "info"
+                                    })
+                                    if (!ok) return
                                     setLoading(true)
                                     const { createSituation } = await import('@/app/actions/factures')
                                     const res = await createSituation(devisId)

@@ -139,9 +139,9 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)]">
-            {/* Barre de recherche et filtres */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md mb-4 shrink-0">
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* Barre de recherche et filtres (Fixed) */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md mb-3 shrink-0">
                 <div className="relative flex-1 w-full md:max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
                     <input

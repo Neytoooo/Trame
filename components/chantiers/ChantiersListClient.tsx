@@ -41,20 +41,24 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
     }, [hasMore, isLoading, loadMore])
 
     return (
-        <div className="space-y-6">
-            <div className="relative max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={17} />
-                <input
-                    type="text"
-                    placeholder="Rechercher un chantier..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
-                />
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* Search Input (Fixed) */}
+            <div className="shrink-0 pb-4">
+                <div className="relative max-w-md">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={17} />
+                    <input
+                        type="text"
+                        placeholder="Rechercher un chantier..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2A] py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none shadow-xs transition-all"
+                    />
+                </div>
             </div>
 
-            {/* Grille des chantiers */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Grille des chantiers (Scrollable) */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 space-y-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {chantiers?.map((chantier: any) => {
                     // Calcul de l'avancement
                     const nodes = chantier.chantier_nodes || []
@@ -133,6 +137,7 @@ export default function ChantiersListClient({ initialChantiers }: { initialChant
                     )}
                 </div>
             )}
+            </div>
         </div>
     )
 }

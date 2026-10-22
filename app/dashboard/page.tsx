@@ -130,15 +130,15 @@ export default async function DashboardPage() {
         .slice(0, 5)
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
 
             {/* --- HERO GREETING SECTION (Style "Hi, Oliver Jack! Welcome Back") --- */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
+            <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1 pb-4">
                 <div>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base tracking-wide">
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-xs md:text-sm tracking-wide">
                         Bonjour, {displayName} !
                     </p>
-                    <h1 className="mt-1 text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <h1 className="mt-0.5 text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                         Tableau de Bord
                     </h1>
                 </div>
@@ -161,8 +161,11 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* --- TOP ROW BENTO GRID (3 Cards: Chantiers, Production & Trésorerie, Devis) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* --- DASHBOARD CONTENT (Contained, no full-page scroll) --- */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-6 pb-6 pr-0.5">
+
+                {/* --- TOP ROW BENTO GRID (3 Cards: Chantiers, Production & Trésorerie, Devis) --- */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 {/* BENTO CARD 1: Chantiers en cours (Style "Patients Today") */}
                 <div className="relative overflow-hidden bg-white/95 dark:bg-[#131B2A] backdrop-blur-md rounded-[28px] p-6 shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none border border-slate-200/70 dark:border-slate-800 hover:shadow-lg transition-all group">
@@ -485,9 +488,9 @@ export default async function DashboardPage() {
                         </div>
                     )}
                 </div>
-
             </div>
 
+            </div>
         </div>
     )
 }

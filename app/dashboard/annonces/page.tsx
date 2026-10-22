@@ -24,18 +24,20 @@ export default async function AnnoncesPage() {
     console.log("🔍 [ANNONCES PAGE] Fetched Notifications:", notifications?.length)
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+            <div className="shrink-0 flex items-center gap-4 pb-4">
                 <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-600/20">
                     <Bell className="text-blue-500" size={32} />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Annonces & Alertes</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Consultez vos notifications et confirmez vos commandes automatiques.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Annonces & Alertes</h1>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-gray-400 font-medium">Consultez vos notifications et confirmez vos commandes automatiques.</p>
                 </div>
             </div>
 
-            <NotificationList initialNotifications={notifications || []} />
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-10">
+                <NotificationList initialNotifications={notifications || []} />
+            </div>
         </div>
     )
 }

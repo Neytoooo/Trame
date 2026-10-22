@@ -151,10 +151,12 @@ export async function convertDevisToFacture(devisId: string) {
 
     if (devisError || !devis) return { error: "Devis introuvable" }
 
-    // 2. Créer la facture (ou récupérer l'existante)
+    // 2. Créer la facture (ou synchroniser l'existante)
     const newRef = devis.reference ? `F-${devis.reference}` : `F-${Date.now().toString().slice(-6)}`
 
-    // Vérifier si une facture existe déjà pour cette référence (pour éviter les doublons)
+    let targetFactureId = ''
+
+    // Vérifier si une facture existe déjà pour cette référence (pour éviter les doublons mais synchroniser les lignes)
     if (devis.reference) {
         const { data: existingFacture } = await supabase
             .from('factures')
@@ -163,28 +165,31 @@ export async function convertDevisToFacture(devisId: string) {
             .single()
 
         if (existingFacture) {
-            // Si elle existe, on redirige vers elle sans en créer une nouvelle
-            // On peut éventuellement mettre à jour le statut, mais le user a dit "pas créer plusieurs sauf si info diff"
-            // Ici on assume qu'on retourne l'existante.
-            return { success: true, factureId: existingFacture.id }
+            targetFactureId = existingFacture.id
+            // Nettoyer les anciennes lignes pour insérer la version à jour du devis
+            await supabase.from('factures_items').delete().eq('facture_id', targetFactureId)
         }
     }
 
-    const { data: facture, error: factureError } = await supabase
-        .from('factures')
-        .insert({
-            chantier_id: devis.chantier_id,
-            status: 'en_attente',
-            reference: newRef,
-            created_by: user.id,
-            // On pourrait copier les dates idoine si besoin
-        })
-        .select()
-        .single()
+    if (!targetFactureId) {
+        const { data: facture, error: factureError } = await supabase
+            .from('factures')
+            .insert({
+                chantier_id: devis.chantier_id,
+                status: 'en_attente',
+                reference: newRef,
+                created_by: user.id,
+                date_emission: new Date().toISOString().split('T')[0],
+                type: 'standard'
+            })
+            .select()
+            .single()
 
-    if (factureError) {
-        console.error(factureError)
-        return { error: "Erreur création facture" }
+        if (factureError || !facture) {
+            console.error(factureError)
+            return { error: "Erreur création facture" }
+        }
+        targetFactureId = facture.id
     }
 
     // 3. Copier les lignes et calculer les totaux
@@ -193,17 +198,20 @@ export async function convertDevisToFacture(devisId: string) {
 
     if (devis.devis_items && devis.devis_items.length > 0) {
         const itemsToInsert = devis.devis_items.map((item: any) => {
-            totalHT += (item.quantity * item.unit_price)
-            totalTTC += (item.quantity * item.unit_price * (1 + (item.tva || 20) / 100))
+            const lineHT = (item.quantity || 0) * (item.unit_price || 0)
+            const lineTVA = lineHT * ((item.tva || 10) / 100)
+            totalHT += lineHT
+            totalTTC += (lineHT + lineTVA)
 
             return {
-                facture_id: facture.id,
+                facture_id: targetFactureId,
                 description: item.description,
                 quantity: item.quantity,
                 unit: item.unit,
                 unit_price: item.unit_price,
-                tva: item.tva,
-                article_id: item.article_id
+                tva: item.tva || 10,
+                article_id: item.article_id,
+                progress_percentage: 100
             }
         })
 
@@ -214,7 +222,7 @@ export async function convertDevisToFacture(devisId: string) {
         await supabase.from('factures').update({
             total_ht: totalHT,
             total_ttc: totalTTC
-        }).eq('id', facture.id)
+        }).eq('id', targetFactureId)
     }
 
     // 4. Mettre à jour le statut du devis
@@ -224,7 +232,7 @@ export async function convertDevisToFacture(devisId: string) {
     revalidatePath(`/dashboard/factures`)
 
     // On retourne l'ID pour rediriger
-    return { success: true, factureId: facture.id }
+    return { success: true, factureId: targetFactureId }
 }
 
 export async function createAcompte(devisId: string, percentage: number) {
@@ -250,7 +258,8 @@ export async function createAcompte(devisId: string, percentage: number) {
     if (error) return { error: "Erreur création acompte" }
 
     // 3. Create Item
-    const amount = (devis.total_ttc || 0) * (percentage / 100)
+    const totalTtcDevis = devis.total_ttc || (Number(devis.total_ht || 0) * 1.2)
+    const amount = totalTtcDevis * (percentage / 100)
     // Note: Acomptes are often treated as "Non soumis à TVA" on the deposit itself until actual invoice, 
     // BUT typically we show the amount TTC. 
     // To keep simple: 1 item, Qty 1, Price = Amount TTC, TVA = 0 (or simply handle as HT for logic).
@@ -273,7 +282,7 @@ export async function createAcompte(devisId: string, percentage: number) {
     // Update totals
     await supabase.from('factures').update({
         total_ht: amountHT,
-        total_ttc: (devis.total_ttc || 0) * (percentage / 100)
+        total_ttc: totalTtcDevis * (percentage / 100)
     }).eq('id', facture.id)
 
     revalidatePath('/dashboard/factures')
@@ -395,10 +404,11 @@ export async function fetchFacturesAction(offset: number, search: string) {
         .from('factures')
         .select(`
             *,
+            factures_items (*),
             chantiers (
                 id,
                 name,
-                clients ( id, name, email, billing_email )
+                clients ( id, name, address_line1, city, zip_code, email, billing_email )
             )
         `)
         .order('created_at', { ascending: false })

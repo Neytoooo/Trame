@@ -164,8 +164,7 @@ Format JSON attendu :
                         })
                         
                         await supabase.from('devis').update({
-                            total_ht: totalHT,
-                            total_ttc: totalTTC
+                            total_ht: Math.round(totalHT * 100) / 100
                         }).eq('id', newDevis.id)
                     }
                 }

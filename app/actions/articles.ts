@@ -91,48 +91,165 @@ export async function searchArticles(query: string) {
     return data || []
 }
 
-export async function importArticlesAction(articles: any[]) {
+export type ImportArticleItem = {
+    name: string
+    category?: string
+    unit?: string
+    price_ht?: number
+    cost_ht?: number
+    reference?: string | null
+    tva?: number
+    stock?: number
+    min_stock?: number
+    supplier?: string | null
+    hasConflict?: boolean
+    existingId?: string
+    conflictStrategy?: 'replace' | 'rename' | 'skip'
+}
+
+export async function getExistingArticlesForImportAction() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data } = await supabase
+        .from('articles')
+        .select('id, name, reference, unit, price_ht, cost_ht')
+        .order('name', { ascending: true })
+
+    return data || []
+}
+
+export async function importArticlesWithConflictsAction(items: ImportArticleItem[]) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: "Non connecté" }
 
-    // Préparer les données
-    const preparedData = articles.map(a => ({
-        created_by: user.id,
-        name: a.name,
-        category: a.category || 'fourniture',
-        unit: a.unit || 'u',
-        price_ht: a.price_ht || 0,
-        cost_ht: a.cost_ht || 0,
-        reference: a.reference || null,
-        tva: a.tva || 20,
-        stock: a.stock || 0,
-        min_stock: a.min_stock || 0,
-        supplier: a.supplier || null
-    }))
+    let insertedCount = 0
+    let updatedCount = 0
+    let skippedCount = 0
 
-    // Insertion en masse
-    const { error } = await supabase.from('articles').insert(preparedData)
+    const toInsert: any[] = []
 
-    if (error) {
-        console.error("Erreur import articles:", error)
-        return { error: "Erreur lors de l'importation en base de données" }
+    for (const item of items) {
+        if (item.hasConflict) {
+            if (item.conflictStrategy === 'skip') {
+                skippedCount++
+                continue
+            } else if (item.conflictStrategy === 'replace' && item.existingId) {
+                const updatePayload: any = {
+                    category: item.category || 'fourniture',
+                    unit: item.unit || 'u',
+                    price_ht: item.price_ht || 0,
+                    cost_ht: item.cost_ht || 0,
+                    tva: item.tva || 20,
+                    stock: item.stock || 0,
+                    min_stock: item.min_stock || 0
+                }
+                if (item.reference) updatePayload.reference = item.reference
+                if (item.supplier) updatePayload.supplier = item.supplier
+
+                const { error: updErr } = await supabase
+                    .from('articles')
+                    .update(updatePayload)
+                    .eq('id', item.existingId)
+
+                if (!updErr) {
+                    updatedCount++
+                } else {
+                    console.error("Erreur mise à jour article:", updErr)
+                }
+                continue
+            }
+        }
+
+        // Insertion (article nouveau ou renommé)
+        toInsert.push({
+            created_by: user.id,
+            name: item.name,
+            category: item.category || 'fourniture',
+            unit: item.unit || 'u',
+            price_ht: item.price_ht || 0,
+            cost_ht: item.cost_ht || 0,
+            reference: item.reference || null,
+            tva: item.tva || 20,
+            stock: item.stock || 0,
+            min_stock: item.min_stock || 0,
+            supplier: item.supplier || null
+        })
+    }
+
+    if (toInsert.length > 0) {
+        const { error: insErr } = await supabase.from('articles').insert(toInsert)
+        if (insErr) {
+            console.error("Erreur import articles:", insErr)
+            return { error: "Erreur lors de l'insertion des articles en base de données" }
+        }
+        insertedCount = toInsert.length
     }
 
     revalidatePath('/dashboard/articles')
-    return { success: true, count: preparedData.length }
+    return {
+        success: true,
+        count: insertedCount + updatedCount,
+        insertedCount,
+        updatedCount,
+        skippedCount
+    }
+}
+
+// Rétrocompatibilité
+export async function importArticlesAction(articles: any[]) {
+    return importArticlesWithConflictsAction(articles)
 }
 
 import { BTP_PRESTATIONS_CATALOG } from '@/lib/btpCatalog'
 
-export async function seedBtpCatalogAction() {
+export async function restoreBtpCatalogNonDestructiveAction() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: "Vous devez être connecté." }
 
-    const preparedData = BTP_PRESTATIONS_CATALOG.map(a => ({
+    // 1. Récupérer TOUS les articles existants en base pour cet utilisateur
+    const { data: existingArticles, error: fetchErr } = await supabase
+        .from('articles')
+        .select('name, reference')
+
+    if (fetchErr) {
+        console.error("Erreur récupération articles existants:", fetchErr)
+    }
+
+    const existingNames = new Set((existingArticles || []).map(a => a.name?.trim().toLowerCase()))
+    const existingRefs = new Set((existingArticles || []).map(a => a.reference?.trim().toLowerCase()).filter(Boolean))
+
+    // 2. Ne sélectionner QUE les articles du catalogue standard BTP qui ne sont pas déjà en base
+    const missingArticles = BTP_PRESTATIONS_CATALOG.filter(a => {
+        const primaryName = a.name.trim().toLowerCase()
+        const fullName = `${a.name}\n${a.complement}`.trim().toLowerCase()
+        const hyphenName = `${a.name} - ${a.complement}`.trim().toLowerCase()
+        const ref = (a.reference || '').trim().toLowerCase()
+
+        if (existingNames.has(primaryName) || existingNames.has(fullName) || existingNames.has(hyphenName)) {
+            return false
+        }
+        if (ref && existingRefs.has(ref)) {
+            return false
+        }
+        return true
+    })
+
+    if (missingArticles.length === 0) {
+        return {
+            success: true,
+            restoredCount: 0,
+            message: "Toutes les prestations du catalogue BTP sont déjà présentes."
+        }
+    }
+
+    // 3. Insérer uniquement les articles manquants SANS toucher aux articles personnalisés de l'utilisateur
+    const preparedData = missingArticles.map(a => ({
         created_by: user.id,
         name: `${a.name}\n${a.complement}`,
         category: a.category,
@@ -146,15 +263,23 @@ export async function seedBtpCatalogAction() {
         supplier: `${a.metier} - ${a.famille}`
     }))
 
-    const { error } = await supabase.from('articles').insert(preparedData)
+    const { error: insErr } = await supabase.from('articles').insert(preparedData)
 
-    if (error) {
-        console.error("Erreur seed catalogue BTP:", error)
-        return { error: "Erreur lors de l'enregistrement du catalogue." }
+    if (insErr) {
+        console.error("Erreur restauration catalogue BTP:", insErr)
+        return { error: "Erreur lors de l'enregistrement des articles manquants." }
     }
 
     revalidatePath('/dashboard/articles')
-    return { success: true, count: preparedData.length }
+    return {
+        success: true,
+        restoredCount: preparedData.length,
+        message: `${preparedData.length} prestations standards du catalogue BTP ont été réintégrées avec succès.`
+    }
+}
+
+export async function seedBtpCatalogAction() {
+    return restoreBtpCatalogNonDestructiveAction()
 }
 
 export async function fetchArticlesAction(offset: number, search: string) {
@@ -205,4 +330,64 @@ export async function fetchArticlesAction(offset: number, search: string) {
     }
 
     return data || []
+}
+
+export async function saveQuoteLinesToArticlesAction(lines: {
+    lineId: string
+    name: string
+    unit: string
+    price_ht: number
+    cost_ht?: number
+    category?: string
+    reference?: string
+    tva?: number
+}[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: "Vous devez être connecté." }
+    if (!lines || lines.length === 0) return { success: true, mappings: [] }
+
+    const payload = lines.map(l => ({
+        created_by: user.id,
+        name: l.name.trim(),
+        unit: l.unit?.trim() || 'u',
+        price_ht: l.price_ht || 0,
+        cost_ht: l.cost_ht || 0,
+        category: l.category || 'ouvrage',
+        reference: l.reference || null,
+        tva: l.tva || 20,
+        stock: 0,
+        min_stock: 0
+    }))
+
+    const { data, error } = await supabase
+        .from('articles')
+        .insert(payload)
+        .select('id, name')
+
+    if (error) {
+        console.error("Erreur enregistrement prestations dans articles:", error)
+        return { error: "Erreur lors de l'enregistrement dans la bibliothèque." }
+    }
+
+    // Associer les IDs d'articles créés aux lineId d'origine
+    const mappings: { lineId: string, articleId: string }[] = []
+    if (data && data.length > 0) {
+        lines.forEach((l, index) => {
+            if (data[index]) {
+                mappings.push({
+                    lineId: l.lineId,
+                    articleId: data[index].id
+                })
+            }
+        })
+    }
+
+    revalidatePath('/dashboard/articles')
+    return {
+        success: true,
+        count: data?.length || 0,
+        mappings
+    }
 }

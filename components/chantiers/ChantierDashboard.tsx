@@ -29,7 +29,7 @@ export default function ChantierDashboard({
 }: ChantierDashboardProps) {
 
     // Calculations for KPIs
-    const totalDevis = devisList.reduce((acc, curr) => acc + (Number(curr.total_ttc) || Number(curr.total_ht) || 0), 0)
+    const totalDevis = devisList.reduce((acc, curr) => acc + (Number(curr.total_ttc) || (Number(curr.total_ht) * 1.2) || 0), 0)
     const totalFactures = facturesList.reduce((acc, curr) => acc + (Number(curr.total_ttc) || 0), 0)
     const paidFactures = facturesList.filter(f => f.status === 'payee' || f.status === 'paye')
     const totalPaid = paidFactures.reduce((acc, curr) => acc + (Number(curr.total_ttc) || 0), 0)
@@ -43,11 +43,13 @@ export default function ChantierDashboard({
         : 'CL'
 
     return (
-        <div className="space-y-5 animate-in fade-in duration-300">
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
             <ArticleStockListener chantierId={chantier.id} />
 
-            {/* --- 1. COMPACT HEADER --- */}
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* --- FIXED HEADER & KPIS --- */}
+            <div className="shrink-0 space-y-4 pb-3">
+                {/* --- 1. COMPACT HEADER --- */}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-1.5">
                     {/* Back Breadcrumb Pill */}
                     <Link
@@ -195,9 +197,11 @@ export default function ChantierDashboard({
                     </div>
                 </div>
             </div>
+            </div>
 
-            {/* --- 3. PANORAMIC 3-COLUMN BENTO (EVERYTHING ON THE SAME PAGE, ZERO TABS) --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            {/* --- 3. PANORAMIC 3-COLUMN BENTO (Scrollable) --- */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
                 {/* COLUMN 1: CLIENT & CHANTIER SPECIFICATIONS */}
                 <div className="rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-5 shadow-xs dark:shadow-none space-y-4">
@@ -357,7 +361,7 @@ export default function ChantierDashboard({
                                             Montant TTC
                                         </span>
                                         <span className="font-black text-slate-900 dark:text-white">
-                                            {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : '-- €'}
+                                            {devis.total_ttc ? `${Number(devis.total_ttc).toFixed(2)} €` : (devis.total_ht ? `${(Number(devis.total_ht) * 1.2).toFixed(2)} €` : '-- €')}
                                         </span>
                                     </div>
                                 </Link>
@@ -435,6 +439,7 @@ export default function ChantierDashboard({
                     )}
                 </div>
 
+            </div>
             </div>
         </div>
     )

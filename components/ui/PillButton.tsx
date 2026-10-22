@@ -13,6 +13,7 @@ interface BasePillButtonProps {
     className?: string
     loading?: boolean
     disabled?: boolean
+    title?: string
 }
 
 interface LinkPillButtonProps extends BasePillButtonProps {
@@ -68,6 +69,7 @@ export default function PillButton({
                 onClick={onClick}
                 target={target}
                 rel={rel}
+                title={props.title}
                 className={baseClasses}
             >
                 {content}
@@ -81,6 +83,7 @@ export default function PillButton({
             type={type}
             onClick={onClick}
             disabled={disabled || loading}
+            title={props.title}
             className={baseClasses}
         >
             {content}

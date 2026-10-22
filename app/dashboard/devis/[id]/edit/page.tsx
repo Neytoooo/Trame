@@ -83,8 +83,13 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
     // Déballage des métadonnées BTP
     const mappedItems = enrichedItems.map(item => {
         const d = (item.details && typeof item.details === 'object' && !Array.isArray(item.details)) ? item.details : {}
+        const isImage = d.is_image === true || item.item_type === 'image'
+        const isSubSection = d.is_sub_section === true || item.item_type === 'sub_section'
+        const restoredType = isImage ? 'image' : (isSubSection ? 'sub_section' : item.item_type)
         return {
             ...item,
+            item_type: restoredType,
+            image_url: d.image_url || item.image_url || '',
             reference: d.reference || '',
             complement: d.complement || '',
             discount_pct: d.discount_pct || 0,
@@ -94,7 +99,7 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
             cost_total: d.cost_total || 0,
             margin: d.margin || 0,
             margin_pct: d.margin_pct || 0,
-            dont_totalize: Boolean(d.dont_totalize),
+            dont_totalize: isImage ? true : Boolean(d.dont_totalize),
             copy_to_schedule: Boolean(d.copy_to_schedule),
             billed_pct: d.billed_pct || 100,
             commercial: d.commercial,
@@ -104,7 +109,7 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
     })
 
     return (
-        <div className="h-[calc(100vh-105px)] flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
+        <div className="h-full flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
 
             {/* HEADER NAVIGATION */}
             <div className="flex items-center justify-between shrink-0">
@@ -118,7 +123,7 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
             </div>
 
             {/* L'ÉDITEUR INTERACTIF (Prend tout l'espace restant sans dépasser) */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
                 <DevisEditor
                     initialItems={mappedItems}
                     devisId={devis.id}

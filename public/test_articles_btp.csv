@@ -1,0 +1,8 @@
+Reference,Designation,Categorie,Unite,Prix_Vente,Prix_Achat,TVA,Stock,Seuil_Alerte,Fournisseur
+RAVECHA,Mise en place d'un échafaudage tubulaire sur pieds,Ouvrage,Ens,720,350,10,80,10,Layher Échafaudages
+RAVBASEVIE,Location et mise en place d'une base vie 4-5 personnes,Fourniture,Forfait,1350,800,10,10,2,Algeco BTP
+RAV994,Montage et entretien d'un WC chimique de chantier,Fourniture,Forfait,750,380,10,15,3,Kiloutou Sanitaire
+MEN_FEN_PVC,Fourniture et pose de fenêtres PVC double vitrage 4/16/4,Fourniture,u,450,260,20,25,5,Lapeyre Pro
+MEN_PORTE_BLIND,Porte d'entrée blindée acier 3 points A2P*,Fourniture,u,1850,1100,20,8,2,Fichet BTP
+ISO_ITE_140,Isolation thermique par l'extérieur (ITE) polystyrène 140mm,Ouvrage,m2,85,48,10,400,50,Saint-Gobain Weber
+MAC_CHAPE_FLUIDE,Chape fluide ciment autonivelante épaisseur 5cm,Ouvrage,m2,32,16.5,10,250,30,Lafarge Bétons

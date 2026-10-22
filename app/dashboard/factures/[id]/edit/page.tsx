@@ -81,7 +81,7 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
     const client = facture.chantiers?.clients
 
     return (
-        <div className="h-[calc(100vh-105px)] flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
+        <div className="h-full flex flex-col gap-2.5 overflow-hidden animate-in fade-in duration-300">
 
             {/* HEADER NAVIGATION */}
             <div className="flex items-center justify-between shrink-0">
@@ -102,7 +102,7 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
             </div>
 
             {/* L'ÉDITEUR PREND LE RELAIS (Prend tout l'espace disponible sans dépasser) */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
                 <FactureEditor
                     initialItems={enrichedItems}
                     factureId={facture.id}
@@ -111,6 +111,7 @@ export default async function EditFacturePage({ params }: { params: Promise<{ id
                     initialStatus={facture.status}
                     initialDateEcheance={facture.date_echeance}
                     initialType={facture.type || 'standard'} // Default to standard if null
+                    initialSituationIndex={facture.situation_index}
                     chantierName={facture.chantiers?.name}
                     client={client}
                     dateEmission={facture.date_emission}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Filter, X, Calendar } from 'lucide-react'
+import { Search, Filter, X, Calendar, User } from 'lucide-react'
 import CustomSelect from '@/components/ui/CustomSelect'
 
 interface FilterOption {
@@ -17,6 +17,9 @@ interface FilterBarProps {
     statusValue: string
     dateRangeValue: string
     placeholder?: string
+    authorValue?: string
+    onAuthorChange?: (value: string) => void
+    authorOptions?: FilterOption[]
     children?: React.ReactNode
 }
 
@@ -29,6 +32,9 @@ export default function FilterBar({
     statusValue,
     dateRangeValue,
     placeholder = "Rechercher...",
+    authorValue,
+    onAuthorChange,
+    authorOptions,
     children
 }: FilterBarProps) {
     return (
@@ -65,6 +71,19 @@ export default function FilterBar({
                     ]}
                     icon={<Filter size={14} className="text-gray-500" />}
                 />
+
+                {/* Author Filter (Optional) */}
+                {onAuthorChange && authorOptions && (
+                    <CustomSelect
+                        value={authorValue || 'all'}
+                        onChange={onAuthorChange}
+                        options={[
+                            { label: 'Tous les collaborateurs', value: 'all' },
+                            ...authorOptions
+                        ]}
+                        icon={<User size={14} className="text-gray-500" />}
+                    />
+                )}
 
                 {/* Date Filter */}
                 <CustomSelect

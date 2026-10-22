@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function PlanningPage() {
     return (
-        <div className="space-y-6">
+        <div className="h-full flex flex-col overflow-hidden">
             <TechnicianSchedule />
         </div>
     )

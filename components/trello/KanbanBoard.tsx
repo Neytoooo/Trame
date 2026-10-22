@@ -80,13 +80,13 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
     }
 
     return (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex h-full gap-6 min-w-[800px] pb-4">
+        <div className="h-full flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex h-full gap-6 min-w-[800px] pb-2">
 
                 {/* COLUMN 1: TO DO */}
-                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col h-full bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md">
                     {/* Header */}
-                    <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
+                    <div className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
                         <div className="flex items-center gap-3">
                             <h2 className="font-bold text-slate-800 dark:text-slate-100 tracking-wide text-sm">À Faire</h2>
                             <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
@@ -99,7 +99,7 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
                         <AnimatePresence mode="popLayout">
                             {pendingNodes.map(node => (
                                 <motion.div
@@ -151,9 +151,9 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                 </div>
 
                 {/* COLUMN 2: TERMINÉ */}
-                <div className="flex-1 min-w-[340px] max-w-md flex flex-col bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md opacity-90 hover:opacity-100 transition-opacity">
+                <div className="flex-1 min-w-[340px] max-w-md flex flex-col h-full bg-white/95 dark:bg-[#131B2A] border border-slate-200/80 dark:border-slate-800 rounded-[28px] shadow-[0_12px_35px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden backdrop-blur-md opacity-90 hover:opacity-100 transition-opacity">
                     {/* Header */}
-                    <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
+                    <div className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1524]">
                         <div className="flex items-center gap-3">
                             <h2 className="font-bold text-slate-800 dark:text-slate-100 tracking-wide text-sm">Terminé</h2>
                             <span className="flex items-center justify-center h-5 min-w-[20px] px-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
@@ -163,7 +163,7 @@ export default function KanbanBoard({ nodes: initialNodes }: { nodes: any[] }) {
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-slate-50/30 dark:bg-[#0B0F17]/30">
                         <AnimatePresence mode="popLayout">
                             {doneNodes.map(node => (
                                 <motion.div
