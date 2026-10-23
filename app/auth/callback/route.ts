@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { getCurrentUserRoleAction } from '@/app/actions/users'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
@@ -56,6 +57,21 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
     }
 
-    console.log('✅ Auth réussie, redirection vers /dashboard')
+    // VÉRIFICATION WHITELIST : L'utilisateur doit être explicitement autorisé
+    try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+            const roleInfo = await getCurrentUserRoleAction(user.email)
+            if (!roleInfo.isAuthorized) {
+                console.warn(`⛔ Accès refusé pour ${user.email} : non enregistré dans la liste autorisée.`)
+                await supabase.auth.signOut()
+                return NextResponse.redirect(new URL('/?error=unauthorized_email', request.url))
+            }
+        }
+    } catch (e) {
+        console.error('Erreur vérification whitelist dans callback:', e)
+    }
+
+    console.log('✅ Auth & Whitelist validées, redirection vers /dashboard')
     return NextResponse.redirect(new URL('/dashboard', request.url))
 }

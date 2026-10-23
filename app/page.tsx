@@ -3,9 +3,10 @@
 import { createClient } from '@/utils/supabase/client'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, ArrowRight, LayoutDashboard, AlertCircle } from 'lucide-react'
+import { CheckCircle2, ArrowRight, LayoutDashboard, AlertCircle, ShieldAlert } from 'lucide-react'
 import { getURL } from '@/utils/getURL'
 import { useRouter } from 'next/navigation'
+import { checkEmailWhitelistedAction } from '@/app/actions/users'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -24,6 +25,8 @@ export default function LoginPage() {
         setAuthError("Échec de l'authentification. Veuillez réessayer.")
       } else if (error === 'no_code') {
         setAuthError("Erreur de redirection. Vérifiez vos URLs dans Supabase.")
+      } else if (error === 'unauthorized_email') {
+        setAuthError("Accès restreint : Votre adresse email n'est pas autorisée sur cette application. Contactez votre administrateur pour recevoir une invitation.")
       }
     }
   }, [])
@@ -58,10 +61,22 @@ export default function LoginPage() {
     setLoading(true)
     setAuthError(null)
 
+    // Vérification de la whitelist en amont
+    try {
+      const whitelistCheck = await checkEmailWhitelistedAction(email)
+      if (!whitelistCheck.isWhitelisted) {
+        setAuthError(whitelistCheck.message || "Cette adresse email n'est pas autorisée sur cet espace d'entreprise.")
+        setLoading(false)
+        return
+      }
+    } catch (err) {
+      console.warn('Vérification whitelist ignorée:', err)
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      alert(error.message)
+      setAuthError(error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message)
       setLoading(false)
     } else {
       router.refresh()
@@ -129,14 +144,16 @@ export default function LoginPage() {
         <div className="flex flex-col justify-center bg-white p-8 md:p-12">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Bon retour parmi nous</h2>
-            <p className="text-sm text-gray-500">Connectez-vous pour accéder à votre espace.</p>
+            <p className="text-sm text-gray-500">Connectez-vous pour accéder à votre espace d'entreprise.</p>
           </div>
 
-          {/* Message d'erreur d'authentification */}
+          {/* Message d'erreur d'authentification ou whitelist */}
           {authError && (
-            <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-700">{authError}</p>
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/90 p-4 text-rose-800 animate-in fade-in duration-200">
+              <ShieldAlert className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div className="text-xs leading-relaxed font-medium">
+                {authError}
+              </div>
             </div>
           )}
 
@@ -191,16 +208,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? 'Connexion en cours...' : 'Se connecter'}
               <ArrowRight size={18} />
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-500">
-            Pas encore de compte ?{' '}
-            <a href="#" className="font-semibold text-blue-600 hover:text-blue-500">Nous contacter</a>
+          <p className="mt-8 text-center text-xs text-gray-400">
+            Plateforme à accès restreint. Les comptes doivent être préalablement enregistrés par un administrateur.
           </p>
         </div>
       </div>

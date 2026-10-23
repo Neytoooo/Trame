@@ -1,6 +1,7 @@
 import { getCachedUser } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import TopPillNavbar from '@/components/dashboard/TopPillNavbar'
+import { getCurrentUserRoleAction } from '@/app/actions/users'
 
 export default async function DashboardLayout({
     children,
@@ -11,6 +12,13 @@ export default async function DashboardLayout({
 
     if (!user) {
         redirect('/')
+    }
+
+    const roleInfo = await getCurrentUserRoleAction(user.email)
+
+    // Si l'utilisateur n'est pas autorisé (ex: pas sur la whitelist ou suspendu)
+    if (!roleInfo.isAuthorized) {
+        redirect('/?error=unauthorized_email')
     }
 
     return (
@@ -30,7 +38,11 @@ export default async function DashboardLayout({
 
             {/* --- TOP FLOATING PILL NAVBAR (Always pinned) --- */}
             <div className="shrink-0 z-50 pt-2.5 pb-2 w-full">
-                <TopPillNavbar user={user} />
+                <TopPillNavbar
+                    user={user}
+                    userRole={roleInfo.role}
+                    displayName={roleInfo.displayName}
+                />
             </div>
 
             {/* --- MAIN WORKSPACE CONTAINER --- */}

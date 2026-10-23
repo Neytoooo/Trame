@@ -9,7 +9,12 @@ export default async function DashboardPage() {
 
     // 1. User Info (memoized via React.cache, 0 network latency)
     const user = await getCachedUser()
-    const displayName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Chef"
+    const userProfile = user?.email === 'mattiskhn@gmail.com'
+        ? { firstName: 'Mattis', displayName: 'Mattis Khn' }
+        : user?.email === 'mattiskhn2@gmail.com'
+        ? { firstName: 'Mattis', displayName: 'Mattis Khn (Second)' }
+        : { firstName: user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Collaborateur", displayName: user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Collaborateur" }
+    const displayName = userProfile.firstName
 
     // 2. Date Ranges for Revenue (Current Month vs Last Month)
     const now = new Date()
@@ -377,7 +382,7 @@ export default async function DashboardPage() {
                             10
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">Alexandre V. & Équipes BTP</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{displayName} & Équipes BTP</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">Poissy, Saint-Mandé, Conflans</p>
                         </div>
                     </div>

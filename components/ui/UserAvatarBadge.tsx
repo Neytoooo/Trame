@@ -36,11 +36,11 @@ export function getAuthorInfo(createdById?: string | null) {
         }
     }
     return {
-        id: 'user-alexandre',
-        name: 'Alexandre Vinuesa',
-        role: 'Directeur d\'Exploitation & Travaux',
-        initials: 'AV',
-        email: 'alexandre.v@trame-btp.fr',
+        id: 'user-default',
+        name: 'Collaborateur Trame',
+        role: 'Équipe Travaux',
+        initials: 'CT',
+        email: 'collaborateur@trame-btp.fr',
         colorKey: 'indigo'
     }
 }
@@ -83,9 +83,9 @@ export default function UserAvatarBadge({ author, createdById, createdAt, size =
             resolvedInitials = resolvedEmail.slice(0, 2).toUpperCase()
             resolvedName = resolvedEmail
         } else {
-            resolvedInitials = 'AV' // Default Alexandre Vinuesa (Directeur Trame)
-            resolvedName = 'Alexandre Vinuesa'
-            resolvedRole = 'Conducteur de Travaux'
+            resolvedInitials = 'CB'
+            resolvedName = 'Collaborateur BTP'
+            resolvedRole = 'Équipe Travaux'
             colorKey = 'indigo'
         }
     }

@@ -19,7 +19,8 @@ import {
     Settings,
     ChevronDown,
     LogOut,
-    ShieldCheck
+    ShieldCheck,
+    UserCheck
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -27,9 +28,11 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface TopPillNavbarProps {
     user: any
+    userRole?: string
+    displayName?: string
 }
 
-export default function TopPillNavbar({ user }: TopPillNavbarProps) {
+export default function TopPillNavbar({ user, userRole, displayName }: TopPillNavbarProps) {
     const pathname = usePathname()
     const router = useRouter()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -48,10 +51,24 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
         router.push('/')
     }
 
-    const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Chef"
-    const displayName = user?.user_metadata?.first_name 
+    // Résolution intelligente du prénom et du nom pour éviter tout nom démo intrusif
+    const actualDisplayName = displayName || (user?.user_metadata?.first_name 
         ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-        : user?.email?.split('@')[0] || "Utilisateur"
+        : (user?.email?.split('@')[0] || "Collaborateur"))
+    const firstName = actualDisplayName.split(' ')[0] || "Collaborateur"
+    const userInitial = (firstName[0] || user?.email?.[0] || 'U').toUpperCase()
+
+    const isAdmin = userRole === 'admin'
+
+    const roleLabels: Record<string, string> = {
+        admin: 'Administrateur',
+        charge_affaires: 'Chargé d\'Affaires',
+        metreur: 'Métreur / Chiffreur',
+        conducteur_travaux: 'Conducteur Travaux',
+        chef_chantier: 'Chef de Chantier',
+        comptabilite: 'Comptabilité'
+    }
+    const currentRoleLabel = roleLabels[userRole || ''] || (isAdmin ? 'Administrateur' : 'Collaborateur BTP')
 
     const isLinkActive = (href: string) => {
         if (href === '/dashboard') return activePath === '/dashboard'
@@ -113,7 +130,14 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
             href: "/dashboard/equipe",
             icon: <Users size={14} />,
             active: isLinkActive('/dashboard/equipe')
-        }
+        },
+        // STRICTEMENT RÉSERVÉ À L'ADMINISTRATEUR (Ne s'affiche JAMAIS pour les autres rôles comme Métreur)
+        ...(isAdmin ? [{
+            name: "Utilisateurs",
+            href: "/dashboard/utilisateurs",
+            icon: <UserCheck size={14} />,
+            active: isLinkActive('/dashboard/utilisateurs')
+        }] : [])
     ]
 
     return (
@@ -126,16 +150,16 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                         className="flex items-center gap-2.5 bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700 group cursor-pointer"
                     >
-                        <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs shadow-xs">
-                            {firstName[0]?.toUpperCase()}
+                        <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs shadow-xs">
+                            {userInitial}
                             <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border-2 border-white dark:border-[#131B2A] rounded-full"></span>
                         </div>
                         <div className="text-left hidden sm:block pr-1">
                             <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                {displayName}
+                                {actualDisplayName}
                             </p>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-none">
-                                Administrateur
+                                {currentRoleLabel}
                             </p>
                         </div>
                         <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : ''}`} />
@@ -145,13 +169,23 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                     {userMenuOpen && (
                         <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#131B2A] border border-slate-200 dark:border-slate-800 p-2 shadow-xl shadow-slate-900/10 dark:shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
                             <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80">
-                                <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">{user?.email}</p>
+                                <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{user?.email}</p>
                                 <span className="inline-flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
                                     <ShieldCheck size={11} />
-                                    Accès Complet BTP
+                                    {isAdmin ? 'Accès Administrateur BTP' : `Accès ${currentRoleLabel}`}
                                 </span>
                             </div>
                             <div className="py-1">
+                                {isAdmin && (
+                                    <Link
+                                        href="/dashboard/utilisateurs"
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-colors font-medium"
+                                    >
+                                        <UserCheck size={14} />
+                                        Gestion Utilisateurs
+                                    </Link>
+                                )}
                                 <Link
                                     href="/dashboard/planning"
                                     onClick={() => setUserMenuOpen(false)}
@@ -172,7 +206,7 @@ export default function TopPillNavbar({ user }: TopPillNavbarProps) {
                             <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80">
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left font-medium"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left font-medium cursor-pointer"
                                 >
                                     <LogOut size={14} />
                                     Se déconnecter

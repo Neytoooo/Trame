@@ -1,6 +1,7 @@
 import { createClient, getCachedUser } from '@/utils/supabase/server'
 import { INITIAL_TEAM_MEMBERS, computeCompanyTotals, TeamMember } from '@/lib/teamData'
 import TeamPerformanceClient from '@/components/equipe/TeamPerformanceClient'
+import { formatProfileName } from '@/types/users'
 
 export default async function EquipePage() {
     const supabase = await createClient()
@@ -38,11 +39,12 @@ export default async function EquipePage() {
     const userPendingDevis = allDevis.filter(d => d.status === 'en_attente' || d.status === 'en_attente_approbation')
     const dbPendingDevis = userPendingDevis.reduce((acc, d) => acc + (d.total_ht || 0), 0)
 
-    // User identity
-    const firstName = user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Alexandre')
-    const lastName = user?.user_metadata?.last_name || 'Vinuesa'
-    const userInitials = `${firstName[0] || 'A'}${lastName[0] || 'V'}`.toUpperCase()
-    const userEmail = user?.email || 'alexandre.v@trame-btp.fr'
+    // User identity - Dynamique et adaptée au compte connecté réel
+    const profile = formatProfileName(user?.email || '', user?.user_metadata)
+    const firstName = profile.firstName
+    const lastName = profile.lastName
+    const userInitials = `${firstName[0] || 'U'}${lastName[0] || ''}`.toUpperCase()
+    const userEmail = user?.email || 'collaborateur@trame-btp.fr'
 
     // 3. Enrich primary team member with live DB stats or realistic baseline
     const enrichedMembers: TeamMember[] = INITIAL_TEAM_MEMBERS.map((member, index) => {
@@ -92,17 +94,17 @@ export default async function EquipePage() {
             return {
                 ...member,
                 prenom: firstName,
-                nom: lastName,
+                nom: lastName || member.nom,
                 initials: userInitials,
                 email: userEmail,
                 caEncaisse,
                 devisEnAttente,
                 nbDevis,
                 nbFactures,
-                tauxConversion: conversion,
-                panierMoyen: panier,
                 nbChantiers,
                 nbClients,
+                tauxConversion: conversion,
+                panierMoyen: panier,
                 chantiersList: liveChantiers.length > 0 ? liveChantiers : member.chantiersList,
                 clientsList: liveClients.length > 0 ? liveClients : member.clientsList,
                 derniersDevis: liveDevis.length > 0 ? liveDevis : member.derniersDevis,
