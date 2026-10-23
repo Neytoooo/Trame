@@ -23,8 +23,10 @@ import {
     Wallet,
     Calendar,
     ArrowUpRight,
-    Check
+    Check,
+    Network
 } from 'lucide-react'
+import CompanyOrganigram from './CompanyOrganigram'
 import { TeamMember, CompanyTotals, computeCompanyTotals } from '@/lib/teamData'
 import StatusBadge from '@/components/ui/StatusBadge'
 import PillButton from '@/components/ui/PillButton'
@@ -35,7 +37,7 @@ interface TeamPerformanceClientProps {
 }
 
 type SortOption = 'ca' | 'devis_attente' | 'conversion' | 'chantiers' | 'clients' | 'nb_devis' | 'nb_factures'
-type ViewMode = 'cards' | 'table'
+type ViewMode = 'organigramme' | 'cards' | 'table'
 
 export default function TeamPerformanceClient({
     initialMembers,
@@ -45,7 +47,7 @@ export default function TeamPerformanceClient({
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedRole, setSelectedRole] = useState<string>('all')
     const [sortBy, setSortBy] = useState<SortOption>('ca')
-    const [viewMode, setViewMode] = useState<ViewMode>('cards')
+    const [viewMode, setViewMode] = useState<ViewMode>('organigramme')
     const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
@@ -219,6 +221,18 @@ export default function TeamPerformanceClient({
                         {/* View Mode Toggle: Clean Pill */}
                         <div className="flex items-center bg-slate-100 dark:bg-[#131B2A] border border-slate-200/90 dark:border-slate-800 rounded-xl p-1">
                             <button
+                                onClick={() => setViewMode('organigramme')}
+                                title="Vue Organigramme 3D Métal"
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    viewMode === 'organigramme'
+                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs font-semibold'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                                <Network size={14} />
+                                <span className="hidden sm:inline">Organigramme 3D</span>
+                            </button>
+                            <button
                                 onClick={() => setViewMode('cards')}
                                 title="Vue Cartes"
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -255,7 +269,8 @@ export default function TeamPerformanceClient({
                     </div>
                 </div>
 
-                {/* Filters & Sorting Bar */}
+                {/* Filters & Sorting Bar (Cartes & Tableau) */}
+                {viewMode !== 'organigramme' && (
                 <div className="flex flex-wrap items-center justify-between gap-2.5 bg-white dark:bg-[#131B2A] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 shadow-xs">
                     {/* Search */}
                     <div className="relative flex-1 min-w-[200px] max-w-md">
@@ -345,11 +360,19 @@ export default function TeamPerformanceClient({
                         </div>
                     </div>
                 </div>
+                )}
             </div>
 
-            {/* =========================================================================
-                2. SCROLLABLE BODY (Executive KPI Cards, Members Grid/Table, Company Report)
-               ========================================================================= */}
+            {/* 2. SCROLLABLE BODY */}
+            {viewMode === 'organigramme' ? (
+                <div className="flex-1 min-h-0 flex flex-col pt-1 pb-2">
+                    <CompanyOrganigram
+                        members={members}
+                        companyTotals={companyTotals}
+                        onSelectMemberDetails={(m) => setSelectedMember(m)}
+                    />
+                </div>
+            ) : (
             <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 space-y-6">
 
                 {/* -------------------------------------------------------------
@@ -808,6 +831,7 @@ export default function TeamPerformanceClient({
                 </div>
 
             </div>
+            )}
 
             {/* =========================================================================
                 3. SLIDE-OVER DRAWER (Detailed Collaborator Profile)
