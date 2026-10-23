@@ -360,31 +360,18 @@ export default function CompanyOrganigram({
                     </div>
                 </div>
 
-                {/* Finition 3D + Zoom */}
+                {/* Légende Hiérarchie 3D + Zoom */}
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-white/[0.06] border border-white/10 rounded-xl p-0.5 text-xs">
-                        <button
-                            onClick={() => setBadgeTheme('ruby')}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
-                                badgeTheme === 'ruby'
-                                    ? 'bg-rose-950/80 text-rose-200 border border-rose-500/50 shadow-xs font-semibold'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
-                            <span>Verre Rubis</span>
-                        </button>
-                        <button
-                            onClick={() => setBadgeTheme('metallic')}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
-                                badgeTheme === 'metallic'
-                                    ? 'bg-slate-700/80 text-slate-100 border border-slate-500/60 shadow-xs font-semibold'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-slate-300 shadow-[0_0_6px_#cbd5e1]" />
-                            <span>Gris Métal</span>
-                        </button>
+                    <div className="hidden sm:flex items-center bg-white/[0.06] border border-white/10 rounded-xl px-2.5 py-1 text-xs gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+                            <span className="text-[11px] font-semibold text-rose-200">Direction (Rubis)</span>
+                        </div>
+                        <span className="text-white/20">|</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shadow-[0_0_8px_#cbd5e1]" />
+                            <span className="text-[11px] font-semibold text-slate-300">Équipe (Obsidienne)</span>
+                        </div>
                     </div>
 
                     <div className="flex items-center bg-white/[0.06] border border-white/10 rounded-xl p-0.5 text-xs text-slate-300">
@@ -675,10 +662,17 @@ export default function CompanyOrganigram({
                                 <X size={16} />
                             </button>
 
-                            {/* En-tête avec cercle */}
+                            {/* En-tête avec cercle 3D */}
                             <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white/30 via-white/10 to-transparent border-2 border-white/50 shadow-lg flex items-center justify-center font-black text-xl text-white">
-                                    {selectedNodeForModal.initials}
+                                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/50 shadow-xl flex items-center justify-center bg-black shrink-0">
+                                    <img
+                                        src={selectedNodeForModal.niveau === 1 ? '/avatar-red.jpg' : '/avatar-black.jpg'}
+                                        alt={`${selectedNodeForModal.prenom} ${selectedNodeForModal.nom}`}
+                                        className="w-full h-full object-cover select-none pointer-events-none transform scale-105"
+                                    />
+                                    <div className="absolute bottom-1 px-1.5 py-0.2 rounded-full bg-black/80 border border-white/30 text-[9px] font-black text-white">
+                                        {selectedNodeForModal.initials}
+                                    </div>
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h3 className="text-lg font-bold text-white truncate">

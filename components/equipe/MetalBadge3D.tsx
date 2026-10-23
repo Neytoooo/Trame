@@ -154,7 +154,9 @@ export default function CircularGlass3DBadge({
 
     const deptInfo = getDeptDetails()
     const isConnected = isHighlighted || isManagerOfHovered || isSubordinateOfHovered
-    const isRuby = theme === 'ruby' || isBoss
+
+    // Image 3D sélectionnée : Rouge uniquement pour le chef (niveau 1), Noir obsidienne pour tout le reste
+    const avatarSrc = isBoss ? '/avatar-red.jpg' : '/avatar-black.jpg'
 
     return (
         <div
@@ -163,7 +165,7 @@ export default function CircularGlass3DBadge({
             className="relative flex flex-col items-center group select-none"
         >
             {/* =========================================================================
-                LE BADGE 100% ROND EN 3D (VERRE LENTILLE + AVATAR 3D)
+                LE BADGE 100% ROND EN 3D (IMAGE 3D RÉELLE + VERRE LENTILLE + INITIALES)
                ========================================================================= */}
             <div
                 className="perspective-1000 cursor-pointer"
@@ -190,218 +192,110 @@ export default function CircularGlass3DBadge({
                     className={`
                         relative ${sizeClasses} rounded-full flex items-center justify-center p-1.5
                         transition-shadow duration-300
-                        ${isHovered || isSelected
-                            ? deptInfo.glow
-                            : isConnected
-                            ? 'shadow-[0_0_25px_rgba(255,255,255,0.5)] ring-2 ring-white/60'
-                            : 'shadow-[0_16px_32px_-6px_rgba(0,0,0,0.65)]'}
                     `}
                     style={{
                         transformStyle: 'preserve-3d',
                         // Anneau circulaire 3D en verre réfractif
-                        background: `
-                            radial-gradient(circle at 35% 25%, 
-                                rgba(255, 255, 255, 0.45) 0%, 
-                                rgba(255, 255, 255, 0.15) 40%, 
-                                rgba(255, 255, 255, 0.05) 70%, 
-                                rgba(0, 0, 0, 0.4) 100%
-                            )
-                        `,
+                        background: isBoss
+                            ? `radial-gradient(circle at 35% 25%, 
+                                rgba(255, 120, 140, 0.5) 0%, 
+                                rgba(225, 29, 72, 0.3) 40%, 
+                                rgba(136, 13, 30, 0.2) 70%, 
+                                rgba(10, 0, 3, 0.85) 100%
+                              )`
+                            : `radial-gradient(circle at 35% 25%, 
+                                rgba(255, 255, 255, 0.35) 0%, 
+                                rgba(148, 163, 184, 0.15) 40%, 
+                                rgba(51, 65, 85, 0.1) 70%, 
+                                rgba(0, 0, 0, 0.85) 100%
+                              )`,
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
-                        boxShadow: `
-                            0 18px 36px -8px rgba(0, 0, 0, 0.65),
-                            inset 0 0 0 2px rgba(255, 255, 255, 0.55),
-                            inset 0 3px 8px 0 rgba(255, 255, 255, 0.8),
-                            inset 0 -3px 8px 0 rgba(0, 0, 0, 0.6)
-                        `
+                        boxShadow: isHovered || isSelected
+                            ? isBoss
+                                ? '0 0 35px rgba(225, 29, 72, 0.85), inset 0 0 0 2px rgba(255, 180, 195, 0.9), inset 0 3px 8px rgba(255, 255, 255, 0.8)'
+                                : '0 0 30px rgba(255, 255, 255, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.85), inset 0 3px 8px rgba(255, 255, 255, 0.7)'
+                            : isConnected
+                            ? isBoss
+                                ? '0 0 25px rgba(225, 29, 72, 0.55), inset 0 0 0 2px rgba(251, 113, 133, 0.7)'
+                                : '0 0 22px rgba(255, 255, 255, 0.35), inset 0 0 0 2px rgba(255, 255, 255, 0.6)'
+                            : isBoss
+                            ? '0 16px 32px -6px rgba(0, 0, 0, 0.85), inset 0 0 0 1.5px rgba(251, 113, 133, 0.5), inset 0 3px 6px rgba(255, 255, 255, 0.5)'
+                            : '0 16px 32px -6px rgba(0, 0, 0, 0.85), inset 0 0 0 1.5px rgba(255, 255, 255, 0.3), inset 0 3px 6px rgba(255, 255, 255, 0.4)'
                     }}
                 >
-                    {/* REFLET LUMINEUX D'ANGLE EN ARC DE CERCLE (Warm Specular Lens Flare) */}
-                    <div className="absolute top-1 left-2 w-8 h-8 rounded-full pointer-events-none opacity-90 overflow-hidden">
+                    {/* REFLET LUMINEUX D'ANGLE EN ARC DE CERCLE */}
+                    <div className="absolute top-1 left-2 w-7 h-7 rounded-full pointer-events-none opacity-90 overflow-hidden z-20">
                         <div
                             className="w-full h-full rounded-full"
                             style={{
-                                background: 'radial-gradient(circle at 30% 30%, rgba(255, 250, 240, 0.95) 0%, rgba(255, 225, 170, 0.6) 45%, transparent 75%)'
+                                background: isBoss
+                                    ? 'radial-gradient(circle at 30% 30%, rgba(255, 220, 230, 0.95) 0%, rgba(255, 120, 150, 0.5) 45%, transparent 75%)'
+                                    : 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(200, 220, 240, 0.5) 45%, transparent 75%)'
                             }}
                         />
                     </div>
 
                     {/* BISEAU CONCENTRIQUE INTÉRIEUR DE VERRE */}
                     <div
-                        className="absolute inset-1.5 rounded-full pointer-events-none"
+                        className="absolute inset-1 rounded-full pointer-events-none z-20"
                         style={{
-                            border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                            boxShadow: 'inset 0 2px 3px rgba(255, 255, 255, 0.5), inset 0 -2px 3px rgba(0, 0, 0, 0.4)'
+                            border: isBoss ? '1.5px solid rgba(251, 113, 133, 0.4)' : '1.5px solid rgba(255, 255, 255, 0.25)',
+                            boxShadow: 'inset 0 2px 3px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.5)'
                         }}
                     />
 
                     {/* REFLET SPÉCULAIRE DYNAMIQUE SUIVANT LA SOURIS */}
                     <div
-                        className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-150"
+                        className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-150 z-20"
                         style={{
                             opacity: glarePos.opacity,
-                            background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255, 255, 255, 0.55) 0%, transparent 60%)`
+                            background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255, 255, 255, 0.45) 0%, transparent 60%)`
                         }}
                     />
 
                     {/* =========================================================
-                        L'AVATAR 3D DU PERSONNAGE (Sphère + Dôme avec reflets studio)
+                        L'AVATAR 3D DU PERSONNAGE (Image réelle Red pour chef, Black pour le reste)
                        ========================================================= */}
-                    <div className="relative w-full h-full flex items-center justify-center">
-                        <svg
-                            viewBox="0 0 120 120"
-                            className="w-[86%] h-[86%] drop-shadow-[0_8px_14px_rgba(0,0,0,0.7)]"
-                        >
-                            <defs>
-                                {/* Gradient 3D Tête Sphérique */}
-                                <radialGradient id={`headGrad-${node.id}`} cx="36%" cy="30%" r="65%" fx="28%" fy="22%">
-                                    {isRuby ? (
-                                        <>
-                                            <stop offset="0%" stopColor="#ffb3ba" />
-                                            <stop offset="18%" stopColor="#e11d48" />
-                                            <stop offset="48%" stopColor="#880d1e" />
-                                            <stop offset="78%" stopColor="#3d0309" />
-                                            <stop offset="100%" stopColor="#120003" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <stop offset="0%" stopColor="#ffffff" />
-                                            <stop offset="20%" stopColor="#cbd5e1" />
-                                            <stop offset="52%" stopColor="#475569" />
-                                            <stop offset="80%" stopColor="#1e293b" />
-                                            <stop offset="100%" stopColor="#0b0f19" />
-                                        </>
-                                    )}
-                                </radialGradient>
+                    <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-black">
+                        {/* L'image 3D réelle fournie */}
+                        <img
+                            src={avatarSrc}
+                            alt={`${node.prenom} ${node.nom}`}
+                            className="w-full h-full object-cover select-none pointer-events-none transform scale-105"
+                            draggable={false}
+                        />
 
-                                {/* Gradient 3D Torse / Épaules */}
-                                <radialGradient id={`torsoGrad-${node.id}`} cx="40%" cy="28%" r="72%" fx="30%" fy="20%">
-                                    {isRuby ? (
-                                        <>
-                                            <stop offset="0%" stopColor="#ffa4ad" />
-                                            <stop offset="18%" stopColor="#d91b38" />
-                                            <stop offset="50%" stopColor="#7a0a19" />
-                                            <stop offset="82%" stopColor="#360207" />
-                                            <stop offset="100%" stopColor="#100002" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <stop offset="0%" stopColor="#ffffff" />
-                                            <stop offset="20%" stopColor="#94a3b8" />
-                                            <stop offset="52%" stopColor="#334155" />
-                                            <stop offset="82%" stopColor="#1e293b" />
-                                            <stop offset="100%" stopColor="#090d16" />
-                                        </>
-                                    )}
-                                </radialGradient>
-                            </defs>
-
-                            {/* Torse Dôme 3D */}
-                            <path
-                                d="M 22 102 C 22 70, 38 62, 60 62 C 82 62, 98 70, 98 102 C 98 106, 22 106, 22 102 Z"
-                                fill={`url(#torsoGrad-${node.id})`}
-                            />
-
-                            {/* Échancrure du col */}
-                            <ellipse
-                                cx="60"
-                                cy="64"
-                                rx="14"
-                                ry="5"
-                                fill={isRuby ? "#250104" : "#0d131f"}
-                                opacity="0.9"
-                            />
-
-                            {/* Reflet de fenêtre studio sur l'épaule gauche */}
-                            <g opacity="0.82" transform="rotate(-8 45 74)">
-                                <path
-                                    d="M 36 71 C 36 67, 43 65, 52 66"
-                                    stroke="white"
-                                    strokeWidth="2.8"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <path
-                                    d="M 33 76 C 34 72, 40 70, 48 71"
-                                    stroke="white"
-                                    strokeWidth="2.4"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <path
-                                    d="M 31 82 C 32 78, 38 76, 45 77"
-                                    stroke="white"
-                                    strokeWidth="2.2"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <line x1="41" y1="67" x2="38" y2="83" stroke="white" strokeWidth="1.2" opacity="0.6" />
-                            </g>
-
-                            {/* Tête Sphérique 3D */}
-                            <circle
-                                cx="60"
-                                cy="37"
-                                r="22"
-                                fill={`url(#headGrad-${node.id})`}
-                            />
-
-                            {/* Reflet de fenêtre studio sur la sphère */}
-                            <g opacity="0.9">
-                                <path
-                                    d="M 47 24 C 50 20, 56 19, 62 20"
-                                    stroke="white"
-                                    strokeWidth="3.2"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <path
-                                    d="M 44 29 C 47 25, 54 24, 60 25"
-                                    stroke="white"
-                                    strokeWidth="2.8"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <path
-                                    d="M 42 35 C 45 31, 52 30, 58 31"
-                                    stroke="white"
-                                    strokeWidth="2.4"
-                                    strokeLinecap="round"
-                                    fill="none"
-                                />
-                                <line x1="52" y1="20" x2="49" y2="35" stroke="white" strokeWidth="1.4" opacity="0.7" />
-                            </g>
-
-                            {/* Reflet caustique bas-droit */}
-                            <path
-                                d="M 72 45 C 75 42, 77 37, 76 32"
-                                stroke={isRuby ? "rgba(255, 150, 165, 0.55)" : "rgba(255, 255, 255, 0.55)"}
-                                strokeWidth="1.6"
-                                strokeLinecap="round"
-                                fill="none"
-                            />
-                        </svg>
+                        {/* Lentille caustique protectrice par-dessus l'image */}
+                        <div
+                            className="absolute inset-0 rounded-full pointer-events-none"
+                            style={{
+                                background: isBoss
+                                    ? 'radial-gradient(circle at 35% 25%, rgba(255, 150, 170, 0.2) 0%, transparent 65%)'
+                                    : 'radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.15) 0%, transparent 65%)',
+                                boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.8)'
+                            }}
+                        />
 
                         {/* INITIALES EN MÉDAILLON EN BAS DU CERCLE */}
                         <div
-                            className="absolute bottom-1 px-2 py-0.5 rounded-full border shadow-sm backdrop-blur-md flex items-center justify-center font-black tracking-wider text-[10px] select-none"
+                            className="absolute bottom-1 px-2 py-0.5 rounded-full border shadow-lg backdrop-blur-md flex items-center justify-center font-black tracking-wider text-[10px] select-none z-10"
                             style={{
-                                background: 'rgba(15, 23, 42, 0.85)',
-                                borderColor: 'rgba(255, 255, 255, 0.45)',
+                                background: isBoss ? 'rgba(50, 3, 15, 0.88)' : 'rgba(10, 14, 22, 0.88)',
+                                borderColor: isBoss ? 'rgba(251, 113, 133, 0.6)' : 'rgba(255, 255, 255, 0.45)',
                                 color: '#ffffff'
                             }}
                         >
                             {node.initials}
                         </div>
-
-                        {/* Couronne dorée pour la Direction */}
-                        {isBoss && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-white shadow-[0_2px_8px_rgba(245,158,11,0.8)] flex items-center justify-center">
-                                <Crown size={12} className="text-slate-950" />
-                            </div>
-                        )}
                     </div>
+
+                    {/* Couronne dorée pour la Direction */}
+                    {isBoss && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-white shadow-[0_2px_10px_rgba(245,158,11,0.9)] flex items-center justify-center z-30">
+                            <Crown size={12} className="text-slate-950 font-bold" />
+                        </div>
+                    )}
                 </motion.div>
             </div>
 
