@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, User, Mail, Phone, MapPin, Building2, CreditCard, FileText } from 'lucide-react'
+import { X, Loader2, User, Mail, Phone, MapPin, Building2, CreditCard, FileText, CheckCircle2 } from 'lucide-react'
 import { ClientData, createClientAction, updateClientAction } from '@/app/actions/clients'
 
 export default function NewClientModal({
@@ -99,21 +99,33 @@ export default function NewClientModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
                 onClick={onClose}
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-gray-900 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0B101B]/95 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in zoom-in-95 duration-200 custom-scrollbar before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent">
 
                 {/* Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-gray-900/95 backdrop-blur-sm p-6">
-                    <h2 className="text-xl font-bold text-white">{clientToEdit ? "Modifier Client" : "Nouveau Client"}</h2>
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#0B101B]/95 backdrop-blur-md px-6 py-5">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/15 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.35)]">
+                            {formData.type === 'professionnel' ? <Building2 size={20} /> : <User size={20} />}
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-white tracking-tight">
+                                {clientToEdit ? "Modifier le Client" : "Nouveau Client"}
+                            </h2>
+                            <p className="text-xs text-slate-400">
+                                {clientToEdit ? "Mettre à jour les coordonnées du client" : "Enregistrez un nouveau client particulier ou professionnel"}
+                            </p>
+                        </div>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 transition-all hover:bg-white/10 hover:text-white"
                     >
-                        <X size={20} />
+                        <X size={16} />
                     </button>
                 </div>
 
@@ -123,46 +135,50 @@ export default function NewClientModal({
                         {/* Nom & Type */}
                         <div className="space-y-4 md:col-span-2">
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-400">Type de client</label>
-                                <div className="flex gap-4">
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Type de client
+                                </label>
+                                <div className="p-1 rounded-2xl bg-white/[0.04] border border-white/10 flex gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, type: 'particulier' })}
-                                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl border p-3 text-sm font-medium transition-all ${formData.type === 'particulier'
-                                            ? 'border-blue-500/50 bg-blue-500/20 text-blue-400'
-                                            : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'
+                                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${formData.type === 'particulier'
+                                            ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_2px_14px_rgba(124,58,237,0.4)]'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
                                             }`}
                                     >
-                                        <User size={18} />
+                                        <User size={15} />
                                         Particulier
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, type: 'professionnel' })}
-                                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl border p-3 text-sm font-medium transition-all ${formData.type === 'professionnel'
-                                            ? 'border-purple-500/50 bg-purple-500/20 text-purple-400'
-                                            : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'
+                                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${formData.type === 'professionnel'
+                                            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_2px_14px_rgba(99,102,241,0.4)]'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
                                             }`}
                                     >
-                                        <Building2 size={18} />
+                                        <Building2 size={15} />
                                         Professionnel
                                     </button>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Nom complet / Entreprise</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Nom complet / Entreprise
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <User size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <User size={16} />
                                     </div>
                                     <input
                                         required
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder={formData.type === 'particulier' ? "ex: Jean Dupont" : "ex: Menuiserie Durand"}
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        placeholder={formData.type === 'particulier' ? "ex: Jean Dupont" : "ex: Menuiserie Durand SARL"}
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
@@ -171,17 +187,19 @@ export default function NewClientModal({
                         {/* Info Pro (SIRET) - Only if Pro */}
                         {formData.type === 'professionnel' && (
                             <div className="md:col-span-2">
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Numéro de SIRET</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Numéro de SIRET
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <FileText size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <FileText size={16} />
                                     </div>
                                     <input
                                         type="text"
                                         value={formData.siret}
                                         onChange={(e) => setFormData({ ...formData, siret: e.target.value })}
                                         placeholder="123 456 789 00012"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
@@ -190,33 +208,37 @@ export default function NewClientModal({
                         {/* Coordonnées */}
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Email</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Email Principal
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <Mail size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <Mail size={16} />
                                     </div>
                                     <input
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="client@email.com"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Email Facturation (Optionnel)</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Email Facturation (Optionnel)
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <Mail size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <Mail size={16} />
                                     </div>
                                     <input
                                         type="email"
                                         value={formData.billing_email}
                                         onChange={(e) => setFormData({ ...formData, billing_email: e.target.value })}
                                         placeholder="facturation@entreprise.com"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
@@ -224,34 +246,38 @@ export default function NewClientModal({
 
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Téléphone</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Téléphone
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <Phone size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <Phone size={16} />
                                     </div>
                                     <input
                                         type="tel"
                                         value={formData.phone_mobile}
                                         onChange={(e) => setFormData({ ...formData, phone_mobile: e.target.value })}
                                         placeholder="06 12 34 56 78"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
 
                             {/* IBAN */}
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">IBAN</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    IBAN
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <CreditCard size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <CreditCard size={16} />
                                     </div>
                                     <input
                                         type="text"
                                         value={formData.iban}
                                         onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
                                         placeholder="FR76 ...."
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20 font-mono text-xs"
                                     />
                                 </div>
                             </div>
@@ -260,17 +286,19 @@ export default function NewClientModal({
                         {/* Adresse */}
                         <div className="space-y-4 md:col-span-2">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-400">Adresse</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                    Adresse Principale
+                                </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                        <MapPin size={18} />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                        <MapPin size={16} />
                                     </div>
                                     <input
                                         type="text"
                                         value={formData.address_line1}
                                         onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
                                         placeholder="123 rue des Lilas"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
@@ -282,7 +310,7 @@ export default function NewClientModal({
                                         value={formData.zip_code}
                                         onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
                                         placeholder="Code Postal"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 px-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 px-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                                 <div>
@@ -291,7 +319,7 @@ export default function NewClientModal({
                                         value={formData.city}
                                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                                         placeholder="Ville"
-                                        className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 px-4 text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 px-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                     />
                                 </div>
                             </div>
@@ -299,21 +327,21 @@ export default function NewClientModal({
 
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-6 border-t border-white/10">
+                    <div className="flex items-center justify-end gap-3 pt-6 border-t border-white/10">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-xl px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                            className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-xs font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white"
                         >
                             Annuler
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-50"
+                            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-6 py-2.5 text-xs font-semibold text-white shadow-[0_4px_20px_rgba(124,58,237,0.4)] transition-all active:scale-95 disabled:opacity-50"
                         >
-                            {loading && <Loader2 className="animate-spin" size={16} />}
-                            Enregistrer
+                            {loading ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
+                            <span>Enregistrer</span>
                         </button>
                     </div>
                 </form>

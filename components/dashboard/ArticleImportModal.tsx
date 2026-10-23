@@ -209,16 +209,30 @@ export default function ArticleImportModal() {
             </PillButton>
 
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#0f1115] p-6 shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+                        onClick={() => setIsOpen(false)}
+                    />
+                    <div className="relative w-full max-w-5xl rounded-3xl border border-white/15 bg-[#0B101B]/95 p-6 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl flex flex-col max-h-[90vh] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent animate-in zoom-in-95 duration-200">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10 shrink-0">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <FileSpreadsheet className="text-emerald-500" />
-                                Importer des articles (Excel / CSV)
-                            </h2>
-                            <button onClick={() => setIsOpen(false)} className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-                                <X size={20} />
+                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.35)]">
+                                    <FileSpreadsheet size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white tracking-tight">
+                                        Importer des articles (Excel / CSV)
+                                    </h2>
+                                    <p className="text-xs text-slate-400">Importation et détection automatique des colonnes</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 transition-all hover:bg-white/10 hover:text-white"
+                            >
+                                <X size={16} />
                             </button>
                         </div>
 
