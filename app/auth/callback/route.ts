@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { getCurrentUserRoleAction } from '@/app/actions/users'
+import { getCurrentUserRoleAction, recordUserLoginAction } from '@/app/actions/users'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
@@ -67,6 +67,9 @@ export async function GET(request: Request) {
                 await supabase.auth.signOut()
                 return NextResponse.redirect(new URL('/?error=unauthorized_email', request.url))
             }
+
+            // Enregistrer la connexion et passer le statut à 'actif'
+            await recordUserLoginAction(user.email)
         }
     } catch (e) {
         console.error('Erreur vérification whitelist dans callback:', e)

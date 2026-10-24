@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, ArrowRight, LayoutDashboard, ShieldAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { checkEmailWhitelistedAction } from '@/app/actions/users'
+import { checkEmailWhitelistedAction, recordUserLoginAction } from '@/app/actions/users'
 import InteractiveDotGrid from '@/components/ui/InteractiveDotGrid'
 import KotaSignatureLogo from '@/components/ui/KotaSignatureLogo'
 
@@ -81,6 +81,7 @@ export default function LoginPage() {
       setAuthError(error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message)
       setLoading(false)
     } else {
+      await recordUserLoginAction(email)
       router.refresh()
       router.push('/dashboard')
     }

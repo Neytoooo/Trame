@@ -202,6 +202,23 @@ export function addStoredUser(user: {
     return newUser
 }
 
+export function recordStoredUserLogin(rawEmail: string): boolean {
+    const email = (rawEmail || '').trim().toLowerCase()
+    if (!email) return false
+    const users = ensureInitialized()
+    const user = users.find(u => u.email.toLowerCase() === email)
+    if (!user) return false
+
+    const now = new Date().toISOString()
+    user.last_login_at = now
+    if (user.status === 'invite') {
+        user.status = 'actif'
+    }
+    user.updated_at = now
+    saveUsers(users)
+    return true
+}
+
 export function updateStoredUserRole(identifier: string, newRole: UserRole): boolean {
     const users = ensureInitialized()
     const target = identifier.trim().toLowerCase()

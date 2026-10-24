@@ -10,7 +10,8 @@ import {
     addStoredUser,
     updateStoredUserRole,
     updateStoredUserStatus,
-    removeStoredUser
+    removeStoredUser,
+    recordStoredUserLogin
 } from '@/lib/authorizedUsersStore'
 
 /**
@@ -56,6 +57,21 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
         if (!error) {
             // La table existe dans Supabase
             if (authRecord) {
+                // Si l'utilisateur était en attente (invité), l'activer immédiatement dès sa connexion
+                if (authRecord.status === 'invite' || !authRecord.last_login_at) {
+                    recordStoredUserLogin(email)
+                    supabase
+                        .from('authorized_users')
+                        .update({
+                            status: 'actif',
+                            last_login_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .ilike('email', email)
+                        .then(() => {})
+                        .catch(() => {})
+                }
+
                 const fName = authRecord.first_name || nameInfo.firstName
                 const lName = authRecord.last_name || nameInfo.lastName
                 const dName = [fName, lName].filter(Boolean).join(' ') || nameInfo.displayName
@@ -65,7 +81,7 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
                     isAuthorized: authRecord.status !== 'suspendu',
                     isAdmin: authRecord.role === 'admin',
                     email: authRecord.email,
-                    status: authRecord.status as UserAccessStatus,
+                    status: (authRecord.status === 'invite' ? 'actif' : authRecord.status) as UserAccessStatus,
                     firstName: fName,
                     lastName: lName,
                     displayName: dName
@@ -93,6 +109,13 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
     // 2. Fallback sur le store persistant si Supabase n'a pas la table
     const storedUser = getStoredUserByEmail(email)
     if (storedUser) {
+        // Si l'utilisateur était en attente (invité), l'activer immédiatement dès sa connexion
+        if (storedUser.status === 'invite' || !storedUser.last_login_at) {
+            recordStoredUserLogin(email)
+            storedUser.status = 'actif'
+            storedUser.last_login_at = new Date().toISOString()
+        }
+
         const fName = storedUser.first_name || nameInfo.firstName
         const lName = storedUser.last_name || nameInfo.lastName
         const dName = [fName, lName].filter(Boolean).join(' ') || nameInfo.displayName
@@ -190,6 +213,33 @@ export async function checkEmailWhitelistedAction(rawEmail: string): Promise<{
     return {
         isWhitelisted: false,
         message: `L'adresse email "${email}" n'a pas été invitée sur cet espace d'entreprise. Veuillez contacter votre administrateur.`
+    }
+}
+
+/**
+ * Enregistre la connexion d'un utilisateur et active son compte si en attente (invite -> actif)
+ */
+export async function recordUserLoginAction(rawEmail: string): Promise<void> {
+    const email = (rawEmail || '').trim().toLowerCase()
+    if (!email) return
+
+    // 1. Mettre à jour dans le store persistant local
+    recordStoredUserLogin(email)
+
+    // 2. Tenter de synchroniser dans Supabase si la table existe
+    try {
+        const supabase = await createClient()
+        const now = new Date().toISOString()
+        await supabase
+            .from('authorized_users')
+            .update({
+                status: 'actif',
+                last_login_at: now,
+                updated_at: now
+            })
+            .ilike('email', email)
+    } catch {
+        // Silencieux si table absente
     }
 }
 

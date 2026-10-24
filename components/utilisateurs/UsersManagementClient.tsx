@@ -237,17 +237,17 @@ export default function UsersManagementClient({
         }
     }
 
-    // Handle Toggle Status (Suspend / Reactivate)
+    // Handle Toggle Status (Suspend / Activate / Reactivate)
     const handleToggleStatus = async (user: AuthorizedUser) => {
-        const nextStatus: UserAccessStatus = user.status === 'suspendu' ? 'actif' : 'suspendu'
-        const actionLabel = nextStatus === 'suspendu' ? 'suspendre' : 'réactiver'
+        const nextStatus: UserAccessStatus = user.status === 'actif' ? 'suspendu' : 'actif'
+        const actionLabel = user.status === 'actif' ? 'suspendre' : (user.status === 'invite' ? 'activer immédiatement' : 'réactiver')
 
         const ok = await confirm({
-            title: `${nextStatus === 'suspendu' ? 'Suspendre' : 'Réactiver'} l'accès ?`,
+            title: `${user.status === 'actif' ? 'Suspendre' : 'Activer'} l'accès ?`,
             message: `Êtes-vous sûr de vouloir ${actionLabel} l'accès pour "${user.email}" ?`,
-            confirmText: nextStatus === 'suspendu' ? 'Oui, suspendre' : 'Oui, réactiver',
+            confirmText: user.status === 'actif' ? 'Oui, suspendre' : 'Oui, activer l\'accès',
             cancelText: 'Annuler',
-            variant: nextStatus === 'suspendu' ? 'danger' : 'info'
+            variant: user.status === 'actif' ? 'danger' : 'success'
         })
         if (!ok) return
 
