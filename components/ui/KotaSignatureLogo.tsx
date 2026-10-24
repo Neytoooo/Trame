@@ -63,7 +63,7 @@ export default function KotaSignatureLogo({ className = '', showTagline = true }
                         duration: 4.5,
                         ease: 'easeInOut'
                     }}
-                    className="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                    className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
                 >
                     {/* SVG KINETIC STROKE TRACER (Plays on initial load / replay) */}
                     <AnimatePresence>
@@ -186,42 +186,19 @@ export default function KotaSignatureLogo({ className = '', showTagline = true }
                 }}
                 className="flex flex-col justify-center"
             >
-                {/* Top Row: Brand Name + Live Enterprise Status Badge */}
-                <div className="flex items-center gap-2.5">
-                    <span className="text-2xl lg:text-3xl font-black tracking-[0.16em] uppercase font-serif bg-gradient-to-r from-[#FFFFFF] via-[#F6EBD7] to-[#D5C6AC] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(246,235,215,0.15)]">
+                {/* Brand Name */}
+                <div className="flex items-center">
+                    <span className="text-3xl lg:text-4xl font-black tracking-[0.16em] uppercase font-serif bg-gradient-to-r from-[#FFFFFF] via-[#F6EBD7] to-[#D5C6AC] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(246,235,215,0.15)]">
                         KOTA
-                    </span>
-
-                    {/* Live Enterprise Security & Cloud Pill */}
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase shadow-xs">
-                        <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                        </span>
-                        Système Opérationnel
                     </span>
                 </div>
 
                 {/* Subtitle Row: Technology & Design */}
-                <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] tracking-[0.28em] text-slate-300/90 font-semibold uppercase leading-none font-mono">
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] tracking-[0.28em] text-slate-300/90 font-semibold uppercase leading-none font-mono">
                         Technology & Design
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span className="text-[9.5px] text-slate-400 font-medium tracking-wide">
-                        ERP Bâtiment
-                    </span>
                 </div>
-
-                {/* Optional Tagline Pill below */}
-                {showTagline && (
-                    <div className="mt-2 flex items-center gap-2">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-slate-400">
-                            <Sparkles size={11} className="text-amber-300" />
-                            <span className="font-medium text-slate-300">Architecture • Devis IA • Chantiers</span>
-                        </div>
-                    </div>
-                )}
             </motion.div>
         </div>
     )

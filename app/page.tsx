@@ -102,11 +102,8 @@ export default function LoginPage() {
               <KotaSignatureLogo />
             </div>
 
-            <div className="mt-8">
-              <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
-                ✦ Alternative moderne à Sage Batigest & Obat
-              </span>
-              <h1 className="mt-5 text-4xl font-bold leading-[1.15] tracking-tight text-white">
+            <div className="mt-6">
+              <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-white">
                 Gérez vos chantiers <br />
                 <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                   sans la complexité.
