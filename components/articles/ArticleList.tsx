@@ -1,19 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { Search, Filter, Package, Hammer, Truck, MoreVertical } from 'lucide-react'
+import {
+    Search,
+    Package,
+    Hammer,
+    Truck,
+    Layers,
+    Box,
+    Tag,
+    Wallet,
+    Trash2,
+    Edit
+} from 'lucide-react'
 import { usePersistentViewMode } from '@/hooks/usePersistentViewMode'
 import ViewToggle from '@/components/ui/ViewToggle'
-import { Badge } from '@/components/ui/Badge'
 import TradeBadge from '@/components/ui/TradeBadge'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
 import VirtualizedList from '@/components/ui/VirtualizedList'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { fetchArticlesAction } from '@/app/actions/articles'
-
+import { fetchArticlesAction, deleteArticleAction } from '@/app/actions/articles'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
+import ArticleModal from '@/components/dashboard/ArticleModal'
 
 interface ArticleListProps {
     initialArticles: any[]
@@ -21,7 +30,12 @@ interface ArticleListProps {
 
 export default function ArticleList({ initialArticles }: ArticleListProps) {
     const router = useRouter()
-    const [viewMode, setViewMode] = usePersistentViewMode('view-mode-articles', 'list')
+    const confirm = useConfirm()
+    const [viewMode, setViewMode] = usePersistentViewMode('view-mode-articles', 'grid')
+    const [selectedMetier, setSelectedMetier] = useState('TOUS')
+    const [editingArticle, setEditingArticle] = useState<any | null>(null)
+
+    const METIERS = ['TOUS', 'RAVALEMENT', 'ÉCHAFAUDAGE', 'PRÉPARATION', 'COUVERTURE', 'MENUISERIE', 'ÉLECTRICITÉ', 'PLOMBERIE', 'PEINTURE']
 
     const {
         data: articles,
@@ -34,8 +48,27 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
     } = useInfiniteScroll({
         fetchAction: fetchArticlesAction,
         initialData: initialArticles,
-        limit: 10
+        limit: 15
     })
+
+    const loadMoreRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoading) {
+                    loadMore()
+                }
+            },
+            { rootMargin: '100px' }
+        )
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current)
+        }
+
+        return () => observer.disconnect()
+    }, [hasMore, isLoading, loadMore])
 
     // REALTIME SUBSCRIPTION
     useEffect(() => {
@@ -43,7 +76,6 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
         const channel = supabase
             .channel('realtime-articles-library')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, (payload) => {
-                console.log('📚 [LIBRARY REALTIME]', payload)
                 if (payload.eventType === 'INSERT') {
                     setArticles(prev => [payload.new, ...prev])
                 } else if (payload.eventType === 'UPDATE') {
@@ -62,24 +94,42 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
 
     const getCategoryIcon = (category: string) => {
         switch (category) {
-            case 'main_doeuvre': return <Hammer size={12} />
-            case 'fourniture': return <Package size={12} />
-            case 'engin': return <Truck size={12} />
-            default: return null
+            case 'main_doeuvre': return <Hammer size={16} />
+            case 'fourniture': return <Package size={16} />
+            case 'engin': return <Truck size={16} />
+            case 'ouvrage': return <Layers size={16} />
+            default: return <Box size={16} />
         }
     }
 
-    const getBadgeVariant = (category: string) => {
+    const getCategoryLabel = (category: string) => {
         switch (category) {
-            case 'main_doeuvre': return 'purple'
-            case 'fourniture': return 'info'
-            case 'engin': return 'orange'
-            default: return 'gray'
+            case 'main_doeuvre': return "Main d'œuvre"
+            case 'fourniture': return 'Fourniture'
+            case 'engin': return 'Engin'
+            case 'ouvrage': return 'Ouvrage'
+            case 'sous_traitance': return 'Sous-traitance'
+            default: return 'Article'
         }
     }
 
-    const [selectedMetier, setSelectedMetier] = useState('TOUS')
-    const METIERS = ['TOUS', 'RAVALEMENT', 'ÉCHAFAUDAGE', 'PRÉPARATION', 'COUVERTURE', 'MENUISERIE']
+    const handleDelete = async (id: string) => {
+        const isConfirmed = await confirm({
+            title: "Supprimer cet article ?",
+            message: "Cette action est irréversible. L'article sera retiré de la bibliothèque.",
+            confirmText: "Oui, supprimer",
+            cancelText: "Annuler",
+            variant: "danger"
+        })
+        if (!isConfirmed) return
+
+        const res = await deleteArticleAction(id)
+        if (res?.success) {
+            setArticles(prev => prev.filter(a => a.id !== id))
+        } else {
+            alert(res?.error || "Erreur lors de la suppression.")
+        }
+    }
 
     const filteredArticles = articles.filter((a: any) => {
         if (selectedMetier === 'TOUS') return true
@@ -88,7 +138,7 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
         return matchSupplier || matchName
     })
 
-    // LIST RENDERER
+    // TABLE LIST RENDERER
     const renderListRow = (article: any, index: number, style: any, isScrolling?: boolean) => {
         const nameParts = (article.name || '').split('\n')
         const designation = nameParts[0] || 'Sans nom'
@@ -104,8 +154,8 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                         <div className="h-4 bg-gray-200 rounded w-1/4 dark:bg-white/10"></div>
                     </div>
                 ) : (
-                    <div className="border-b border-gray-100 dark:border-white/5 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 flex items-center px-6 h-full text-sm text-gray-500 dark:text-gray-400">
-                        <div className="w-24 font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 truncate pr-2">
+                    <div className="border-b border-gray-100 dark:border-white/5 transition-colors hover:bg-slate-50/80 dark:hover:bg-[#162032] flex items-center px-6 h-full text-sm text-gray-500 dark:text-gray-400">
+                        <div className="w-24 font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400 truncate pr-2">
                             {article.reference || 'REF-N/A'}
                         </div>
                         <div className="flex-1 min-w-0 pr-4">
@@ -119,11 +169,11 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                         <div className="w-80 shrink-0 pr-4 flex items-center">
                             <TradeBadge trade={article.supplier || article.category} />
                         </div>
-                        <div className="w-16 text-center font-mono text-xs">{article.unit || 'u'}</div>
-                        <div className="w-24 text-right font-medium text-gray-900 dark:text-white">
+                        <div className="w-16 text-center font-mono text-xs text-slate-600 dark:text-slate-300">{article.unit || 'u'}</div>
+                        <div className="w-24 text-right font-bold text-gray-900 dark:text-white">
                             {priceHT.toFixed(2)} €
                         </div>
-                        <div className="w-24 text-right font-semibold text-blue-600 dark:text-blue-400">
+                        <div className="w-24 text-right font-semibold text-indigo-600 dark:text-indigo-400">
                             {ttc10} €
                         </div>
                         <div className="w-24 text-right text-gray-500 dark:text-gray-400 text-xs">
@@ -131,6 +181,22 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                         </div>
                         <div className="w-24 text-right text-xs font-mono text-gray-400 dark:text-gray-500">
                             {Number(article.cost_ht || 0).toFixed(2)} €
+                        </div>
+                        <div className="w-20 text-right pl-3 flex items-center justify-end gap-1.5">
+                            <button
+                                onClick={() => setEditingArticle(article)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title="Modifier"
+                            >
+                                <Edit size={14} />
+                            </button>
+                            <button
+                                onClick={() => handleDelete(article.id)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                title="Supprimer"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     </div>
                 )}
@@ -143,13 +209,13 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
             {/* Barre de recherche et filtres (Fixed) */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#131B2A] backdrop-blur-md mb-3 shrink-0">
                 <div className="relative flex-1 w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={17} />
                     <input
                         type="text"
                         placeholder="Rechercher référence, ouvrage, prestation (ex: RAV D2, Échafaudage...)"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white dark:placeholder-slate-500 dark:focus:border-indigo-500"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-800 dark:bg-[#0E1524] dark:text-white dark:placeholder-slate-500 dark:focus:border-indigo-500 transition-all"
                     />
                 </div>
 
@@ -158,13 +224,13 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                 </div>
             </div>
 
-            {/* Onglets Filtres Métier BTP (Style Batiecom) */}
+            {/* Onglets Filtres Métier BTP */}
             <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2 shrink-0 no-scrollbar">
                 {METIERS.map(m => (
                     <button
                         key={m}
                         onClick={() => setSelectedMetier(m)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                             selectedMetier === m
                                 ? 'bg-indigo-600 text-white shadow-xs'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-[#131B2A] dark:text-slate-300 dark:border dark:border-slate-800 dark:hover:bg-[#1A2438]'
@@ -175,122 +241,175 @@ export default function ArticleList({ initialArticles }: ArticleListProps) {
                 ))}
             </div>
 
-            {/* Content */}
-            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs dark:border-slate-800 dark:bg-[#131B2A]">
+            {/* Conteneur de Défilement (Exactement comme Devis) */}
+            <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 space-y-4">
                 {viewMode === 'list' ? (
-                    <div className="flex flex-col h-full overflow-x-auto">
-                        <div className="min-w-[1250px] flex flex-col h-full">
-                            {/* Static Header */}
-                            <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#0E1524] dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
-                                <div className="w-24 pr-2">Réf.</div>
-                                <div className="flex-1">Désignation & Complément</div>
-                                <div className="w-80 shrink-0 pr-4">Famille / Métier</div>
-                                <div className="w-16 text-center">Unité</div>
-                                <div className="w-24 text-right">P.V. HT</div>
-                                <div className="w-24 text-right text-blue-600 dark:text-blue-400">TTC 10%</div>
-                                <div className="w-24 text-right">TTC 20%</div>
-                                <div className="w-24 text-right">Déboursé</div>
+                    // TABLE VIEW (Harmonisée comme Devis)
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none">
+                        <div className="flex flex-col h-[650px] overflow-x-auto">
+                            <div className="min-w-[1300px] flex flex-col h-full">
+                                {/* Header Statique */}
+                                <div className="flex items-center bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#0E1524] dark:text-slate-400 py-3.5 px-6 font-semibold border-b border-slate-200 dark:border-slate-800 shrink-0">
+                                    <div className="w-24 pr-2">Réf.</div>
+                                    <div className="flex-1">Désignation & Complément</div>
+                                    <div className="w-80 shrink-0 pr-4">Famille / Métier</div>
+                                    <div className="w-16 text-center">Unité</div>
+                                    <div className="w-24 text-right">P.V. HT</div>
+                                    <div className="w-24 text-right text-indigo-600 dark:text-indigo-400">TTC 10%</div>
+                                    <div className="w-24 text-right">TTC 20%</div>
+                                    <div className="w-24 text-right">Déboursé</div>
+                                    <div className="w-20 text-right pl-3">Actions</div>
+                                </div>
+                                {/* Liste Virtualisée */}
+                                <div className="flex-1">
+                                    {filteredArticles && (filteredArticles.length > 0 || isLoading) ? (
+                                        <VirtualizedList
+                                            items={filteredArticles}
+                                            renderItem={renderListRow}
+                                            itemHeight={68}
+                                            useIsScrolling
+                                            hasMore={hasMore}
+                                            isLoading={isLoading}
+                                            onEndReached={loadMore}
+                                        />
+                                    ) : (
+                                        <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+                                            Aucun article trouvé pour ce métier.
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        {/* Virtual List */}
-                        <div className="flex-1">
-                            {filteredArticles && (filteredArticles.length > 0 || isLoading) ? (
-                                <VirtualizedList
-                                    items={filteredArticles}
-                                    renderItem={renderListRow}
-                                    itemHeight={72}
-                                    useIsScrolling
-                                    hasMore={hasMore}
-                                    isLoading={isLoading}
-                                    onEndReached={loadMore}
-                                />
-                            ) : (
-                                <div className="py-12 text-center text-gray-500 dark:text-gray-400">Aucun article trouvé pour ce métier.</div>
-                            )}
-                        </div>
                         </div>
                     </div>
                 ) : (
-                    // GRID VIEW
-                    <div className="h-full p-4 bg-gray-50/50 dark:bg-transparent">
-                        {articles && (articles.length > 0 || isLoading) ? (
-                            <VirtualizedArticleGrid items={articles} getBadgeVariant={getBadgeVariant} getCategoryIcon={getCategoryIcon} hasMore={hasMore} isLoading={isLoading} onEndReached={loadMore} />
-                        ) : (
-                            <div className="text-center py-12 text-gray-500 dark:text-gray-400">Aucun article trouvé.</div>
+                    // GRID VIEW (Exactement les mêmes cards que Devis)
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredArticles.map((article: any) => {
+                            const nameParts = (article.name || '').split('\n')
+                            const designation = nameParts[0] || 'Sans nom'
+                            const complement = nameParts[1] || ''
+
+                            return (
+                                <div
+                                    key={article.id}
+                                    className="group relative overflow-hidden rounded-[24px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131B2A] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none transition-all hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md flex flex-col justify-between"
+                                >
+                                    {/* Header Card */}
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="min-w-0 pr-3">
+                                            <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 truncate" title={designation}>
+                                                <span className="text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                    {getCategoryIcon(article.category)}
+                                                </span>
+                                                <span className="truncate">{designation}</span>
+                                            </h3>
+                                            {article.reference && (
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                                                    {article.reference}
+                                                </p>
+                                            )}
+                                            {complement && (
+                                                <p className="text-[11px] text-slate-400 dark:text-slate-500 italic truncate mt-0.5">
+                                                    {complement}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <TradeBadge trade={article.supplier || article.category} />
+                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#0E1524] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800">
+                                                {getCategoryLabel(article.category)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Info Rows (Aligné avec les cards Devis) */}
+                                    <div className="space-y-3 mb-6">
+                                        {/* Ligne 1 : Famille / Métier / Fournisseur */}
+                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                            <Tag size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                            <span className="truncate">{article.supplier || 'Prestation générale'}</span>
+                                        </div>
+
+                                        {/* Ligne 2 : Unité & TVA */}
+                                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                                            <Layers size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                            <span className="truncate">
+                                                Unité : <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{article.unit || 'u'}</span>
+                                                {' '}• TVA : <span className="font-mono">{article.tva || 20}%</span>
+                                            </span>
+                                        </div>
+
+                                        {/* Ligne 3 : Déboursé & Stock */}
+                                        <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                                            <div className="flex items-center gap-2">
+                                                <Wallet size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                                <span>
+                                                    Déboursé : <span className="font-mono font-medium text-slate-600 dark:text-slate-300">{Number(article.cost_ht || 0).toFixed(2)} €</span>
+                                                </span>
+                                            </div>
+                                            {article.category === 'fourniture' && (
+                                                <span className={`text-xs font-mono font-semibold ${article.stock <= (article.min_stock || 0) ? 'text-amber-500 dark:text-amber-400' : 'text-slate-400 dark:text-slate-400'}`}>
+                                                    Stock : {article.stock || 0}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Actions Footer */}
+                                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                                                Prix Vente HT
+                                            </span>
+                                            <span className="font-black text-slate-900 dark:text-white text-base">
+                                                {Number(article.price_ht || 0).toFixed(2)} €
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleDelete(article.id)}
+                                                className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all dark:bg-rose-500/10 dark:text-rose-400 cursor-pointer"
+                                                title="Supprimer"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+
+                                            <button
+                                                onClick={() => setEditingArticle(article)}
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-semibold hover:bg-indigo-600 hover:text-white transition-all dark:bg-indigo-600/20 dark:text-indigo-400 cursor-pointer"
+                                                title="Modifier l'article"
+                                            >
+                                                <Edit size={14} />
+                                                <span>Modifier</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {/* Sentinel pour scroll infini */}
+                {(hasMore || isLoading) && (
+                    <div ref={loadMoreRef} className="h-10 w-full flex items-center justify-center p-4 mt-4">
+                        {isLoading && (
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
                         )}
                     </div>
                 )}
             </div>
-        </div>
-    )
-}
 
-function VirtualizedArticleGrid({ items, getBadgeVariant, getCategoryIcon, hasMore, isLoading, onEndReached }: any) {
-    const ITEMS_PER_ROW = 3
-    const rows = []
-    for (let i = 0; i < items.length; i += ITEMS_PER_ROW) {
-        rows.push(items.slice(i, i + ITEMS_PER_ROW))
-    }
-
-    const renderRow = (chunk: any[], index: number, style: any, isScrolling?: boolean) => (
-        <div style={style}>
-            {isScrolling ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2 pb-4">
-                    {[...Array(chunk.length)].map((_, i) => (
-                        <div key={i} className="h-[220px] rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2 pb-4">
-                    {chunk.map((article: any) => (
-                        <Card key={article.id} className="group relative overflow-hidden transition-all bg-white border-gray-200 hover:border-blue-200 hover:shadow-md dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:shadow-black/20 h-[220px] flex flex-col justify-between">
-                            <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start mb-2">
-                                    <Badge variant={getBadgeVariant(article.category) as any}>
-                                        {getCategoryIcon(article.category)}
-                                    </Badge>
-                                    <span className="text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-white cursor-pointer">
-                                        <MoreVertical size={16} />
-                                    </span>
-                                </div>
-                                <CardTitle className="text-lg text-gray-900 dark:text-white truncate" title={article.name}>{article.name}</CardTitle>
-                                <CardDescription className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{article.category} • Par {article.unit}</CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="pb-2">
-                                {article.category === 'fourniture' && (
-                                    <div className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg border border-gray-100 dark:bg-white/5 dark:border-white/5">
-                                        <span className="text-gray-600 dark:text-gray-400">Stock : <span className={`font-bold ${article.stock <= (article.min_stock || 0) ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>{article.stock || 0}</span></span>
-                                        <span className="text-gray-500 truncate max-w-[100px]">{article.supplier || 'Sans fournisseur'}</span>
-                                    </div>
-                                )}
-                            </CardContent>
-
-                            <CardFooter className="flex justify-between items-end border-t border-gray-100 pt-4 dark:border-white/5">
-                                <div>
-                                    <p className="text-gray-500 text-xs dark:text-gray-500">Prix Vente</p>
-                                    <p className="text-emerald-600 font-bold text-lg dark:text-emerald-400">{article.price_ht} €</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-gray-500 text-xs dark:text-gray-500">Déboursé</p>
-                                    <p className="text-gray-600 font-medium dark:text-gray-400">{article.cost_ht} €</p>
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
+            {/* Modal de Modification d'Article */}
+            {editingArticle && (
+                <ArticleModal
+                    isOpen={Boolean(editingArticle)}
+                    onClose={() => setEditingArticle(null)}
+                    articleToEdit={editingArticle}
+                />
             )}
         </div>
-    )
-
-    return (
-        <VirtualizedList
-            items={rows}
-            renderItem={renderRow}
-            itemHeight={240}
-            useIsScrolling
-            hasMore={hasMore}
-            isLoading={isLoading}
-            onEndReached={onEndReached}
-        />
     )
 }

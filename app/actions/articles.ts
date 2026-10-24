@@ -81,6 +81,61 @@ export async function createArticle(formData: FormData) {
     return { success: true }
 }
 
+export async function updateArticleAction(id: string, formData: FormData) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Non autorisé" }
+
+    const name = formData.get('name') as string
+    const category = formData.get('category') as string
+    const unit = formData.get('unit') as string
+    const price_ht = parseFloat(formData.get('price_ht') as string) || 0
+    const cost_ht = parseFloat(formData.get('cost_ht') as string) || 0
+    const stock = parseInt(formData.get('stock') as string) || 0
+    const min_stock = parseInt(formData.get('min_stock') as string) || 0
+    const supplier = formData.get('supplier') as string || null
+    const reference = formData.get('reference') as string || null
+    const tva = parseFloat(formData.get('tva') as string) || 20
+
+    const { error } = await supabase.from('articles').update({
+        name,
+        category,
+        unit,
+        price_ht,
+        cost_ht,
+        stock,
+        min_stock,
+        supplier,
+        reference,
+        tva
+    }).eq('id', id)
+
+    if (error) {
+        console.error("Erreur mise à jour article:", error)
+        return { error: "Erreur lors de la mise à jour" }
+    }
+
+    revalidatePath('/dashboard/articles')
+    return { success: true }
+}
+
+export async function deleteArticleAction(id: string) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Non autorisé" }
+
+    const { error } = await supabase.from('articles').delete().eq('id', id)
+    if (error) {
+        console.error("Erreur suppression article:", error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/dashboard/articles')
+    return { success: true }
+}
+
 export async function searchArticles(query: string) {
     const supabase = await createClient()
     const { data } = await supabase

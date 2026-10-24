@@ -2,11 +2,24 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Plus, X, Loader2, Search, Trash2, Box, Layers, CheckCircle2 } from 'lucide-react'
-import { createArticle, searchArticles } from '@/app/actions/articles'
+import { createArticle, updateArticleAction, searchArticles } from '@/app/actions/articles'
 import PillButton from '@/components/ui/PillButton'
 
-export default function ArticleModal() {
-    const [isOpen, setIsOpen] = useState(false)
+interface ArticleModalProps {
+    isOpen?: boolean
+    onClose?: () => void
+    articleToEdit?: any
+}
+
+export default function ArticleModal({
+    isOpen: controlledIsOpen,
+    onClose: controlledOnClose,
+    articleToEdit
+}: ArticleModalProps = {}) {
+    const isControlled = typeof controlledIsOpen === 'boolean'
+    const [internalIsOpen, setInternalIsOpen] = useState(false)
+    const isOpen = isControlled ? controlledIsOpen : internalIsOpen
+
     const [isLoading, setIsLoading] = useState(false)
     const [type, setType] = useState<'simple' | 'ouvrage'>('simple')
 
@@ -16,12 +29,59 @@ export default function ArticleModal() {
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [calculatedCost, setCalculatedCost] = useState(0)
 
-    // Controlled cost input to avoid React error
+    // Controlled inputs state
     const [cost, setCost] = useState('')
+    const [name, setName] = useState('')
+    const [reference, setReference] = useState('')
+    const [category, setCategory] = useState('fourniture')
+    const [unit, setUnit] = useState('u')
+    const [priceHt, setPriceHt] = useState('')
+    const [tva, setTva] = useState('20')
+    const [stock, setStock] = useState('')
+    const [minStock, setMinStock] = useState('')
+    const [supplier, setSupplier] = useState('')
 
     const formRef = useRef<HTMLFormElement>(null)
 
-    // Calcul du coût automatique
+    const handleClose = () => {
+        if (isControlled) {
+            controlledOnClose?.()
+        } else {
+            setInternalIsOpen(false)
+        }
+    }
+
+    // Synchronisation avec l'article à éditer
+    useEffect(() => {
+        if (isOpen && articleToEdit) {
+            setName(articleToEdit.name || '')
+            setReference(articleToEdit.reference || '')
+            setCategory(articleToEdit.category || 'fourniture')
+            setUnit(articleToEdit.unit || 'u')
+            setPriceHt(articleToEdit.price_ht ? String(articleToEdit.price_ht) : '')
+            setCost(articleToEdit.cost_ht ? String(articleToEdit.cost_ht) : '')
+            setTva(articleToEdit.tva ? String(articleToEdit.tva) : '20')
+            setStock(articleToEdit.stock ? String(articleToEdit.stock) : '')
+            setMinStock(articleToEdit.min_stock ? String(articleToEdit.min_stock) : '')
+            setSupplier(articleToEdit.supplier || '')
+            setType(articleToEdit.category === 'ouvrage' ? 'ouvrage' : 'simple')
+        } else if (isOpen && !articleToEdit) {
+            setName('')
+            setReference('')
+            setCategory('fourniture')
+            setUnit('u')
+            setPriceHt('')
+            setCost('')
+            setTva('20')
+            setStock('')
+            setMinStock('')
+            setSupplier('')
+            setType('simple')
+            setComposants([])
+        }
+    }, [isOpen, articleToEdit])
+
+    // Calcul du coût automatique pour ouvrage
     useEffect(() => {
         if (type === 'ouvrage') {
             const total = composants.reduce((acc, item) => acc + (item.quantity * item.cost_ht), 0)
@@ -55,16 +115,19 @@ export default function ArticleModal() {
             formData.set('cost_ht', calculatedCost.toFixed(2))
         }
 
-        const result = await createArticle(formData)
+        const result = articleToEdit?.id
+            ? await updateArticleAction(articleToEdit.id, formData)
+            : await createArticle(formData)
+
         setIsLoading(false)
 
         if (result?.success) {
-            setIsOpen(false)
+            handleClose()
             setComposants([])
             setSearchTerm('')
             formRef.current?.reset()
         } else {
-            alert("Erreur lors de l'enregistrement")
+            alert(result?.error || "Erreur lors de l'enregistrement")
         }
     }
 
@@ -77,18 +140,20 @@ export default function ArticleModal() {
 
     return (
         <>
-            <PillButton
-                onClick={() => setIsOpen(true)}
-                icon={<Plus size={14} />}
-            >
-                Nouvel Article
-            </PillButton>
+            {!isControlled && (
+                <PillButton
+                    onClick={() => setInternalIsOpen(true)}
+                    icon={<Plus size={14} />}
+                >
+                    Nouvel Article
+                </PillButton>
+            )}
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
                         className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
-                        onClick={() => setIsOpen(false)}
+                        onClick={handleClose}
                     />
 
                     <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/15 bg-[#0B101B]/95 shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent">
@@ -100,12 +165,16 @@ export default function ArticleModal() {
                                     {type === 'ouvrage' ? <Layers size={20} /> : <Box size={20} />}
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-white tracking-tight">Ajouter un article</h2>
-                                    <p className="text-xs text-slate-400">Catalogue de prix & ouvrages composés</p>
+                                    <h2 className="text-lg font-bold text-white tracking-tight">
+                                        {articleToEdit ? "Modifier l'article" : "Ajouter un article"}
+                                    </h2>
+                                    <p className="text-xs text-slate-400">
+                                        {articleToEdit ? "Mettre à jour les tarifs et caractéristiques" : "Catalogue de prix & ouvrages composés"}
+                                    </p>
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={handleClose}
                                 className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 transition-all hover:bg-white/10 hover:text-white"
                             >
                                 <X size={16} />
@@ -146,6 +215,8 @@ export default function ArticleModal() {
                                     </label>
                                     <input
                                         name="reference"
+                                        value={reference}
+                                        onChange={(e) => setReference(e.target.value)}
                                         placeholder="ex: REF-001"
                                         className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20 font-medium"
                                     />
@@ -155,7 +226,11 @@ export default function ArticleModal() {
                                         Désignation
                                     </label>
                                     <input
-                                        name="name" required autoFocus
+                                        name="name"
+                                        required
+                                        autoFocus
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
                                         placeholder="ex: Pose Parquet Chêne Massif"
                                         className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20 font-medium"
                                     />
@@ -169,6 +244,8 @@ export default function ArticleModal() {
                                     </label>
                                     <select
                                         name="category"
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
                                         className="w-full rounded-2xl border border-white/10 bg-[#0E1526] px-4 py-3 text-sm text-white outline-none transition-all focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 [&>option]:bg-[#0E1526] [&>option]:text-white font-medium"
                                     >
                                         <option value="fourniture">📦 Fourniture</option>
@@ -185,6 +262,8 @@ export default function ArticleModal() {
                                     </label>
                                     <select
                                         name="unit"
+                                        value={unit}
+                                        onChange={(e) => setUnit(e.target.value)}
                                         className="w-full rounded-2xl border border-white/10 bg-[#0E1526] px-4 py-3 text-sm text-white outline-none transition-all focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 [&>option]:bg-[#0E1526] [&>option]:text-white font-medium"
                                     >
                                         <option value="u">Unité (u)</option>
@@ -280,7 +359,12 @@ export default function ArticleModal() {
                                         Prix Vente HT (€)
                                     </label>
                                     <input
-                                        name="price_ht" type="number" step="0.01" required
+                                        name="price_ht"
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        value={priceHt}
+                                        onChange={(e) => setPriceHt(e.target.value)}
                                         placeholder="0.00"
                                         className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.05] px-4 py-3 text-sm text-emerald-300 placeholder-emerald-600 outline-none transition-all focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 font-mono font-semibold"
                                     />
@@ -292,6 +376,8 @@ export default function ArticleModal() {
                                     </label>
                                     <select
                                         name="tva"
+                                        value={tva}
+                                        onChange={(e) => setTva(e.target.value)}
                                         className="w-full rounded-2xl border border-white/10 bg-[#0E1526] px-4 py-3 text-sm text-white outline-none transition-all focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 [&>option]:bg-[#0E1526] [&>option]:text-white font-medium"
                                     >
                                         <option value="20">20% (Standard)</option>
@@ -306,7 +392,9 @@ export default function ArticleModal() {
                                         Coût / Déboursé (€)
                                     </label>
                                     <input
-                                        name="cost_ht" type="number" step="0.01"
+                                        name="cost_ht"
+                                        type="number"
+                                        step="0.01"
                                         value={cost}
                                         onChange={(e) => setCost(e.target.value)}
                                         readOnly={type === 'ouvrage'}
@@ -330,7 +418,11 @@ export default function ArticleModal() {
                                         <div>
                                             <label className="mb-1 block text-[11px] text-slate-400">Stock Actuel</label>
                                             <input
-                                                name="stock" type="number" step="1"
+                                                name="stock"
+                                                type="number"
+                                                step="1"
+                                                value={stock}
+                                                onChange={(e) => setStock(e.target.value)}
                                                 placeholder="0"
                                                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20 font-mono"
                                             />
@@ -338,7 +430,11 @@ export default function ArticleModal() {
                                         <div>
                                             <label className="mb-1 block text-[11px] text-slate-400">Seuil d&apos;alerte</label>
                                             <input
-                                                name="min_stock" type="number" step="1"
+                                                name="min_stock"
+                                                type="number"
+                                                step="1"
+                                                value={minStock}
+                                                onChange={(e) => setMinStock(e.target.value)}
                                                 placeholder="0"
                                                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20 font-mono"
                                             />
@@ -346,7 +442,10 @@ export default function ArticleModal() {
                                         <div>
                                             <label className="mb-1 block text-[11px] text-slate-400">Fournisseur</label>
                                             <input
-                                                name="supplier" type="text"
+                                                name="supplier"
+                                                type="text"
+                                                value={supplier}
+                                                onChange={(e) => setSupplier(e.target.value)}
                                                 placeholder="Nom fournisseur"
                                                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition-all focus:border-violet-500/60 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/20"
                                             />
@@ -358,7 +457,7 @@ export default function ArticleModal() {
                             <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-white/10">
                                 <button
                                     type="button"
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={handleClose}
                                     className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-xs font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white"
                                 >
                                     Annuler
@@ -369,7 +468,7 @@ export default function ArticleModal() {
                                     className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-6 py-2.5 text-xs font-semibold text-white shadow-[0_4px_20px_rgba(124,58,237,0.4)] transition-all active:scale-95 disabled:opacity-50"
                                 >
                                     {isLoading ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                                    <span>Enregistrer l&apos;article</span>
+                                    <span>{articleToEdit ? "Mettre à jour l'article" : "Enregistrer l'article"}</span>
                                 </button>
                             </div>
 
