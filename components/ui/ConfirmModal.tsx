@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, ShieldAlert, Info, X, Loader2 } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, Info, CheckCircle2, X, Loader2 } from 'lucide-react'
 
 export interface ConfirmModalProps {
     isOpen: boolean
@@ -12,7 +12,7 @@ export interface ConfirmModalProps {
     message: React.ReactNode
     confirmText?: string
     cancelText?: string
-    variant?: 'danger' | 'warning' | 'info'
+    variant?: 'danger' | 'warning' | 'info' | 'success'
     isProcessing?: boolean
 }
 
@@ -48,6 +48,11 @@ export default function ConfirmModal({
             icon: Info,
             bg: 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
             button: 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-lg shadow-indigo-500/20 focus:ring-indigo-500'
+        },
+        success: {
+            icon: CheckCircle2,
+            bg: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+            button: 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-lg shadow-emerald-500/20 focus:ring-emerald-500'
         }
     }[variant]
 

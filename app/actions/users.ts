@@ -60,16 +60,18 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
                 // Si l'utilisateur était en attente (invité), l'activer immédiatement dès sa connexion
                 if (authRecord.status === 'invite' || !authRecord.last_login_at) {
                     recordStoredUserLogin(email)
-                    supabase
-                        .from('authorized_users')
-                        .update({
-                            status: 'actif',
-                            last_login_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        })
-                        .ilike('email', email)
-                        .then(() => {})
-                        .catch(() => {})
+                    try {
+                        await supabase
+                            .from('authorized_users')
+                            .update({
+                                status: 'actif',
+                                last_login_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            })
+                            .ilike('email', email)
+                    } catch {
+                        // Silencieux
+                    }
                 }
 
                 const fName = authRecord.first_name || nameInfo.firstName
