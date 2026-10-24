@@ -19,9 +19,9 @@ export default function KotaSignatureLogo({ className = '', showTagline = true }
         setReplayKey((prev) => prev + 1)
     }
 
-    // Normalized smooth cubic bezier path modeling the continuous ribbon loop of the K
+    // Normalized smooth cubic bezier path modeling the continuous ribbon loop of the K in 480x585
     const ribbonPath =
-        'M 140 450 C 95 405, 85 270, 130 170 C 165 95, 235 75, 275 95 C 310 115, 290 190, 255 260 C 235 300, 290 345, 360 400 C 420 450, 455 460, 415 488 C 360 508, 280 488, 220 465 C 180 450, 260 340, 325 270 C 395 195, 455 205, 445 268 C 435 320, 360 350, 285 325 Z'
+        'M 130 300 C 90 270, 80 170, 120 90 C 150 35, 210 20, 245 35 C 275 50, 260 115, 230 180 C 215 210, 270 250, 330 295 C 385 335, 410 340, 380 345 C 335 350, 265 335, 210 315 C 170 305, 240 215, 300 160 C 360 95, 415 105, 405 160 C 395 205, 330 230, 265 210 Z'
 
     return (
         <div className={`relative flex items-center gap-4 select-none ${className}`}>
@@ -63,14 +63,14 @@ export default function KotaSignatureLogo({ className = '', showTagline = true }
                         duration: 4.5,
                         ease: 'easeInOut'
                     }}
-                    className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                    className="relative w-32 h-40 md:w-36 md:h-46 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
                 >
                     {/* SVG KINETIC STROKE TRACER (Plays on initial load / replay) */}
                     <AnimatePresence>
                         {!isRevealed && (
                             <svg
                                 key={`svg-${replayKey}`}
-                                viewBox="0 0 520 520"
+                                viewBox="0 0 480 585"
                                 className="absolute inset-0 w-full h-full pointer-events-none z-20"
                             >
                                 <defs>
@@ -136,8 +136,8 @@ export default function KotaSignatureLogo({ className = '', showTagline = true }
                         className="relative w-full h-full"
                     >
                         <Image
-                            src="/kota-symbol.png"
-                            alt="KOTA Emblem"
+                            src="/kota-logo-transparent.png"
+                            alt="KOTA Logo"
                             fill
                             className="object-contain drop-shadow-[0_8px_20px_rgba(246,235,215,0.18)]"
                             priority
