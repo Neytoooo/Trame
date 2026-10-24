@@ -37,10 +37,10 @@ export function getAuthorInfo(createdById?: string | null) {
     }
     return {
         id: 'user-default',
-        name: 'Collaborateur Trame',
+        name: 'Collaborateur KOTA',
         role: 'Équipe Travaux',
-        initials: 'CT',
-        email: 'collaborateur@trame-btp.fr',
+        initials: 'CK',
+        email: 'collaborateur@kota-btp.fr',
         colorKey: 'indigo'
     }
 }
@@ -60,7 +60,7 @@ export default function UserAvatarBadge({ author, createdById, createdAt, size =
     let resolvedEmail = author?.email
     let colorKey = author?.avatar_color || 'indigo'
 
-    // Si on a un createdById, chercher d'abord dans l'équipe Trame
+    // Si on a un createdById, chercher d'abord dans l'équipe KOTA
     if (createdById) {
         const teamMember = INITIAL_TEAM_MEMBERS.find(m => m.id === createdById)
         if (teamMember) {

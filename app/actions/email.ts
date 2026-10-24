@@ -20,7 +20,7 @@ export async function sendFactureEmail(facture: any, email: string, pdfBase64?: 
         }] : []
 
         const { data, error } = await resend.emails.send({
-            from: 'Trame <onboarding@resend.dev>', // Changer par ton domaine vérifié plus tard
+            from: 'KOTA <onboarding@resend.dev>', // Changer par ton domaine vérifié plus tard
             to: [email],
             subject: `Votre facture ${facture.reference} est disponible`,
             html: `
@@ -33,7 +33,7 @@ export async function sendFactureEmail(facture: any, email: string, pdfBase64?: 
                 </div>
 
                 <p>Merci de votre confiance.</p>
-                <p>Cordialement,<br/>L'équipe Trame</p>
+                <p>Cordialement,<br/>L'équipe KOTA</p>
             `,
             attachments
         })

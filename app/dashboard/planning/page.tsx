@@ -1,7 +1,7 @@
 import TechnicianSchedule from '@/components/planning/TechnicianSchedule'
 
 export const metadata = {
-    title: 'Planning des Techniciens & Chantiers | Trame',
+    title: 'Planning des Techniciens & Chantiers | KOTA',
     description: 'Planning hebdomadaire des interventions par technicien et zone géographique.'
 }
 

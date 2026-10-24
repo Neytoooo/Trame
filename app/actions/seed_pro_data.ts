@@ -11,7 +11,7 @@ export async function seedProBtpDataAction() {
     if (userError || !user) {
         return {
             success: false,
-            error: "Vous devez être connecté à Trame pour initialiser les données."
+            error: "Vous devez être connecté à KOTA pour initialiser les données."
         }
     }
 

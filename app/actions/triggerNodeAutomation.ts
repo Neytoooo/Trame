@@ -170,7 +170,7 @@ async function handleEmailAction(node: any, chantier: any, resendInstance: Resen
     if (!recipientEmail) return { success: false, error: "Email destinataire manquant" }
 
     const { error } = await resendInstance.emails.send({
-        from: 'Trame <onboarding@resend.dev>',
+        from: 'KOTA <onboarding@resend.dev>',
         to: [recipientEmail],
         subject: emailSubject,
         html: `<h1>Nouvelle étape : ${node.label}</h1><p>Le chantier avance !</p>`,
@@ -190,7 +190,7 @@ async function handleCalendarAction(node: any, chantier: any, resendInstance: Re
 
     // Simple Email for now (ICS logic omitted for brevity in cleanup, can re-add if needed but keeping it clean)
     const { error } = await resendInstance.emails.send({
-        from: 'Trame <onboarding@resend.dev>',
+        from: 'KOTA <onboarding@resend.dev>',
         to: [clientEmail],
         subject: `Invitation : ${title}`,
         html: `<p>Vous êtes invité à : <strong>${title}</strong></p><p>${description}</p>`,

@@ -1,8 +1,8 @@
-# 🏗️ Trame - L'ERP Bâtiment Nouvelle Génération
+# 🏗️ KOTA - Technology & Design (ERP Bâtiment Nouvelle Génération)
 
-**Trame** est une application SaaS moderne conçue pour simplifier la gestion des artisans et PME du bâtiment. Elle se positionne comme une alternative rapide, esthétique et web-based aux logiciels traditionnels comme Sage Batigest.
+**KOTA** est une application SaaS moderne conçue pour simplifier la gestion des artisans et PME du bâtiment. Elle se positionne comme une alternative rapide, esthétique et web-based aux logiciels traditionnels comme Sage Batigest.
 
-![Trame Preview](https://via.placeholder.com/1200x600?text=Dashboard+Preview+Trame) **
+![Trame Preview](https://via.placeholder.com/1200x600?text=Dashboard+Preview+KOTA) **
 
 ## ✨ Fonctionnalités Principales
 

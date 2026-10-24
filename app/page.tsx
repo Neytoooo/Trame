@@ -101,12 +101,12 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="mb-6">
-              <div className="relative h-20 w-44">
+              <div className="relative h-24 w-56">
                 <Image
-                  src="/trame-logo.png"
-                  alt="Trame Logo"
+                  src="/kota-logo-transparent.png"
+                  alt="KOTA Logo"
                   fill
-                  className="object-contain"
+                  className="object-contain object-left"
                   priority
                 />
               </div>
@@ -114,7 +114,7 @@ export default function LoginPage() {
 
             <div className="mt-12">
               <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
-                ✦ Alternative à Sage Batigest
+                ✦ Alternative moderne à Sage Batigest & Obat
               </span>
               <h1 className="mt-5 text-4xl font-bold leading-[1.15] tracking-tight text-white">
                 Gérez vos chantiers <br />
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 </span>
               </h1>
               <p className="mt-4 text-[15px] leading-relaxed text-gray-400">
-                Devis, factures et suivi de chantier en temps réel, partout avec vous.
+                Devis IA, factures et suivi d'équipe en temps réel avec KOTA.
               </p>
             </div>
           </div>
@@ -152,6 +152,19 @@ export default function LoginPage() {
 
         {/* COLONNE DROITE : Formulaire (Action) */}
         <div className="flex flex-col justify-center bg-[#111827] p-8 md:p-12">
+          {/* Logo KOTA visible uniquement sur mobile */}
+          <div className="mb-6 flex items-center justify-center md:hidden">
+            <div className="relative h-14 w-44">
+              <Image
+                src="/kota-logo-transparent.png"
+                alt="KOTA Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight text-white">Bon retour parmi nous</h2>
             <p className="mt-1 text-sm text-gray-400">Connectez-vous pour accéder à votre espace d'entreprise.</p>

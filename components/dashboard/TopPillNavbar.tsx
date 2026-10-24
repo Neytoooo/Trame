@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -144,8 +145,36 @@ export default function TopPillNavbar({ user, userRole, displayName }: TopPillNa
         <header className="relative z-50 w-full px-4 md:px-8">
             <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
 
-                {/* --- 1. USER PROFILE PILL (Left) --- */}
-                <div className="relative shrink-0">
+                {/* --- 1. BRAND & USER PROFILE PILLS (Left) --- */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Brand Pill */}
+                    <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700 group cursor-pointer"
+                        title="KOTA — Technology & Design"
+                    >
+                        <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-[#0D121B] border border-white/10 shadow-xs overflow-hidden">
+                            <Image
+                                src="/kota-symbol.png"
+                                alt="KOTA"
+                                width={20}
+                                height={20}
+                                className="w-5 h-5 object-contain"
+                                priority
+                            />
+                        </div>
+                        <div className="text-left hidden lg:block pr-1">
+                            <p className="text-[11px] font-black tracking-widest text-slate-900 dark:text-white uppercase leading-none font-serif">
+                                KOTA
+                            </p>
+                            <p className="text-[7.5px] tracking-wider text-slate-400 dark:text-slate-500 font-semibold uppercase leading-none mt-0.5">
+                                Tech & Design
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* User Profile Pill */}
+                    <div className="relative shrink-0">
                     <button
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                         className="flex items-center gap-2.5 bg-white dark:bg-[#131B2A] hover:bg-slate-50 dark:hover:bg-[#1A2438] border border-slate-200/90 dark:border-slate-800 rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all hover:border-slate-300 dark:hover:border-slate-700 group cursor-pointer"
@@ -215,8 +244,9 @@ export default function TopPillNavbar({ user, userRole, displayName }: TopPillNa
                         </div>
                     )}
                 </div>
+            </div>
 
-                {/* --- 2. CENTER PILL NAVBAR (LIQUID MORPHING SELECTOR) --- */}
+            {/* --- 2. CENTER PILL NAVBAR (LIQUID MORPHING SELECTOR) --- */}
                 <div className="flex items-center justify-center">
                     <nav className="relative flex items-center gap-0.5 p-1 bg-white dark:bg-[#131B2A]/90 border border-slate-200/90 dark:border-slate-800 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-md no-scrollbar">
                         {navLinks.map((link) => {

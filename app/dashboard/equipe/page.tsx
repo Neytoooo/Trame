@@ -44,7 +44,7 @@ export default async function EquipePage() {
     const firstName = profile.firstName
     const lastName = profile.lastName
     const userInitials = `${firstName[0] || 'U'}${lastName[0] || ''}`.toUpperCase()
-    const userEmail = user?.email || 'collaborateur@trame-btp.fr'
+    const userEmail = user?.email || 'collaborateur@kota.fr'
 
     // 3. Enrich primary team member with live DB stats or realistic baseline
     const enrichedMembers: TeamMember[] = INITIAL_TEAM_MEMBERS.map((member, index) => {
