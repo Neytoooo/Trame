@@ -7,6 +7,7 @@ import { CheckCircle2, ArrowRight, LayoutDashboard, ShieldAlert } from 'lucide-r
 import { useRouter } from 'next/navigation'
 import { checkEmailWhitelistedAction } from '@/app/actions/users'
 import InteractiveDotGrid from '@/components/ui/InteractiveDotGrid'
+import KotaSignatureLogo from '@/components/ui/KotaSignatureLogo'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -96,22 +97,9 @@ export default function LoginPage() {
         {/* COLONNE GAUCHE : Marketing (Visuel) */}
         <div className="relative hidden flex-col justify-between bg-[#0B0F17]/95 p-10 md:flex border-r border-white/[0.04]">
           <div className="relative">
-            {/* Logo KOTA Agrandie & Animé au Hover */}
-            <div className="mb-8">
-              <div className="group relative inline-block cursor-pointer">
-                {/* Aura subtile et élégante au survol */}
-                <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-amber-400/0 via-amber-200/15 to-indigo-500/0 opacity-0 blur-2xl transition-all duration-500 group-hover:opacity-100 group-hover:scale-110 pointer-events-none" />
-
-                <div className="relative h-28 w-28 lg:h-32 lg:w-32 transition-all duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-1">
-                  <Image
-                    src="/kota-logo-transparent.png"
-                    alt="KOTA Logo"
-                    fill
-                    className="object-contain object-left drop-shadow-[0_6px_28px_rgba(255,255,255,0.08)]"
-                    priority
-                  />
-                </div>
-              </div>
+            {/* Brand Header KOTA : Tracé Cinétique Signature + Lockup Typographique */}
+            <div className="mb-10">
+              <KotaSignatureLogo />
             </div>
 
             <div className="mt-8">
@@ -154,19 +142,9 @@ export default function LoginPage() {
 
         {/* COLONNE DROITE : Formulaire (Action) */}
         <div className="flex flex-col justify-center bg-[#111827] p-8 md:p-12">
-          {/* Logo KOTA visible uniquement sur mobile */}
+          {/* Logo KOTA visible uniquement sur mobile avec Lockup Signature */}
           <div className="mb-6 flex items-center justify-center md:hidden">
-            <div className="group relative inline-block cursor-pointer">
-              <div className="relative h-20 w-20 transition-transform duration-300 group-hover:scale-105">
-                <Image
-                  src="/kota-logo-transparent.png"
-                  alt="KOTA Logo"
-                  fill
-                  className="object-contain drop-shadow-[0_4px_16px_rgba(255,255,255,0.08)]"
-                  priority
-                />
-              </div>
-            </div>
+            <KotaSignatureLogo showTagline={false} />
           </div>
 
           <div className="mb-8">
