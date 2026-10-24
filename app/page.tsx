@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { CheckCircle2, ArrowRight, LayoutDashboard, ShieldAlert } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { checkEmailWhitelistedAction } from '@/app/actions/users'
+import InteractiveDotGrid from '@/components/ui/InteractiveDotGrid'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -84,35 +85,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080C14] p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#060A10] p-4">
 
-      {/* --- ARRIÈRE PLAN (Effet "Glow" animé) --- */}
-      <div className="absolute -left-32 top-1/4 h-[500px] w-[500px] rounded-full bg-blue-600 opacity-15 blur-[120px] animate-pulse" />
-      <div className="absolute -right-32 bottom-1/4 h-[500px] w-[500px] rounded-full bg-indigo-700 opacity-15 blur-[120px] animate-pulse" style={{ animationDelay: '1.5s' }} />
-      <div className="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-violet-600 opacity-10 blur-[80px]" />
+      {/* --- ARRIÈRE-PLAN INTERACTIF : GRILLE DE POINTS ARCHITECTURALE AVEC RÉACTION SOURIS --- */}
+      <InteractiveDotGrid />
 
       {/* --- CONTENEUR PRINCIPAL --- */}
-      <div className="relative z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-3xl border border-white/[0.08] shadow-[0_0_80px_rgba(0,0,0,0.6)] md:grid-cols-2">
+      <div className="relative z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-3xl border border-white/[0.08] shadow-[0_0_80px_rgba(0,0,0,0.6)] md:grid-cols-2 backdrop-blur-xs">
 
         {/* COLONNE GAUCHE : Marketing (Visuel) */}
-        <div className="relative hidden flex-col justify-between bg-[#0D1117] p-10 md:flex">
-          {/* Subtle inner glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-indigo-600/10 pointer-events-none" />
-
+        <div className="relative hidden flex-col justify-between bg-[#0B0F17]/95 p-10 md:flex border-r border-white/[0.04]">
           <div className="relative">
-            <div className="mb-6">
-              <div className="relative h-24 w-56">
-                <Image
-                  src="/kota-logo-transparent.png"
-                  alt="KOTA Logo"
-                  fill
-                  className="object-contain object-left"
-                  priority
-                />
+            {/* Logo KOTA Agrandie & Animé au Hover */}
+            <div className="mb-8">
+              <div className="group relative inline-block cursor-pointer">
+                {/* Aura subtile et élégante au survol */}
+                <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-amber-400/0 via-amber-200/15 to-indigo-500/0 opacity-0 blur-2xl transition-all duration-500 group-hover:opacity-100 group-hover:scale-110 pointer-events-none" />
+
+                <div className="relative h-28 w-28 lg:h-32 lg:w-32 transition-all duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-1">
+                  <Image
+                    src="/kota-logo-transparent.png"
+                    alt="KOTA Logo"
+                    fill
+                    className="object-contain object-left drop-shadow-[0_6px_28px_rgba(255,255,255,0.08)]"
+                    priority
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="mt-12">
+            <div className="mt-8">
               <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
                 ✦ Alternative moderne à Sage Batigest & Obat
               </span>
@@ -154,14 +156,16 @@ export default function LoginPage() {
         <div className="flex flex-col justify-center bg-[#111827] p-8 md:p-12">
           {/* Logo KOTA visible uniquement sur mobile */}
           <div className="mb-6 flex items-center justify-center md:hidden">
-            <div className="relative h-14 w-44">
-              <Image
-                src="/kota-logo-transparent.png"
-                alt="KOTA Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+            <div className="group relative inline-block cursor-pointer">
+              <div className="relative h-20 w-20 transition-transform duration-300 group-hover:scale-105">
+                <Image
+                  src="/kota-logo-transparent.png"
+                  alt="KOTA Logo"
+                  fill
+                  className="object-contain drop-shadow-[0_4px_16px_rgba(255,255,255,0.08)]"
+                  priority
+                />
+              </div>
             </div>
           </div>
 
