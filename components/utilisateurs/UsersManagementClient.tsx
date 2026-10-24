@@ -274,7 +274,7 @@ export default function UsersManagementClient({
         if (!ok) return
 
         setActionLoadingId(user.id)
-        const res = await removeAuthorizedUserAction(user.id)
+        const res = await removeAuthorizedUserAction(user.id, user.email)
         setActionLoadingId(null)
 
         if (res.success || isTableMissing) {

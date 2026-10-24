@@ -1,4 +1,4 @@
-import { getCachedUser } from '@/utils/supabase/server'
+import { getCachedUser, createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import TopPillNavbar from '@/components/dashboard/TopPillNavbar'
 import { getCurrentUserRoleAction } from '@/app/actions/users'
@@ -14,10 +14,30 @@ export default async function DashboardLayout({
         redirect('/')
     }
 
+    const supabase = await createClient()
+
+    // 1. Vérification du rôle et des droits d'accès whitelist
     const roleInfo = await getCurrentUserRoleAction(user.email)
 
-    // Si l'utilisateur n'est pas autorisé (ex: pas sur la whitelist ou suspendu)
+    // Si l'utilisateur n'est pas autorisé (ex: pas sur la whitelist, supprimé de la DB ou suspendu)
     if (!roleInfo.isAuthorized) {
+        // Détruire immédiatement la session pour déconnecter son navigateur
+        try {
+            await supabase.auth.signOut()
+        } catch {
+            // Ignorer
+        }
+        redirect('/?error=unauthorized_email')
+    }
+
+    // 2. Vérification d'existence en base Supabase : si le compte a été supprimé manuellement dans auth.users
+    const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
+    if (verifyError || !verifiedUser) {
+        try {
+            await supabase.auth.signOut()
+        } catch {
+            // Ignorer
+        }
         redirect('/?error=unauthorized_email')
     }
 

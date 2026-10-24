@@ -28,6 +28,7 @@ export default function LoginPage() {
         setAuthError("Erreur de redirection. Vérifiez vos URLs dans Supabase.")
       } else if (error === 'unauthorized_email') {
         setAuthError("Accès restreint : Votre adresse email n'est pas autorisée sur cette application. Contactez votre administrateur pour recevoir une invitation.")
+        supabase.auth.signOut().catch(() => {})
       }
     }
   }, [])

@@ -109,6 +109,15 @@ export async function middleware(request: NextRequest) {
         })
     }
 
+    // Si sur l'accueil '/' avec un paramètre d'erreur (ex: utilisateur révoqué), ne JAMAIS rediriger sur le dashboard
+    if (pathname === '/' && searchParams.has('error')) {
+        return NextResponse.next({
+            request: {
+                headers: request.headers,
+            },
+        })
+    }
+
     // Si sur l'accueil '/' et déjà connecté avec token valide, redirection directe sur le dashboard (0ms)
     if (pathname === '/' && isTokenValid) {
         return NextResponse.redirect(new URL('/dashboard', request.url))

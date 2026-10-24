@@ -45,7 +45,52 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
         }
     }
 
-    // 1. Vérifier en priorité dans le store persistant
+    // 1. Tenter la vérification en priorité dans la table Supabase si elle existe
+    try {
+        const { data: authRecord, error } = await supabase
+            .from('authorized_users')
+            .select('*')
+            .ilike('email', email)
+            .maybeSingle()
+
+        if (!error) {
+            // La table existe dans Supabase
+            if (authRecord) {
+                const fName = authRecord.first_name || nameInfo.firstName
+                const lName = authRecord.last_name || nameInfo.lastName
+                const dName = [fName, lName].filter(Boolean).join(' ') || nameInfo.displayName
+
+                return {
+                    role: authRecord.role as UserRole,
+                    isAuthorized: authRecord.status !== 'suspendu',
+                    isAdmin: authRecord.role === 'admin',
+                    email: authRecord.email,
+                    status: authRecord.status as UserAccessStatus,
+                    firstName: fName,
+                    lastName: lName,
+                    displayName: dName
+                }
+            } else {
+                // L'utilisateur a été supprimé de la table Supabase
+                // Nettoyer également le store local pour rester parfaitement synchronisé
+                removeStoredUser(email)
+                return {
+                    role: 'charge_affaires',
+                    isAuthorized: false,
+                    isAdmin: false,
+                    email,
+                    status: 'suspendu',
+                    firstName: nameInfo.firstName,
+                    lastName: nameInfo.lastName,
+                    displayName: nameInfo.displayName
+                }
+            }
+        }
+    } catch {
+        // Fallback store si la table n'existe pas encore dans Supabase
+    }
+
+    // 2. Fallback sur le store persistant si Supabase n'a pas la table
     const storedUser = getStoredUserByEmail(email)
     if (storedUser) {
         const fName = storedUser.first_name || nameInfo.firstName
@@ -62,34 +107,6 @@ export async function getCurrentUserRoleAction(explicitEmail?: string): Promise<
             lastName: lName,
             displayName: dName
         }
-    }
-
-    // 2. Vérifier dans la table Supabase si elle existe
-    try {
-        const { data: authRecord } = await supabase
-            .from('authorized_users')
-            .select('*')
-            .ilike('email', email)
-            .single()
-
-        if (authRecord) {
-            const fName = authRecord.first_name || nameInfo.firstName
-            const lName = authRecord.last_name || nameInfo.lastName
-            const dName = [fName, lName].filter(Boolean).join(' ') || nameInfo.displayName
-
-            return {
-                role: authRecord.role as UserRole,
-                isAuthorized: authRecord.status !== 'suspendu',
-                isAdmin: authRecord.role === 'admin',
-                email: authRecord.email,
-                status: authRecord.status as UserAccessStatus,
-                firstName: fName,
-                lastName: lName,
-                displayName: dName
-            }
-        }
-    } catch {
-        // Fallback store
     }
 
     // Par défaut si email introuvable dans la liste
@@ -119,7 +136,42 @@ export async function checkEmailWhitelistedAction(rawEmail: string): Promise<{
         return { isWhitelisted: false, message: 'Adresse email invalide.' }
     }
 
-    // 1. Vérification dans le store persistant
+    // 1. Vérification dans la table Supabase en priorité
+    try {
+        const supabase = await createClient()
+        const { data: record, error } = await supabase
+            .from('authorized_users')
+            .select('*')
+            .ilike('email', email)
+            .maybeSingle()
+
+        if (!error) {
+            if (record) {
+                if (record.status === 'suspendu') {
+                    return {
+                        isWhitelisted: false,
+                        message: 'Votre accès à cette entreprise a été suspendu par l\'administrateur.'
+                    }
+                }
+                return {
+                    isWhitelisted: true,
+                    role: record.role as UserRole,
+                    status: record.status as UserAccessStatus
+                }
+            } else {
+                // Supprimé de Supabase
+                removeStoredUser(email)
+                return {
+                    isWhitelisted: false,
+                    message: `L'adresse email "${email}" n'est plus autorisée sur cet espace d'entreprise. Votre compte a été révoqué.`
+                }
+            }
+        }
+    } catch {
+        // Fallback store
+    }
+
+    // 2. Vérification dans le store persistant si la table Supabase n'est pas configurée
     const stored = getStoredUserByEmail(email)
     if (stored) {
         if (stored.status === 'suspendu') {
@@ -133,32 +185,6 @@ export async function checkEmailWhitelistedAction(rawEmail: string): Promise<{
             role: stored.role,
             status: stored.status
         }
-    }
-
-    // 2. Vérification dans la table Supabase
-    try {
-        const supabase = await createClient()
-        const { data: record } = await supabase
-            .from('authorized_users')
-            .select('*')
-            .ilike('email', email)
-            .single()
-
-        if (record) {
-            if (record.status === 'suspendu') {
-                return {
-                    isWhitelisted: false,
-                    message: 'Votre accès à cette entreprise a été suspendu par l\'administrateur.'
-                }
-            }
-            return {
-                isWhitelisted: true,
-                role: record.role as UserRole,
-                status: record.status as UserAccessStatus
-            }
-        }
-    } catch {
-        // Fallback
     }
 
     return {
@@ -192,15 +218,14 @@ export async function getAuthorizedUsersAction(): Promise<{
             .select('*')
             .order('created_at', { ascending: false })
 
-        if (!error && remoteUsers && remoteUsers.length > 0) {
-            // Fusionner avec les utilisateurs distants
-            const mergedMap = new Map<string, AuthorizedUser>()
-            for (const u of storedUsers) mergedMap.set(u.email.toLowerCase(), u)
-            for (const u of remoteUsers as AuthorizedUser[]) mergedMap.set(u.email.toLowerCase(), u)
-            return {
-                success: true,
-                users: Array.from(mergedMap.values()),
-                isTableMissing: false
+        if (!error) {
+            // La table existe dans Supabase : elle est la source de vérité absolue
+            if (remoteUsers && remoteUsers.length > 0) {
+                return {
+                    success: true,
+                    users: remoteUsers as AuthorizedUser[],
+                    isTableMissing: false
+                }
             }
         }
 
@@ -361,7 +386,10 @@ export async function updateAuthorizedUserStatusAction(
 /**
  * Révoque / supprime définitivement un utilisateur de la liste blanche (Réservé aux Administrateurs)
  */
-export async function removeAuthorizedUserAction(userId: string): Promise<{
+export async function removeAuthorizedUserAction(
+    userId: string,
+    explicitEmail?: string
+): Promise<{
     success: boolean
     error?: string
 }> {
@@ -371,7 +399,15 @@ export async function removeAuthorizedUserAction(userId: string): Promise<{
     }
 
     const storedUsers = getStoredUsers()
-    const target = storedUsers.find(u => u.id === userId)
+    const target = storedUsers.find(
+        u => u.id === userId || (explicitEmail && u.email.toLowerCase() === explicitEmail.toLowerCase())
+    )
+
+    const targetEmail = (explicitEmail || target?.email || '').trim().toLowerCase()
+
+    if (targetEmail === 'mattiskhn@gmail.com') {
+        return { success: false, error: 'Impossible de supprimer le compte administrateur principal.' }
+    }
     if (target?.role === 'admin') {
         const adminCount = storedUsers.filter(u => u.role === 'admin').length
         if (adminCount <= 1) {
@@ -379,15 +415,28 @@ export async function removeAuthorizedUserAction(userId: string): Promise<{
         }
     }
 
-    const removed = removeStoredUser(userId)
+    // 1. Supprimer du store local par ID et par Email
+    removeStoredUser(userId)
+    if (targetEmail) {
+        removeStoredUser(targetEmail)
+    }
 
+    // 2. Supprimer de la table Supabase si elle existe
     try {
         const supabase = await createClient()
-        await supabase.from('authorized_users').delete().eq('id', userId)
+        if (targetEmail) {
+            await supabase
+                .from('authorized_users')
+                .delete()
+                .or(`id.eq.${userId},email.ilike.${targetEmail}`)
+        } else {
+            await supabase.from('authorized_users').delete().eq('id', userId)
+        }
     } catch {
         // Ignorer
     }
 
     revalidatePath('/dashboard/utilisateurs')
-    return { success: removed }
+    revalidatePath('/dashboard')
+    return { success: true }
 }

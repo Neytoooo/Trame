@@ -105,25 +105,29 @@ function ensureInitialized(): AuthorizedUser[] {
         const content = fs.readFileSync(FILE_PATH, 'utf-8')
         const parsed = JSON.parse(content) as AuthorizedUser[]
 
-        // S'assurer que les comptes clés existent et sont à jour
+        // S'assurer que le compte administrateur principal existe toujours pour éviter tout blocage
         let modified = false
-        for (const defaultUser of DEFAULT_TEST_USERS) {
-            const idx = parsed.findIndex(u => u.email.toLowerCase() === defaultUser.email.toLowerCase())
-            if (idx === -1) {
-                parsed.push(defaultUser)
-                modified = true
-            } else if (defaultUser.email === 'mattiskhn2@gmail.com' && parsed[idx].role !== 'metreur') {
-                // Forcer le rôle metreur pour mattiskhn2 s'il avait été écrasé
-                parsed[idx].role = 'metreur'
-                parsed[idx].first_name = 'Mattis'
-                parsed[idx].last_name = 'Khn (Second)'
-                modified = true
-            } else if (defaultUser.email === 'mattiskhn@gmail.com' && parsed[idx].role !== 'admin') {
-                parsed[idx].role = 'admin'
-                parsed[idx].first_name = 'Mattis'
-                parsed[idx].last_name = 'Khn'
-                modified = true
-            }
+        const adminEmail = 'mattiskhn@gmail.com'
+        const adminIdx = parsed.findIndex(u => u.email.toLowerCase() === adminEmail)
+        if (adminIdx === -1) {
+            parsed.unshift({
+                id: 'usr-mattis-admin',
+                email: adminEmail,
+                role: 'admin',
+                first_name: 'Mattis',
+                last_name: 'Khn',
+                phone: '06 12 34 56 78',
+                status: 'actif',
+                created_by: null,
+                invited_at: '2026-10-01T08:00:00.000Z',
+                last_login_at: new Date().toISOString(),
+                created_at: '2026-10-01T08:00:00.000Z',
+                updated_at: new Date().toISOString()
+            })
+            modified = true
+        } else if (parsed[adminIdx].role !== 'admin') {
+            parsed[adminIdx].role = 'admin'
+            modified = true
         }
 
         if (modified) {
@@ -198,29 +202,32 @@ export function addStoredUser(user: {
     return newUser
 }
 
-export function updateStoredUserRole(id: string, newRole: UserRole): boolean {
+export function updateStoredUserRole(identifier: string, newRole: UserRole): boolean {
     const users = ensureInitialized()
-    const target = users.find(u => u.id === id)
-    if (!target) return false
-    target.role = newRole
-    target.updated_at = new Date().toISOString()
+    const target = identifier.trim().toLowerCase()
+    const user = users.find(u => u.id === identifier || u.email.toLowerCase() === target)
+    if (!user) return false
+    user.role = newRole
+    user.updated_at = new Date().toISOString()
     saveUsers(users)
     return true
 }
 
-export function updateStoredUserStatus(id: string, newStatus: UserAccessStatus): boolean {
+export function updateStoredUserStatus(identifier: string, newStatus: UserAccessStatus): boolean {
     const users = ensureInitialized()
-    const target = users.find(u => u.id === id)
-    if (!target) return false
-    target.status = newStatus
-    target.updated_at = new Date().toISOString()
+    const target = identifier.trim().toLowerCase()
+    const user = users.find(u => u.id === identifier || u.email.toLowerCase() === target)
+    if (!user) return false
+    user.status = newStatus
+    user.updated_at = new Date().toISOString()
     saveUsers(users)
     return true
 }
 
-export function removeStoredUser(id: string): boolean {
+export function removeStoredUser(identifier: string): boolean {
     const users = ensureInitialized()
-    const filtered = users.filter(u => u.id !== id)
+    const target = identifier.trim().toLowerCase()
+    const filtered = users.filter(u => u.id !== identifier && u.email.toLowerCase() !== target)
     if (filtered.length === users.length) return false
     saveUsers(filtered)
     return true
