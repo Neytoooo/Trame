@@ -1,6 +1,7 @@
 import { createClient, getCachedUser } from '@/utils/supabase/server'
-import { Bell, ShoppingCart, Info, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import NotificationList from './NotificationList'
+import { getMobileNotifications } from '@/lib/mobileDevisStore'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,35 +9,48 @@ export default async function AnnoncesPage() {
     const supabase = await createClient()
     const user = await getCachedUser()
 
-    // En production, utiliser l'action getNotifications, mais ici on peut fetch direct server-side
-    console.log("🔍 [ANNONCES PAGE] Current User ID:", user?.id)
-    console.log("🌍 [ANNONCES PAGE] Fetching GLOBAL notifications (no user filter)")
+    let dbNotifications: any[] = []
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .neq('status', 'archived')
+            .order('created_at', { ascending: false })
+            .limit(50)
 
-    const { data: notifications, error } = await supabase
-        .from('notifications')
-        .select('*')
-        // .eq('user_id', user?.id)  <-- REMOVED to show ALL notifications
-        .neq('status', 'archived')
-        .order('created_at', { ascending: false })
-        .limit(50)
+        if (data) dbNotifications = data
+        if (error) console.error("❌ [ANNONCES PAGE] Fetch Error:", error)
+    } catch (e) {
+        console.warn('Erreur chargement notifications Supabase:', e)
+    }
 
-    if (error) console.error("❌ [ANNONCES PAGE] Fetch Error:", error)
-    console.log("🔍 [ANNONCES PAGE] Fetched Notifications:", notifications?.length)
+    // Fusion avec les notifications de l'application mobile KOTA
+    const localMobileNotifs = getMobileNotifications()
+    const seenIds = new Set(dbNotifications.map(n => n.id))
+    const mergedNotifications = [...dbNotifications]
+
+    for (const m of localMobileNotifs) {
+        if (!seenIds.has(m.id)) {
+            mergedNotifications.push(m)
+        }
+    }
+
+    mergedNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     return (
         <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
             <div className="shrink-0 flex items-center gap-4 pb-4">
-                <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-600/20">
-                    <Bell className="text-blue-500" size={32} />
+                <div className="p-3 bg-violet-600/10 rounded-2xl border border-violet-600/20">
+                    <Bell className="text-violet-500" size={32} />
                 </div>
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Annonces & Alertes</h1>
-                    <p className="text-xs md:text-sm text-slate-500 dark:text-gray-400 font-medium">Consultez vos notifications et confirmez vos commandes automatiques.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Annonces & Notifications</h1>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-gray-400 font-medium">Consultez les devis créés via le smartphone et confirmez vos commandes BTP.</p>
                 </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-10">
-                <NotificationList initialNotifications={notifications || []} />
+                <NotificationList initialNotifications={mergedNotifications} />
             </div>
         </div>
     )
