@@ -62,18 +62,28 @@ export default async function EditDevisPage({ params }: { params: Promise<{ id: 
                     clients: mob.chantiers?.clients || { id: 'cl-mob', name: 'Client Mobile' }
                 }
             }
-            rawItems = (mob.items || []).map((it, idx) => ({
-                id: it.id || `item-${idx}`,
-                devis_id: mob.id,
-                description: it.description,
-                quantity: it.quantity,
-                unit: it.unit,
-                unit_price: it.unit_price,
-                cost_price: it.cost_price || 0,
-                tva: it.tva || 10,
-                position: idx,
-                item_type: 'item'
-            }))
+            rawItems = (mob.items || []).map((it, idx) => {
+                const isImg = (it as any).item_type === 'image' || Boolean((it as any).image_url) || Boolean((it as any).details?.is_image)
+                return {
+                    id: it.id || `item-${idx}`,
+                    devis_id: mob.id,
+                    description: it.description,
+                    quantity: isImg ? 0 : it.quantity,
+                    unit: isImg ? '' : it.unit,
+                    unit_price: isImg ? 0 : it.unit_price,
+                    cost_price: it.cost_price || 0,
+                    tva: isImg ? 0 : (it.tva || 10),
+                    position: idx,
+                    item_type: isImg ? 'image' : (it.item_type || 'item'),
+                    image_url: (it as any).image_url || (it as any).details?.image_url || '',
+                    caption: (it as any).caption || (it as any).details?.caption || '',
+                    details: (it as any).details || (isImg ? {
+                        is_image: true,
+                        image_url: (it as any).image_url || '',
+                        caption: (it as any).caption || it.description || ''
+                    } : {})
+                }
+            })
         }
     }
 

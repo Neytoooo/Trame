@@ -5,6 +5,7 @@ import { getCurrentCompanyId } from '@/lib/company'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { updateMobileDevis } from '@/lib/mobileDevisStore'
 
 export async function createEmptyDevis(chantierId: string) {
     const supabase = await createClient()
@@ -172,6 +173,17 @@ export async function addLineFromArticle(devisId: string, articleId: string) {
 }
 
 export async function saveDevis(devisId: string, items: any[], devisData?: { name?: string, status?: string }) {
+    // Si c'est un devis mobile / local
+    if (devisId.startsWith('dev-mob-')) {
+        const ok = updateMobileDevis(devisId, items, devisData)
+        if (!ok) {
+            return { error: 'Erreur lors de la mise à jour du devis mobile' }
+        }
+        revalidatePath(`/dashboard/devis/${devisId}/edit`)
+        revalidatePath('/dashboard/devis')
+        return { success: true }
+    }
+
     const supabase = await createClient()
 
     // 0. Update devis metadata if provided

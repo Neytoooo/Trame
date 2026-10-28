@@ -84,6 +84,63 @@ export function getMobileDevisById(id: string): MobileDevis | null {
     return list.find(d => d.id === id) || null
 }
 
+export function updateMobileDevis(
+    id: string,
+    items: any[],
+    devisData?: { name?: string; status?: string }
+): boolean {
+    try {
+        ensureDataDir()
+        const list = getMobileDevis()
+        const index = list.findIndex(d => d.id === id)
+        if (index === -1) return false
+
+        const target = list[index]
+
+        let totalHT = 0
+        const sanitizedItems = items.map((it, idx) => {
+            const isImage = it.item_type === 'image' || it.details?.is_image === true || Boolean(it.image_url)
+            const qty = isImage ? 0 : (Number(it.quantity) || 0)
+            const pu = isImage ? 0 : (Number(it.unit_price) || 0)
+            const discount = isImage ? 0 : (Number(it.details?.discount_pct) || 0)
+            if (!isImage && !it.details?.dont_totalize) {
+                totalHT += qty * pu * (1 - discount / 100)
+            }
+
+            return {
+                id: it.id || `item-${Date.now()}-${idx}`,
+                description: it.description || (isImage ? 'Photo / Constat chantier' : 'Prestation'),
+                quantity: qty,
+                unit: isImage ? '' : (it.unit || 'u'),
+                unit_price: pu,
+                cost_price: Number(it.cost_price) || 0,
+                tva: Number(it.tva) || 10,
+                item_type: isImage ? 'image' : (it.item_type || 'item'),
+                image_url: it.image_url || it.details?.image_url || '',
+                caption: it.caption || it.details?.caption || '',
+                details: it.details || {
+                    is_image: isImage,
+                    image_url: it.image_url || it.details?.image_url || '',
+                    caption: it.caption || it.details?.caption || ''
+                }
+            }
+        })
+
+        target.items = sanitizedItems as any
+        target.total_ht = Math.round(totalHT * 100) / 100
+        target.updated_at = new Date().toISOString()
+        if (devisData?.name) target.name = devisData.name
+        if (devisData?.status) target.status = devisData.status as any
+
+        list[index] = target
+        fs.writeFileSync(DEVIS_FILE, JSON.stringify(list, null, 2), 'utf8')
+        return true
+    } catch (e) {
+        console.error('Erreur updateMobileDevis:', e)
+        return false
+    }
+}
+
 export function getMobileNotifications(): MobileNotification[] {
     try {
         ensureDataDir()

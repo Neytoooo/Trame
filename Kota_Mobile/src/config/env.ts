@@ -3,7 +3,7 @@ import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 
 // Tunnel public actif sécurisé (permet de connecter le smartphone en 5G ou partage de connexion)
-export const ACTIVE_TUNNEL_URL = 'https://68d2a1bc986f2f.lhr.life'
+export const ACTIVE_TUNNEL_URL = 'https://ac09407eb53e94.lhr.life'
 
 // IP locale de secours (si sur le même réseau Wi-Fi direct)
 export const SERVER_LOCAL_IP = '10.70.136.9'

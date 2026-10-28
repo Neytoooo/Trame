@@ -114,7 +114,7 @@ export default function SettingsScreen() {
           style={styles.input}
           value={apiUrl}
           onChangeText={setApiUrl}
-          placeholder="https://68d2a1bc986f2f.lhr.life"
+          placeholder="https://ac09407eb53e94.lhr.life"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
         <View style={styles.quickButtonsCol}>
           <TouchableOpacity
             style={styles.tunnelBtn}
-            onPress={() => setApiUrl('https://68d2a1bc986f2f.lhr.life')}
+            onPress={() => setApiUrl('https://ac09407eb53e94.lhr.life')}
             activeOpacity={0.8}
           >
             <Sparkles size={13} color={colors.white} />

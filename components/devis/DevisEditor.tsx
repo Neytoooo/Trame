@@ -261,8 +261,31 @@ export default function DevisEditor({
         setIsImageChoiceOpen(true)
     }
 
-    const handleSelectDepotPhoto = (photo: DepotPhoto) => {
+    const handleSelectDepotPhoto = async (photo: DepotPhoto) => {
         const caption = photo.title || photo.notes || 'Photo du Dépôt'
+
+        // Créer une copie indépendante et permanente pour ce devis
+        // Même si la photo originale du Dépôt est supprimée du Dépôt, le devis conserve sa copie !
+        let devisImageUrl = photo.image_url
+        try {
+            const res = await fetch('/api/devis/copy-photo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageUrl: photo.image_url,
+                    devisId: devisId || reference || 'devis'
+                })
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.success && data.imageUrl) {
+                    devisImageUrl = data.imageUrl
+                }
+            }
+        } catch (e) {
+            console.error('Erreur copie photo pour le devis:', e)
+        }
+
         const newImageItem: DevisItem = {
             id: `new_${Date.now()}`,
             description: photo.title || `Photo ${photo.category}`,
@@ -271,14 +294,15 @@ export default function DevisEditor({
             unit_price: 0,
             tva: 0,
             item_type: 'image',
-            image_url: photo.image_url,
+            image_url: devisImageUrl,
             caption: caption,
             details: {
                 is_image: true,
-                image_url: photo.image_url,
+                image_url: devisImageUrl,
                 caption: caption,
                 depot_photo_id: photo.id,
-                devis_reference: photo.devis_reference
+                devis_reference: photo.devis_reference,
+                original_depot_url: photo.image_url
             }
         }
         setItems(prev => [...prev, newImageItem])
@@ -1516,13 +1540,33 @@ export default function DevisEditor({
                     setReplacingItemId(null)
                 }}
                 currentDevisReference={reference}
-                onSelectPhoto={(photo) => {
+                onSelectPhoto={async (photo) => {
+                    let devisImageUrl = photo.image_url
+                    try {
+                        const res = await fetch('/api/devis/copy-photo', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                imageUrl: photo.image_url,
+                                devisId: devisId || reference || 'devis'
+                            })
+                        })
+                        if (res.ok) {
+                            const data = await res.json()
+                            if (data.success && data.imageUrl) {
+                                devisImageUrl = data.imageUrl
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Erreur copie photo:', e)
+                    }
+
                     if (replacingItemId) {
                         setItems(prev => prev.map(it => it.id === replacingItemId ? {
                             ...it,
-                            image_url: photo.image_url,
+                            image_url: devisImageUrl,
                             caption: photo.title || photo.notes || 'Photo du Dépôt',
-                            details: { ...it.details, image_url: photo.image_url, caption: photo.title || photo.notes }
+                            details: { ...it.details, image_url: devisImageUrl, caption: photo.title || photo.notes }
                         } : it))
                         setReplacingItemId(null)
                     } else {
