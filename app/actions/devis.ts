@@ -1,5 +1,7 @@
 'use server'
 
+import { getCurrentCompanyId } from '@/lib/company'
+
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -41,20 +43,35 @@ export async function createEmptyDevis(chantierId: string) {
 
     const ref = `DEV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
 
-    // 1. Créer le devis brouillon
-    const { data, error } = await supabase
+    // 1. Créer le devis brouillon avec rattachement entreprise
+    const companyId = await getCurrentCompanyId(supabase)
+    const insertPayload: any = {
+        chantier_id: chantierId,
+        reference: ref,
+        name: `Devis ${ref}`,
+        status: 'brouillon',
+        total_ht: 0,
+        company_id: companyId,
+        created_by: profileId,
+        notes: 'Validité de l\'offre : 30 jours.\nAcompte de 30% à la commande.'
+    }
+
+    let { data, error } = await supabase
         .from('devis')
-        .insert({
-            chantier_id: chantierId,
-            reference: ref,
-            name: `Devis ${ref}`,
-            status: 'brouillon',
-            total_ht: 0,
-            created_by: profileId,
-            notes: 'Validité de l\'offre : 30 jours.\nAcompte de 30% à la commande.'
-        })
+        .insert(insertPayload)
         .select()
         .single()
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('company_id'))) {
+        const { company_id, ...fallbackPayload } = insertPayload
+        const retry = await supabase
+            .from('devis')
+            .insert(fallbackPayload)
+            .select()
+            .single()
+        data = retry.data
+        error = retry.error
+    }
 
     if (error) {
         console.error("Erreur création devis:", error)

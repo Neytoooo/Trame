@@ -1,5 +1,7 @@
 'use server'
 
+import { getCurrentCompanyId } from '@/lib/company'
+
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -44,8 +46,9 @@ export async function createArticle(formData: FormData) {
         }
     }
 
-    // 4. Insertion en base de l'article parent
-    const { data: newArticle, error } = await supabase.from('articles').insert({
+    // 4. Insertion en base de l'article parent avec rattachement entreprise
+    const companyId = await getCurrentCompanyId(supabase)
+    const insertPayload: any = {
         name,
         category,
         unit,
@@ -56,8 +59,18 @@ export async function createArticle(formData: FormData) {
         supplier,
         reference,
         tva,
+        company_id: companyId,
         created_by: user.id
-    }).select().single()
+    }
+
+    let { data: newArticle, error } = await supabase.from('articles').insert(insertPayload).select().single()
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('company_id'))) {
+        const { company_id, ...fallbackPayload } = insertPayload
+        const retry = await supabase.from('articles').insert(fallbackPayload).select().single()
+        newArticle = retry.data
+        error = retry.error
+    }
 
     if (error) {
         console.error(error)

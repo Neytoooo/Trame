@@ -1,5 +1,7 @@
 'use server'
 
+import { getCurrentCompanyId } from '@/lib/company'
+
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -10,17 +12,32 @@ export async function createEmptyFacture(chantierId: string) {
 
     if (!user) return { error: "Non connecté" }
 
-    // 1. Créer la facture brouillon
-    const { data, error } = await supabase
+    // 1. Créer la facture brouillon avec rattachement entreprise
+    const companyId = await getCurrentCompanyId(supabase)
+    const insertPayload: any = {
+        chantier_id: chantierId,
+        status: 'en_attente',
+        reference: `F-${Date.now().toString().slice(-6)}`,
+        company_id: companyId,
+        created_by: user.id
+    }
+
+    let { data, error } = await supabase
         .from('factures')
-        .insert({
-            chantier_id: chantierId,
-            status: 'en_attente',
-            reference: `F-${Date.now().toString().slice(-6)}`, // Simple auto-ref logic for now
-            created_by: user.id
-        })
+        .insert(insertPayload)
         .select()
         .single()
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('company_id'))) {
+        const { company_id, ...fallbackPayload } = insertPayload
+        const retry = await supabase
+            .from('factures')
+            .insert(fallbackPayload)
+            .select()
+            .single()
+        data = retry.data
+        error = retry.error
+    }
 
     if (error) {
         console.error(error)

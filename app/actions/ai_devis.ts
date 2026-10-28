@@ -56,7 +56,7 @@ Format JSON attendu :
 `
 
         // 3. Appel à Gemini (modèle flash, très rapide et moins cher pour du parsing)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json" } })
+        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash", generationConfig: { responseMimeType: "application/json" } })
         
         const result = await model.generateContent(prompt)
         const responseText = result.response.text()

@@ -1,3 +1,5 @@
+import type { AuthorizedUser, UserRole } from '@/types/users'
+import { USER_ROLES_CONFIG } from '@/types/users'
 export interface TeamMember {
     id: string
     nom: string
@@ -8,6 +10,7 @@ export interface TeamMember {
     initials: string
     accentColor: 'indigo' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet'
     statut: 'Actif' | 'En chantier' | 'En déplacement' | 'Congés'
+    manager_id?: string | null
     
     // 1. Argent rapporté (factures payées)
     caEncaisse: number
@@ -245,4 +248,132 @@ export function computeCompanyTotals(members: TeamMember[]): CompanyTotals {
         panierMoyenGlobal,
         nombreCollaborateurs: members.length
     }
+}
+
+export function buildEnrichedTeamMembers(
+    authorizedUsers: AuthorizedUser[],
+    primaryUserEmail: string,
+    liveDbMetrics: {
+        caEncaisse: number
+        devisEnAttente: number
+        nbDevis: number
+        nbFactures: number
+        nbChantiers: number
+        nbClients: number
+        liveChantiers: Array<{ id: string; nom: string; ville?: string; statut: string; montant: number }>
+        liveClients: Array<{ id: string; nom: string; ville?: string }>
+        liveDevis: Array<{ ref: string; client: string; montant: number; statut: string }>
+        liveFactures: Array<{ ref: string; client: string; montant: number; statut: string }>
+    }
+): TeamMember[] {
+    const roleColors: Record<UserRole, 'indigo' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet'> = {
+        admin: 'indigo',
+        conducteur_travaux: 'emerald',
+        chef_chantier: 'amber',
+        charge_affaires: 'sky',
+        metreur: 'violet',
+        comptabilite: 'rose'
+    }
+
+    if (!authorizedUsers || authorizedUsers.length === 0) {
+        return INITIAL_TEAM_MEMBERS
+    }
+
+    const lowerPrimaryEmail = (primaryUserEmail || '').toLowerCase().trim()
+
+    return authorizedUsers.map((u) => {
+        const uEmail = (u.email || '').toLowerCase().trim()
+        const isPrimary = uEmail === lowerPrimaryEmail
+
+        const demoMatch = INITIAL_TEAM_MEMBERS.find(m =>
+            m.email.toLowerCase() === uEmail ||
+            (u.last_name && m.nom.toLowerCase() === u.last_name.toLowerCase()) ||
+            (u.first_name && m.prenom.toLowerCase() === u.first_name.toLowerCase())
+        )
+
+        const prenom = u.first_name || (demoMatch?.prenom) || u.email.split('@')[0]
+        const nom = u.last_name || (demoMatch?.nom) || ''
+        const initials = `${prenom[0] || 'U'}${nom[0] || ''}`.toUpperCase()
+        const roleLabel = USER_ROLES_CONFIG[u.role]?.label || u.role
+        const accent = roleColors[u.role] || demoMatch?.accentColor || 'indigo'
+        const statut = u.status === 'suspendu' ? 'Congés' : 'Actif'
+
+        if (isPrimary) {
+            const caEncaisse = liveDbMetrics.caEncaisse > 0 ? liveDbMetrics.caEncaisse : (demoMatch?.caEncaisse || 168450)
+            const devisEnAttente = liveDbMetrics.devisEnAttente > 0 ? liveDbMetrics.devisEnAttente : (demoMatch?.devisEnAttente || 94200)
+            const nbDevis = liveDbMetrics.nbDevis > 0 ? liveDbMetrics.nbDevis : (demoMatch?.nbDevis || 24)
+            const nbFactures = liveDbMetrics.nbFactures > 0 ? liveDbMetrics.nbFactures : (demoMatch?.nbFactures || 18)
+            const nbChantiers = liveDbMetrics.nbChantiers > 0 ? liveDbMetrics.nbChantiers : (demoMatch?.nbChantiers || 8)
+            const nbClients = liveDbMetrics.nbClients > 0 ? liveDbMetrics.nbClients : (demoMatch?.nbClients || 15)
+
+            const conversion = nbDevis > 0 ? Math.round((nbFactures / nbDevis) * 100) : 75
+            const panier = nbFactures > 0 ? Math.round(caEncaisse / nbFactures) : 9358
+
+            return {
+                id: u.id,
+                nom,
+                prenom,
+                role: roleLabel,
+                email: u.email,
+                telephone: u.phone || '+33 6 12 34 56 78',
+                initials,
+                accentColor: accent,
+                statut,
+                manager_id: u.manager_id || null,
+                caEncaisse,
+                devisEnAttente,
+                nbDevis,
+                nbFactures,
+                tauxConversion: conversion,
+                panierMoyen: panier,
+                nbChantiers,
+                nbClients,
+                chantiersList: liveDbMetrics.liveChantiers.length > 0 ? liveDbMetrics.liveChantiers : (demoMatch?.chantiersList || []),
+                clientsList: liveDbMetrics.liveClients.length > 0 ? liveDbMetrics.liveClients : (demoMatch?.clientsList || []),
+                derniersDevis: liveDbMetrics.liveDevis.length > 0 ? liveDbMetrics.liveDevis : (demoMatch?.derniersDevis || []),
+                dernieresFactures: liveDbMetrics.liveFactures.length > 0 ? liveDbMetrics.liveFactures : (demoMatch?.dernieresFactures || [])
+            }
+        }
+
+        if (demoMatch) {
+            return {
+                ...demoMatch,
+                id: u.id,
+                nom,
+                prenom,
+                role: roleLabel,
+                email: u.email,
+                telephone: u.phone || demoMatch.telephone,
+                initials,
+                accentColor: accent,
+                statut,
+                manager_id: u.manager_id !== undefined ? u.manager_id : (demoMatch.manager_id || null)
+            }
+        }
+
+        return {
+            id: u.id,
+            nom,
+            prenom,
+            role: roleLabel,
+            email: u.email,
+            telephone: u.phone || '+33 6 00 00 00 00',
+            initials,
+            accentColor: accent,
+            statut,
+            manager_id: u.manager_id || null,
+            caEncaisse: 0,
+            devisEnAttente: 0,
+            nbDevis: 0,
+            nbFactures: 0,
+            tauxConversion: 0,
+            panierMoyen: 0,
+            nbChantiers: 0,
+            nbClients: 0,
+            chantiersList: [],
+            clientsList: [],
+            derniersDevis: [],
+            dernieresFactures: []
+        }
+    })
 }

@@ -6,6 +6,8 @@ import {
     Users,
     UserPlus,
     ShieldCheck,
+    Network,
+    Crown,
     Search,
     X,
     Check,
@@ -56,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.authorized_users (
     phone TEXT,
     status TEXT NOT NULL DEFAULT 'invite'
         CHECK (status IN ('actif', 'invite', 'suspendu')),
+    manager_id TEXT,
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     invited_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     last_login_at TIMESTAMP WITH TIME ZONE,
@@ -81,7 +84,7 @@ BEGIN
         SELECT 1 FROM pg_policies WHERE tablename = 'authorized_users' AND policyname = 'Authenticated users can manage authorized_users'
     ) THEN
         CREATE POLICY "Authenticated users can manage authorized_users" ON public.authorized_users
-            FOR ALL USING (auth.role() = 'authenticated');
+            FOR ALL TO authenticated USING (true) WITH CHECK (true);
     END IF;
 END $$;
 
@@ -125,7 +128,8 @@ export default function UsersManagementClient({
         role: 'charge_affaires' as UserRole,
         first_name: '',
         last_name: '',
-        phone: ''
+        phone: '',
+        manager_id: ''
     })
     const [formLoading, setFormLoading] = useState(false)
     const [formError, setFormError] = useState<string | null>(null)
@@ -178,45 +182,27 @@ export default function UsersManagementClient({
         setFormLoading(true)
         setFormError(null)
 
-        const res = await addAuthorizedUserAction(addForm)
+        const res = await addAuthorizedUserAction({
+            ...addForm,
+            manager_id: addForm.manager_id || null
+        })
         setFormLoading(false)
 
         if (res.success && res.user) {
-            setUsers(prev => [res.user!, ...prev])
+            // Utilisateur persisté en base de données avec succès
+            setUsers(prev => [res.user!, ...prev.filter(u => u.email.toLowerCase() !== res.user!.email.toLowerCase())])
             setIsAddModalOpen(false)
             setAddForm({
                 email: '',
                 role: 'charge_affaires',
                 first_name: '',
                 last_name: '',
-                phone: ''
-            })
-        } else if (res.error?.includes('authorized_users') || isTableMissing) {
-            // Mode preview immédiat pour tester l'interface
-            const localUser: AuthorizedUser = {
-                id: 'local-' + Date.now(),
-                email: addForm.email.trim().toLowerCase(),
-                role: addForm.role,
-                first_name: addForm.first_name.trim() || null,
-                last_name: addForm.last_name.trim() || null,
-                phone: addForm.phone.trim() || null,
-                status: 'invite',
-                created_by: null,
-                invited_at: new Date().toISOString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }
-            setUsers(prev => [localUser, ...prev])
-            setIsAddModalOpen(false)
-            setAddForm({
-                email: '',
-                role: 'charge_affaires',
-                first_name: '',
-                last_name: '',
-                phone: ''
+                phone: '',
+                manager_id: ''
             })
         } else {
-            setFormError(res.error || 'Erreur lors de l\'enregistrement.')
+            // Afficher l'erreur réelle retournée par Supabase sans créer de profil fantôme éphémère
+            setFormError(res.error || 'Erreur lors de l\'enregistrement dans Supabase.')
         }
     }
 
@@ -547,12 +533,34 @@ export default function UsersManagementClient({
                                                 </div>
                                             </td>
 
-                                            {/* Rôle BTP */}
+                                            {/* Rôle BTP & Rattachement */}
                                             <td className="py-3 px-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${roleConfig.badgeColor}`}>
-                                                    {user.role === 'admin' ? <Shield size={12} /> : <HardHat size={12} />}
-                                                    {roleConfig.label}
-                                                </span>
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${roleConfig.badgeColor}`}>
+                                                        {user.role === 'admin' ? <Shield size={12} /> : <HardHat size={12} />}
+                                                        {roleConfig.label}
+                                                    </span>
+                                                    {(() => {
+                                                        const manager = user.manager_id ? users.find(m => m.id === user.manager_id) : null
+                                                        if (manager) {
+                                                            const mgrName = [manager.first_name, manager.last_name].filter(Boolean).join(' ') || manager.email
+                                                            return (
+                                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium pl-0.5">
+                                                                    <Network size={11} className="text-indigo-500 shrink-0" />
+                                                                    Rattaché à {mgrName}
+                                                                </span>
+                                                            )
+                                                        } else if (user.role === 'admin') {
+                                                            return (
+                                                                <span className="text-[10px] text-amber-500/85 flex items-center gap-1 font-medium pl-0.5">
+                                                                    <Crown size={11} className="shrink-0" />
+                                                                    Direction Générale
+                                                                </span>
+                                                            )
+                                                        }
+                                                        return null
+                                                    })()}
+                                                </div>
                                             </td>
 
                                             {/* Statut d'accès */}
@@ -817,6 +825,41 @@ export default function UsersManagementClient({
                                         onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                                         className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-indigo-500 transition-colors"
                                     />
+                                </div>
+
+                                {/* Rattachement hiérarchique (Organigramme) */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5">
+                                            <Network size={13} className="text-indigo-500" />
+                                            Rattaché à (Supérieur hiérarchique)
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-normal">Organigramme</span>
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            value={addForm.manager_id}
+                                            onChange={(e) => setAddForm({ ...addForm, manager_id: e.target.value })}
+                                            className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none pr-8"
+                                        >
+                                            <option value="">Direction Générale (Aucun supérieur / Pôle autonome)</option>
+                                            {users
+                                                .filter(u => u.status !== 'suspendu')
+                                                .map(u => {
+                                                    const roleCfg = USER_ROLES_CONFIG[u.role]
+                                                    const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email
+                                                    return (
+                                                        <option key={u.id} value={u.id}>
+                                                            {name} — {roleCfg?.label || u.role}
+                                                        </option>
+                                                    )
+                                                })}
+                                        </select>
+                                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Définit le lien hiérarchique et le tracé des câbles dans l'organigramme de l'entreprise.
+                                    </p>
                                 </div>
 
                                 <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.authorized_users (
     phone TEXT,
     status TEXT NOT NULL DEFAULT 'invite'
         CHECK (status IN ('actif', 'invite', 'suspendu')),
+    manager_id TEXT,
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     invited_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     last_login_at TIMESTAMP WITH TIME ZONE,
@@ -55,3 +56,14 @@ VALUES
     ('claire.bernard@trame-btp.fr', 'comptabilite', 'actif', 'Claire', 'Bernard', '06 54 89 63 21')
 ON CONFLICT (email) DO UPDATE 
 SET role = EXCLUDED.role, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name;
+
+-- Assurer la colonne manager_id si la table existe déjà
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'authorized_users' AND column_name = 'manager_id'
+    ) THEN
+        ALTER TABLE public.authorized_users ADD COLUMN manager_id TEXT;
+    END IF;
+END $$;

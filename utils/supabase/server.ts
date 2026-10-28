@@ -68,6 +68,10 @@ export const getCachedUser = cache(async (): Promise<User | null> => {
                     if (token && typeof token === 'string' && token.includes('.')) {
                         const payloadPart = token.split('.')[1]
                         const payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8'))
+                        try {
+                            const { recordAuthSession } = await import('@/lib/serverAuthCache')
+                            recordAuthSession(token, parsed.refresh_token, payload?.sub, payload?.email)
+                        } catch {}
                         // Si le token est valide pendant encore au moins 60 secondes
                         if (payload?.exp && (payload.exp * 1000) > Date.now() + 60000) {
                             return {

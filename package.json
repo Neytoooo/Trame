@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "tunnel": "ssh -o StrictHostKeyChecking=no -R 80:localhost:3000 nokey@localhost.run",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
