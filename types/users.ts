@@ -9,6 +9,8 @@ export interface AuthorizedUser {
     last_name?: string | null
     phone?: string | null
     status: UserAccessStatus
+    manager_id?: string | null
+    company_id?: string | null
     created_by?: string | null
     invited_at: string
     last_login_at?: string | null

@@ -1,5 +1,7 @@
 'use server'
 
+import { getCurrentCompanyId } from '@/lib/company'
+
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -16,14 +18,23 @@ export async function createChantier(formData: FormData) {
     const address = formData.get('address') as string
     const date_debut = formData.get('date_debut') as string || null
 
-    const { error } = await supabase.from('chantiers').insert({
+    const companyId = await getCurrentCompanyId(supabase)
+    const insertPayload: any = {
         name,
         client_id,
         status,
         address_line1: address,
         date_debut,
+        company_id: companyId,
         created_by: user.id
-    })
+    }
+
+    let { error } = await supabase.from('chantiers').insert(insertPayload)
+    if (error && (error.code === 'PGRST204' || error.message?.includes('company_id'))) {
+        const { company_id, ...fallbackPayload } = insertPayload
+        const retry = await supabase.from('chantiers').insert(fallbackPayload)
+        error = retry.error
+    }
 
     if (error) {
         console.error("Erreur insertion chantier:", error)
@@ -82,4 +93,4 @@ export async function fetchChantiersAction(offset: number, search: string) {
     }
 
     return data || []
-}
+}

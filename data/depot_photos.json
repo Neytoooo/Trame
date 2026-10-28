@@ -1,0 +1,19 @@
+[
+  {
+    "id": "photo-1793199775124-3lwj",
+    "title": "Gemini_Generated_Image_beyc1vbeyc1vbeyc",
+    "devis_id": "dev-mob-1793117247606",
+    "devis_reference": "DEV-MOB-47606",
+    "chantier_id": null,
+    "chantier_name": "Rénovation Façade Pierre de Taille",
+    "client_name": "M. Jean Lefebvre",
+    "category": "constat",
+    "image_url": "/uploads/depot/photo-1793199775124-3lwj.jpg",
+    "thumbnail_url": "/uploads/depot/photo-1793199775124-3lwj.jpg",
+    "notes": "test",
+    "device_info": "Import KOTA Web (Navigateur)",
+    "created_at": "2026-10-28T15:02:55.124Z",
+    "updated_at": "2026-10-28T15:02:55.124Z",
+    "company_id": "00000000-0000-0000-0000-000000000001"
+  }
+]

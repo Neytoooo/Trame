@@ -21,7 +21,15 @@ export async function getNotifications() {
 export async function markAsRead(id: string) {
     const supabase = await createClient()
 
-    await supabase.from('notifications').update({ status: 'read' }).eq('id', id)
+    try {
+        await supabase.from('notifications').update({ status: 'read' }).eq('id', id)
+    } catch {}
+    if (id.startsWith('notif-mob-')) {
+        try {
+            const { markMobileNotificationAsRead } = await import('@/lib/mobileDevisStore')
+            markMobileNotificationAsRead(id)
+        } catch {}
+    }
 
     revalidatePath('/dashboard/annonces')
 }

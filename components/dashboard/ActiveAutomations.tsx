@@ -97,7 +97,7 @@ export default function ActiveAutomations() {
         fetchData()
 
         // Debounce realtime updates
-        let timeout: NodeJS.Timeout | null = null
+        let timeout: any = null
         const debouncedFetch = () => {
             if (timeout) clearTimeout(timeout)
             timeout = setTimeout(() => {

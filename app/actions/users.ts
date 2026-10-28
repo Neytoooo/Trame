@@ -4,11 +4,13 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { UserRole, UserAccessStatus, AuthorizedUser } from '@/types/users'
 import { formatProfileName } from '@/types/users'
+import { getCurrentCompanyId } from '@/lib/company'
 import {
     getStoredUsers,
     getStoredUserByEmail,
     addStoredUser,
     updateStoredUserRole,
+    updateStoredUserManager,
     updateStoredUserStatus,
     removeStoredUser,
     recordStoredUserLogin
@@ -308,6 +310,7 @@ export async function addAuthorizedUserAction(payload: {
     first_name?: string
     last_name?: string
     phone?: string
+    manager_id?: string | null
 }): Promise<{
     success: boolean
     user?: AuthorizedUser
@@ -324,33 +327,171 @@ export async function addAuthorizedUserAction(payload: {
         return { success: false, error: 'Veuillez renseigner une adresse email valide.' }
     }
 
-    // Sauvegarder dans le store persistant
-    const saved = addStoredUser({
+    const supabase = await createClient()
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    const companyId = await getCurrentCompanyId(supabase)
+
+    const basePayload: any = {
         email,
         role: payload.role || 'charge_affaires',
         first_name: payload.first_name?.trim() || null,
         last_name: payload.last_name?.trim() || null,
-        phone: payload.phone?.trim() || null
+        phone: payload.phone?.trim() || null,
+        status: 'invite',
+        created_by: currentUser?.id || null,
+        invited_at: new Date().toISOString(),
+        company_id: companyId
+    }
+
+    // 1. Tenter d'abord l'insertion directe dans Supabase (Source de vérité de production)
+    const payloadWithManager = payload.manager_id ? { ...basePayload, manager_id: payload.manager_id } : basePayload
+    let remoteData: any = null
+    let remoteError: any = null
+
+    try {
+        const res = await supabase
+            .from('authorized_users')
+            .insert(payloadWithManager)
+            .select()
+            .single()
+        remoteData = res.data
+        remoteError = res.error
+    } catch (e: any) {
+        remoteError = e
+    }
+
+    // Si la colonne manager_id ou company_id n'a pas encore été créée dans Supabase (erreur PGRST204)
+    if (remoteError && (remoteError.code === 'PGRST204' || remoteError.message?.includes('manager_id') || remoteError.message?.includes('company_id'))) {
+        try {
+            const fallback1: any = { ...payloadWithManager }
+            if (remoteError.message?.includes('company_id') || remoteError.code === 'PGRST204') {
+                delete fallback1.company_id
+            }
+            if (remoteError.message?.includes('manager_id')) {
+                delete fallback1.manager_id
+            }
+            let retry = await supabase
+                .from('authorized_users')
+                .insert(fallback1)
+                .select()
+                .single()
+
+            if (retry.error && (retry.error.code === 'PGRST204' || retry.error.message?.includes('manager_id') || retry.error.message?.includes('company_id'))) {
+                const minimalPayload: any = { ...basePayload }
+                delete minimalPayload.manager_id
+                delete minimalPayload.company_id
+                retry = await supabase
+                    .from('authorized_users')
+                    .insert(minimalPayload)
+                    .select()
+                    .single()
+            }
+            remoteData = retry.data
+            remoteError = retry.error
+        } catch (e: any) {
+            remoteError = e
+        }
+    }
+
+    // Gestion des erreurs Supabase
+    if (remoteError) {
+        // Table inexistante dans Supabase : fallback local
+        if (remoteError.code === 'PGRST205' || remoteError.code === '42P01') {
+            const saved = addStoredUser({
+                email,
+                role: payload.role || 'charge_affaires',
+                first_name: payload.first_name?.trim() || null,
+                last_name: payload.last_name?.trim() || null,
+                phone: payload.phone?.trim() || null,
+                company_id: companyId || null,
+                manager_id: payload.manager_id || null
+            })
+            revalidatePath('/dashboard/utilisateurs')
+            revalidatePath('/dashboard/equipe')
+            return { success: true, user: saved }
+        }
+
+        // Email dupliqué
+        if (remoteError.code === '23505' || remoteError.message?.includes('duplicate key') || remoteError.message?.includes('unique constraint')) {
+            return { success: false, error: `L'adresse email "${email}" est déjà autorisée dans l'entreprise.` }
+        }
+
+        // Erreur de permission RLS
+        if (remoteError.code === '42501' || remoteError.message?.includes('row-level security')) {
+            console.error('Erreur RLS Supabase:', remoteError)
+            return {
+                success: false,
+                error: "Erreur de permission Supabase (RLS). Veuillez exécuter le script SQL dans votre console Supabase pour autoriser l'écriture."
+            }
+        }
+
+        console.error("Erreur Supabase lors de l'insertion:", remoteError)
+        return { success: false, error: remoteError.message || "Erreur lors de l'enregistrement en base de données Supabase." }
+    }
+
+    // 2. Synchroniser dans le store local pour cohérence
+    const finalUser: AuthorizedUser = remoteData ? {
+        id: remoteData.id,
+        email: remoteData.email,
+        role: remoteData.role as UserRole,
+        first_name: remoteData.first_name,
+        last_name: remoteData.last_name,
+        phone: remoteData.phone,
+        status: remoteData.status,
+        company_id: remoteData.company_id || companyId || null,
+        manager_id: remoteData.manager_id || payload.manager_id || null,
+        created_by: remoteData.created_by,
+        invited_at: remoteData.invited_at,
+        last_login_at: remoteData.last_login_at,
+        created_at: remoteData.created_at,
+        updated_at: remoteData.updated_at
+    } : addStoredUser({
+        email,
+        role: payload.role || 'charge_affaires',
+        first_name: payload.first_name?.trim() || null,
+        last_name: payload.last_name?.trim() || null,
+        phone: payload.phone?.trim() || null,
+        company_id: companyId || null,
+        manager_id: payload.manager_id || null
     })
 
-    // Tenter de synchroniser avec Supabase
+    addStoredUser(finalUser)
+
+    revalidatePath('/dashboard/utilisateurs')
+    revalidatePath('/dashboard/equipe')
+    return { success: true, user: finalUser }
+}
+
+/**
+ * Met à jour le supérieur hiérarchique d'un utilisateur (Réservé aux Administrateurs)
+ */
+export async function updateAuthorizedUserManagerAction(
+    userId: string,
+    newManagerId: string | null
+): Promise<{ success: boolean; error?: string }> {
+    const userRole = await getCurrentUserRoleAction()
+    if (!userRole.isAdmin) {
+        return { success: false, error: 'Accès refusé. Seul un administrateur peut modifier la hiérarchie.' }
+    }
+
+    const updated = updateStoredUserManager(userId, newManagerId)
+    if (!updated) {
+        return { success: false, error: 'Utilisateur introuvable.' }
+    }
+
     try {
         const supabase = await createClient()
-        await supabase.from('authorized_users').insert({
-            email: saved.email,
-            role: saved.role,
-            first_name: saved.first_name,
-            last_name: saved.last_name,
-            phone: saved.phone,
-            status: saved.status,
-            invited_at: saved.invited_at
-        })
+        await supabase
+            .from('authorized_users')
+            .update({ manager_id: newManagerId, updated_at: new Date().toISOString() })
+            .eq('id', userId)
     } catch {
         // Silencieux si table absente
     }
 
     revalidatePath('/dashboard/utilisateurs')
-    return { success: true, user: saved }
+    revalidatePath('/dashboard/equipe')
+    return { success: true }
 }
 
 /**

@@ -12,6 +12,7 @@ const rootShortcuts: Record<string, string> = {
     '/taches': '/dashboard/trello',
     '/dashboard/taches': '/dashboard/trello',
     '/planning': '/dashboard/planning',
+    '/depot': '/dashboard/depot',
 }
 
 function decodeBase64Url(str: string): string {

@@ -1,0 +1,64 @@
+[
+  {
+    "id": "dev-mob-1793117247606",
+    "reference": "DEV-MOB-47606",
+    "name": "Devis Rénovation Façade Pierre de Taille",
+    "status": "brouillon",
+    "total_ht": 19640,
+    "created_at": "2026-10-27T16:07:27.606Z",
+    "updated_at": "2026-10-27T16:07:27.606Z",
+    "notes": "Relevé fait sur place par Mattis via KOTA Mobile.",
+    "synced_supabase": false,
+    "chantiers": {
+      "id": "ch-1793117247606",
+      "name": "Rénovation Façade Pierre de Taille",
+      "clients": {
+        "name": "M. Jean Lefebvre",
+        "phone": "06 12 34 56 78",
+        "address_line1": "14 Rue de la Paix, 75002 Paris"
+      }
+    },
+    "items": [
+      {
+        "id": "item-1793117247606-0",
+        "description": "Montage et démontage échafaudage tubulaire classe 4",
+        "quantity": 180,
+        "unit": "m²",
+        "unit_price": 32,
+        "cost_price": 20.8,
+        "tva": 10,
+        "item_type": "item"
+      },
+      {
+        "id": "item-1793117247606-1",
+        "description": "Nettoyage hydrogommage basse pression",
+        "quantity": 180,
+        "unit": "m²",
+        "unit_price": 45,
+        "cost_price": 29.25,
+        "tva": 10,
+        "item_type": "item"
+      },
+      {
+        "id": "item-1793117247606-2",
+        "description": "Reprise des joints à la chaux naturelle",
+        "quantity": 65,
+        "unit": "ml",
+        "unit_price": 28,
+        "cost_price": 18.2,
+        "tva": 10,
+        "item_type": "item"
+      },
+      {
+        "id": "item-1793117247606-3",
+        "description": "Application hydrofuge incolore respirant 2 couches",
+        "quantity": 180,
+        "unit": "m²",
+        "unit_price": 22,
+        "cost_price": 14.3,
+        "tva": 10,
+        "item_type": "item"
+      }
+    ]
+  }
+]

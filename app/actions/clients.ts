@@ -1,5 +1,7 @@
 'use server'
 
+import { getCurrentCompanyId } from '@/lib/company'
+
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -27,12 +29,19 @@ export async function createClientAction(data: ClientData) {
         return { error: 'Vous devez être connecté pour créer un client.' }
     }
 
-    const { error } = await supabase
-        .from('clients')
-        .insert({
-            ...data,
-            created_by: user.id
-        })
+    const companyId = await getCurrentCompanyId(supabase)
+    const insertPayload: any = {
+        ...data,
+        company_id: companyId,
+        created_by: user.id
+    }
+
+    let { error } = await supabase.from('clients').insert(insertPayload)
+    if (error && (error.code === 'PGRST204' || error.message?.includes('company_id'))) {
+        const { company_id, ...fallbackPayload } = insertPayload
+        const retry = await supabase.from('clients').insert(fallbackPayload)
+        error = retry.error
+    }
 
     if (error) {
         console.error('Erreur création client:', error)

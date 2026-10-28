@@ -46,210 +46,111 @@ export default function CompanyOrganigram({
     const treeContainerRef = useRef<HTMLDivElement>(null)
     const [wires, setWires] = useState<WireConnection[]>([])
 
-    // Arbre hiérarchique épuré
+    // Arbre hiérarchique dynamique et réactif selon les collaborateurs réels
     const organigramNodes: OrganigramNode[] = useMemo(() => {
-        const primaryMember = members[0] || {
-            prenom: 'Mattis',
-            nom: 'Khn',
-            email: 'direction@trame-btp.fr',
-            telephone: '+33 6 12 34 56 78',
-            initials: 'MK',
-            caEncaisse: companyTotals.totalCaEncaisse
+        if (!members || members.length === 0) return []
+
+        // 1. Trouver le nœud racine (Direction Générale / Niveau 1)
+        // Priorité : un admin dont manager_id est null, ou le premier membre
+        const rootCandidate = members.find(m => !m.manager_id && (m.role.toLowerCase().includes('admin') || m.role.toLowerCase().includes('direction')))
+            || members.find(m => !m.manager_id)
+            || members[0]
+
+        const rootId = rootCandidate.id
+
+        // Helper pour mapper le département et le poste complet selon le rôle
+        const getDeptAndPoste = (role: string): {
+            dept: 'Direction' | 'Travaux & Chantiers' | 'Affaires & Commerce' | 'Études & Métré' | 'Finance & Admin'
+            poste: string
+            accent: 'indigo' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet'
+        } => {
+            const r = (role || '').toLowerCase()
+            if (r.includes('admin') || r.includes('direct')) {
+                return { dept: 'Direction', poste: 'Président & Directeur Général BTP', accent: 'indigo' }
+            }
+            if (r.includes('conducteur') || r.includes('travaux')) {
+                return { dept: 'Travaux & Chantiers', poste: 'Conduite de Travaux & Chantier', accent: 'emerald' }
+            }
+            if (r.includes('chef') || r.includes('chantier')) {
+                return { dept: 'Travaux & Chantiers', poste: 'Chef de Chantier - Gros Œuvre & Structure', accent: 'amber' }
+            }
+            if (r.includes('affaires') || r.includes('charge') || r.includes('commercial')) {
+                return { dept: 'Affaires & Commerce', poste: 'Responsable Commercial & Chargé d\'Affaires BTP', accent: 'sky' }
+            }
+            if (r.includes('metreur') || r.includes('chiffreur') || r.includes('étude')) {
+                return { dept: 'Études & Métré', poste: 'Responsable Études de Prix, DQE & Métrés', accent: 'indigo' }
+            }
+            if (r.includes('compta') || r.includes('finance')) {
+                return { dept: 'Finance & Admin', poste: 'Responsable Comptabilité, Facturation & Trésorerie', accent: 'rose' }
+            }
+            return { dept: 'Travaux & Chantiers', poste: role, accent: 'indigo' }
         }
 
-        const sophieMember = members.find(m => m.nom.toLowerCase().includes('martinez')) || members[1]
-        const pierreMember = members.find(m => m.nom.toLowerCase().includes('durand')) || members[2]
-        const marcMember = members.find(m => m.nom.toLowerCase().includes('lefebvre')) || members[3]
-        const thomasMember = members.find(m => m.nom.toLowerCase().includes('bernard')) || members[4]
+        // 2. Associer chaque collaborateur à son manager
+        const nodes = members.map((m, idx) => {
+            const isRoot = m.id === rootId
+            let effectiveManagerId: string | null = null
 
-        return [
-            // =========================================================================
-            // NIVEAU 1 : DIRECTION GÉNÉRALE (Racine / Top)
-            // =========================================================================
-            {
-                id: 'node-direction',
-                memberId: primaryMember?.id || 'user-root',
-                nom: primaryMember.nom || 'Khn',
-                prenom: primaryMember.prenom || 'Mattis',
-                role: 'Direction Générale',
-                posteComplet: 'Président & Directeur Général BTP',
-                departement: 'Direction',
-                niveau: 1,
-                email: primaryMember.email || 'direction@trame-btp.fr',
-                telephone: primaryMember.telephone || '+33 6 12 34 56 78',
-                initials: primaryMember.initials || 'MK',
-                accentColor: 'indigo',
-                statut: 'Actif',
-                managerId: null,
-                subordinateIds: ['node-travaux', 'node-affaires', 'node-metreur', 'node-finance'],
-                caEncaisse: companyTotals.totalCaEncaisse,
-                devisEnAttente: companyTotals.totalDevisEnAttente,
-                nbChantiers: companyTotals.totalChantiers,
-                matricule: '001-DG'
-            },
-
-            // =========================================================================
-            // NIVEAU 2 : RESPONSABLES DE PÔLES / CADRES (Rattachés à la Direction)
-            // =========================================================================
-            {
-                id: 'node-travaux',
-                memberId: sophieMember?.id || 'member-sophie',
-                nom: sophieMember?.nom || 'Martinez',
-                prenom: sophieMember?.prenom || 'Sophie',
-                role: 'Conduite de Travaux',
-                posteComplet: 'Directrice Conduite de Travaux & Chantier',
-                departement: 'Travaux & Chantiers',
-                niveau: 2,
-                email: sophieMember?.email || 'sophie.m@trame-btp.fr',
-                telephone: sophieMember?.telephone || '+33 6 23 45 67 89',
-                initials: sophieMember?.initials || 'SM',
-                accentColor: 'emerald',
-                statut: sophieMember?.statut || 'Actif',
-                managerId: 'node-direction',
-                subordinateIds: ['node-chef-gros-oeuvre', 'node-conducteur-second-oeuvre'],
-                caEncaisse: sophieMember?.caEncaisse || 142500,
-                devisEnAttente: sophieMember?.devisEnAttente || 68400,
-                nbChantiers: sophieMember?.nbChantiers || 6,
-                matricule: '002-CT'
-            },
-            {
-                id: 'node-affaires',
-                memberId: 'usr-thomas-ca',
-                nom: 'Laurent',
-                prenom: 'Thomas',
-                role: 'Chargé d\'Affaires',
-                posteComplet: 'Responsable Commercial & Chargé d\'Affaires BTP',
-                departement: 'Affaires & Commerce',
-                niveau: 2,
-                email: 'thomas.laurent@trame-btp.fr',
-                telephone: '+33 6 45 12 89 23',
-                initials: 'TL',
-                accentColor: 'sky',
-                statut: 'Actif',
-                managerId: 'node-direction',
-                subordinateIds: ['node-charge-affaires-clim'],
-                caEncaisse: 124800,
-                devisEnAttente: 78500,
-                nbChantiers: 5,
-                matricule: '003-CA'
-            },
-            {
-                id: 'node-metreur',
-                memberId: 'usr-mattis-metreur',
-                nom: 'Khn',
-                prenom: 'Mattis (Second)',
-                role: 'Métreur / Chiffreur',
-                posteComplet: 'Responsable Études de Prix, DQE & Métrés',
-                departement: 'Études & Métré',
-                niveau: 2,
-                email: 'mattiskhn2@gmail.com',
-                telephone: '+33 6 98 76 54 32',
-                initials: 'MK',
-                accentColor: 'indigo',
-                statut: 'Actif',
-                managerId: 'node-direction',
-                subordinateIds: [],
-                caEncaisse: 98000,
-                devisEnAttente: 62000,
-                nbChantiers: 4,
-                matricule: '004-MT'
-            },
-            {
-                id: 'node-finance',
-                memberId: 'usr-claire-compta',
-                nom: 'Bernard',
-                prenom: 'Claire',
-                role: 'Responsable Comptabilité',
-                posteComplet: 'Responsable Comptabilité, Facturation & Trésorerie',
-                departement: 'Finance & Admin',
-                niveau: 2,
-                email: 'claire.bernard@trame-btp.fr',
-                telephone: '+33 6 54 89 63 21',
-                initials: 'CB',
-                accentColor: 'rose',
-                statut: 'Actif',
-                managerId: 'node-direction',
-                subordinateIds: [],
-                caEncaisse: companyTotals.totalCaEncaisse,
-                devisEnAttente: companyTotals.totalDevisEnAttente,
-                nbChantiers: companyTotals.totalChantiers,
-                matricule: '005-FC'
-            },
-
-            // =========================================================================
-            // NIVEAU 3 : TERRAIN & CHEFS DE CHANTIER (Rattachés aux Cadres)
-            // =========================================================================
-            {
-                id: 'node-chef-gros-oeuvre',
-                memberId: pierreMember?.id || 'member-pierre',
-                nom: pierreMember?.nom || 'Durand',
-                prenom: pierreMember?.prenom || 'Pierre',
-                role: 'Chef de Chantier',
-                posteComplet: 'Chef de Chantier Principal - Gros Œuvre & Structure',
-                departement: 'Travaux & Chantiers',
-                niveau: 3,
-                email: pierreMember?.email || 'pierre.d@trame-btp.fr',
-                telephone: pierreMember?.telephone || '+33 6 34 56 78 90',
-                initials: pierreMember?.initials || 'PD',
-                accentColor: 'amber',
-                statut: pierreMember?.statut || 'En chantier',
-                managerId: 'node-travaux',
-                subordinateIds: [],
-                caEncaisse: pierreMember?.caEncaisse || 118200,
-                devisEnAttente: pierreMember?.devisEnAttente || 45200,
-                nbChantiers: pierreMember?.nbChantiers || 5,
-                matricule: '006-CC'
-            },
-            {
-                id: 'node-conducteur-second-oeuvre',
-                memberId: thomasMember?.id || 'member-thomas',
-                nom: thomasMember?.nom || 'Bernard',
-                prenom: thomasMember?.prenom || 'Thomas',
-                role: 'Conducteur de Travaux',
-                posteComplet: 'Conducteur de Travaux - Second Œuvre & Finition',
-                departement: 'Travaux & Chantiers',
-                niveau: 3,
-                email: thomasMember?.email || 'thomas.b@trame-btp.fr',
-                telephone: thomasMember?.telephone || '+33 6 56 78 90 12',
-                initials: thomasMember?.initials || 'TB',
-                accentColor: 'violet',
-                statut: thomasMember?.statut || 'En déplacement',
-                managerId: 'node-travaux',
-                subordinateIds: [],
-                caEncaisse: thomasMember?.caEncaisse || 87900,
-                devisEnAttente: thomasMember?.devisEnAttente || 34800,
-                nbChantiers: thomasMember?.nbChantiers || 4,
-                matricule: '007-CT'
-            },
-            {
-                id: 'node-charge-affaires-clim',
-                memberId: marcMember?.id || 'member-marc',
-                nom: marcMember?.nom || 'Lefebvre',
-                prenom: marcMember?.prenom || 'Marc',
-                role: 'Chargé d\'Affaires',
-                posteComplet: 'Chargé d\'Affaires - Électricité & Génie Climatique',
-                departement: 'Affaires & Commerce',
-                niveau: 3,
-                email: marcMember?.email || 'marc.l@trame-btp.fr',
-                telephone: marcMember?.telephone || '+33 6 45 67 89 01',
-                initials: marcMember?.initials || 'ML',
-                accentColor: 'sky',
-                statut: marcMember?.statut || 'Actif',
-                managerId: 'node-affaires',
-                subordinateIds: [],
-                caEncaisse: marcMember?.caEncaisse || 96400,
-                devisEnAttente: marcMember?.devisEnAttente || 82100,
-                nbChantiers: marcMember?.nbChantiers || 7,
-                matricule: '008-CA'
+            if (!isRoot) {
+                if (m.manager_id && members.some(other => other.id === m.manager_id && other.id !== m.id)) {
+                    effectiveManagerId = m.manager_id
+                } else {
+                    effectiveManagerId = rootId
+                }
             }
-        ]
+
+            const { dept, poste, accent } = getDeptAndPoste(m.role)
+
+            return {
+                id: m.id,
+                memberId: m.id,
+                nom: m.nom || 'Collaborateur',
+                prenom: m.prenom || '',
+                role: m.role || 'Collaborateur',
+                posteComplet: poste,
+                departement: dept,
+                niveau: isRoot ? 1 : 2,
+                email: m.email || '',
+                telephone: m.telephone || '',
+                initials: m.initials || `${m.prenom?.[0] || 'U'}${m.nom?.[0] || ''}`.toUpperCase(),
+                accentColor: m.accentColor || accent,
+                statut: m.statut || 'Actif',
+                managerId: effectiveManagerId,
+                subordinateIds: [] as string[],
+                caEncaisse: m.caEncaisse || 0,
+                devisEnAttente: m.devisEnAttente || 0,
+                nbChantiers: m.nbChantiers || 0,
+                matricule: `${String(idx + 1).padStart(3, '0')}-BTP`
+            } as OrganigramNode
+        })
+
+        // 3. Calculer les subordonnés directs
+        nodes.forEach(node => {
+            node.subordinateIds = nodes
+                .filter(n => n.managerId === node.id)
+                .map(n => n.id)
+        })
+
+        // 4. Calculer la profondeur hiérarchique (niveau 1, 2, ou 3)
+        nodes.forEach(node => {
+            if (!node.managerId) {
+                node.niveau = 1
+            } else {
+                const parent = nodes.find(n => n.id === node.managerId)
+                if (parent?.niveau === 1) {
+                    node.niveau = 2
+                } else {
+                    node.niveau = 3
+                }
+            }
+        })
+
+        return nodes
     }, [members, companyTotals])
 
-    // Groupements hiérarchiques
-    const level1Node = organigramNodes.find(n => n.niveau === 1)
+    // Groupements hiérarchiques réactifs
+    const level1Nodes = useMemo(() => organigramNodes.filter(n => n.niveau === 1), [organigramNodes])
     const level2Nodes = useMemo(() => organigramNodes.filter(n => n.niveau === 2), [organigramNodes])
-    const travauxSubordinates = useMemo(() => organigramNodes.filter(n => n.managerId === 'node-travaux'), [organigramNodes])
-    const affairesSubordinates = useMemo(() => organigramNodes.filter(n => n.managerId === 'node-affaires'), [organigramNodes])
 
     const hoveredNode = useMemo(() => {
         return organigramNodes.find(n => n.id === hoveredNodeId)
@@ -326,16 +227,18 @@ export default function CompanyOrganigram({
         setWires(newWires)
     }, [organigramNodes, hoveredNodeId])
 
-    // Recalculer les fils au montage, au zoom, au redimensionnement et au survol
+    // Recalculer les fils au montage, au zoom, au redimensionnement et au changement d'organigramme
     useEffect(() => {
         calculateWires()
-        const timer = setTimeout(calculateWires, 100)
+        const timer1 = setTimeout(calculateWires, 50)
+        const timer2 = setTimeout(calculateWires, 200)
         window.addEventListener('resize', calculateWires)
         return () => {
-            clearTimeout(timer)
+            clearTimeout(timer1)
+            clearTimeout(timer2)
             window.removeEventListener('resize', calculateWires)
         }
-    }, [calculateWires, zoom])
+    }, [calculateWires, zoom, organigramNodes])
 
     return (
         <div className="relative flex-1 flex flex-col min-h-0 bg-[#070B12]/95 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md overflow-hidden">
@@ -496,39 +399,15 @@ export default function CompanyOrganigram({
                     }}
                 >
                     {/* =========================================================
-                        NIVEAU 1 : DIRECTION GÉNÉRALE (1 Cercle au sommet)
+                        NIVEAU 1 : DIRECTION GÉNÉRALE (Racine au sommet)
                        ========================================================= */}
-                    {level1Node && (
-                        <div className="flex flex-col items-center mb-16 sm:mb-20">
-                            <CircularGlass3DBadge
-                                node={level1Node}
-                                managerName={null}
-                                theme={badgeTheme}
-                                isHighlighted={isConnectedToHovered(level1Node.id)}
-                                isSelected={activeNodeId === level1Node.id}
-                                isManagerOfHovered={hoveredNode?.managerId === level1Node.id}
-                                isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(level1Node.id)}
-                                onSelect={() => {
-                                    setActiveNodeId(level1Node.id)
-                                    setSelectedNodeForModal(level1Node)
-                                }}
-                                onHover={(h) => {
-                                    setHoveredNodeId(h ? level1Node.id : null)
-                                    calculateWires()
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    {/* =========================================================
-                        NIVEAU 2 : LES 4 PÔLES CADRES (Cercles en éventail reliés par les fils)
-                       ========================================================= */}
-                    <div className="grid grid-cols-4 gap-12 sm:gap-20 items-start mb-16 sm:mb-20">
-                        {level2Nodes.map(node => (
-                            <div key={node.id} className="flex flex-col items-center">
+                    {level1Nodes.length > 0 && (
+                        <div className="flex flex-wrap justify-center items-center gap-10 mb-16 sm:mb-20">
+                            {level1Nodes.map(node => (
                                 <CircularGlass3DBadge
+                                    key={node.id}
                                     node={node}
-                                    managerName={getManagerName(node.managerId)}
+                                    managerName={null}
                                     theme={badgeTheme}
                                     isHighlighted={isConnectedToHovered(node.id)}
                                     isSelected={activeNodeId === node.id}
@@ -543,73 +422,103 @@ export default function CompanyOrganigram({
                                         calculateWires()
                                     }}
                                 />
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* =========================================================
-                        NIVEAU 3 : CHEFS DE CHANTIER & TERRAIN (Reliés à leur responsable)
+                        NIVEAU 2 & NIVEAU 3 : BRANCHES PAR PÔLES ET RESPONSABLES
                        ========================================================= */}
-                    <div className="grid grid-cols-4 gap-12 sm:gap-20 items-start pb-12">
-                        {/* 1. Équipe Travaux (Pierre Durand & Thomas Bernard) */}
-                        <div className="flex items-start justify-center gap-8">
-                            {travauxSubordinates.map(node => (
-                                <div key={node.id} className="flex flex-col items-center">
-                                    <CircularGlass3DBadge
-                                        node={node}
-                                        managerName={getManagerName(node.managerId)}
-                                        theme={badgeTheme}
-                                        isHighlighted={isConnectedToHovered(node.id)}
-                                        isSelected={activeNodeId === node.id}
-                                        isManagerOfHovered={hoveredNode?.managerId === node.id}
-                                        isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(node.id)}
-                                        onSelect={() => {
-                                            setActiveNodeId(node.id)
-                                            setSelectedNodeForModal(node)
-                                        }}
-                                        onHover={(h) => {
-                                            setHoveredNodeId(h ? node.id : null)
-                                            calculateWires()
-                                        }}
-                                    />
+                    <div className="flex flex-wrap justify-center items-start gap-12 sm:gap-20 pb-16">
+                        {level2Nodes.map(l2Node => {
+                            const subordinates = organigramNodes.filter(n => n.managerId === l2Node.id)
+
+                            return (
+                                <div key={l2Node.id} className="flex flex-col items-center min-w-[210px]">
+                                    {/* Badge Niveau 2 (Responsable / Cadre BTP) */}
+                                    <div className="mb-16 sm:mb-20">
+                                        <CircularGlass3DBadge
+                                            node={l2Node}
+                                            managerName={getManagerName(l2Node.managerId)}
+                                            theme={badgeTheme}
+                                            isHighlighted={isConnectedToHovered(l2Node.id)}
+                                            isSelected={activeNodeId === l2Node.id}
+                                            isManagerOfHovered={hoveredNode?.managerId === l2Node.id}
+                                            isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(l2Node.id)}
+                                            onSelect={() => {
+                                                setActiveNodeId(l2Node.id)
+                                                setSelectedNodeForModal(l2Node)
+                                            }}
+                                            onHover={(h) => {
+                                                setHoveredNodeId(h ? l2Node.id : null)
+                                                calculateWires()
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Subordonnés Niveau 3 rattachés à ce responsable */}
+                                    {subordinates.length > 0 ? (
+                                        <div className="flex flex-wrap justify-center items-start gap-8">
+                                            {subordinates.map(subNode => {
+                                                const subSubordinates = organigramNodes.filter(n => n.managerId === subNode.id)
+
+                                                return (
+                                                    <div key={subNode.id} className="flex flex-col items-center">
+                                                        <CircularGlass3DBadge
+                                                            node={subNode}
+                                                            managerName={getManagerName(subNode.managerId)}
+                                                            theme={badgeTheme}
+                                                            isHighlighted={isConnectedToHovered(subNode.id)}
+                                                            isSelected={activeNodeId === subNode.id}
+                                                            isManagerOfHovered={hoveredNode?.managerId === subNode.id}
+                                                            isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(subNode.id)}
+                                                            onSelect={() => {
+                                                                setActiveNodeId(subNode.id)
+                                                                setSelectedNodeForModal(subNode)
+                                                            }}
+                                                            onHover={(h) => {
+                                                                setHoveredNodeId(h ? subNode.id : null)
+                                                                calculateWires()
+                                                            }}
+                                                        />
+
+                                                        {/* Subordonnés Niveau 4 éventuels */}
+                                                        {subSubordinates.length > 0 && (
+                                                            <div className="mt-14 flex flex-wrap justify-center gap-6">
+                                                                {subSubordinates.map(subSub => (
+                                                                    <CircularGlass3DBadge
+                                                                        key={subSub.id}
+                                                                        node={subSub}
+                                                                        managerName={getManagerName(subSub.managerId)}
+                                                                        theme={badgeTheme}
+                                                                        isHighlighted={isConnectedToHovered(subSub.id)}
+                                                                        isSelected={activeNodeId === subSub.id}
+                                                                        isManagerOfHovered={hoveredNode?.managerId === subSub.id}
+                                                                        isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(subSub.id)}
+                                                                        onSelect={() => {
+                                                                            setActiveNodeId(subSub.id)
+                                                                            setSelectedNodeForModal(subSub)
+                                                                        }}
+                                                                        onHover={(h) => {
+                                                                            setHoveredNodeId(h ? subSub.id : null)
+                                                                            calculateWires()
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-center text-[10px] text-slate-500 font-mono pt-4">
+                                            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/5">Pôle autonome</span>
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
-
-                        {/* 2. Équipe Affaires (Marc Lefebvre) */}
-                        <div className="flex items-start justify-center">
-                            {affairesSubordinates.map(node => (
-                                <div key={node.id} className="flex flex-col items-center">
-                                    <CircularGlass3DBadge
-                                        node={node}
-                                        managerName={getManagerName(node.managerId)}
-                                        theme={badgeTheme}
-                                        isHighlighted={isConnectedToHovered(node.id)}
-                                        isSelected={activeNodeId === node.id}
-                                        isManagerOfHovered={hoveredNode?.managerId === node.id}
-                                        isSubordinateOfHovered={hoveredNode?.subordinateIds.includes(node.id)}
-                                        onSelect={() => {
-                                            setActiveNodeId(node.id)
-                                            setSelectedNodeForModal(node)
-                                        }}
-                                        onHover={(h) => {
-                                            setHoveredNodeId(h ? node.id : null)
-                                            calculateWires()
-                                        }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* 3. Pôle Études */}
-                        <div className="flex justify-center text-[10px] text-slate-500 font-mono pt-4">
-                            <span>Autonome</span>
-                        </div>
-
-                        {/* 4. Pôle Finance */}
-                        <div className="flex justify-center text-[10px] text-slate-500 font-mono pt-4">
-                            <span>Autonome</span>
-                        </div>
+                            )
+                        })}
                     </div>
                 </div>
             </div>
