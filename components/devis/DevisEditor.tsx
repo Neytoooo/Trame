@@ -6,13 +6,16 @@ import {
     Plus, Trash2, Save, Calculator, Loader2, FileText, ChevronRight,
     Layout, GripVertical, Wallet, Calendar, Sliders, FolderPlus,
     Building2, UserCheck, ShieldCheck, CheckCircle2, Tag, FileDown,
-    Image as ImageIcon, ArrowUp, ArrowDown, Upload, Box, BookmarkPlus
+    Image as ImageIcon, ArrowUp, ArrowDown, Upload, Box, BookmarkPlus,
+    Laptop, FolderArchive, X
 } from 'lucide-react'
 import ArticleSelector from './ArticleSelector'
 import CalculatorPopover from './CalculatorPopover'
 import DevisLineDetailModal, { DevisLineData } from './DevisLineDetailModal'
 import DevisPdfExportModal from './DevisPdfExportModal'
 import ImportToLibraryModal from './ImportToLibraryModal'
+import DepotPhotoPickerModal from './DepotPhotoPickerModal'
+import { DepotPhoto } from '@/types/depot'
 import { saveDevis, deleteDevisItem } from '@/app/actions/devis'
 import { generateCustomDevisPDF } from '@/utils/generatePdf'
 import { DevisPdfColumnConfig } from '@/types/pdfExport'
@@ -77,6 +80,11 @@ export default function DevisEditor({
     const [loading, setLoading] = useState(false)
     const [isSelectorOpen, setIsSelectorOpen] = useState(false)
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+    // Modals Choix Image & Dépôt Photos (Web & KOTA Mobile)
+    const [isImageChoiceOpen, setIsImageChoiceOpen] = useState(false)
+    const [isDepotPickerOpen, setIsDepotPickerOpen] = useState(false)
+    const [replacingItemId, setReplacingItemId] = useState<string | null>(null)
 
     // Calculator State
     const [calcModalOpen, setCalcModalOpen] = useState(false)
@@ -249,7 +257,31 @@ export default function DevisEditor({
 
     // Gestion de l'insertion et du remplacement d'image
     const handleTriggerImageUpload = () => {
-        fileInputRef.current?.click()
+        setReplacingItemId(null)
+        setIsImageChoiceOpen(true)
+    }
+
+    const handleSelectDepotPhoto = (photo: DepotPhoto) => {
+        const caption = photo.title || photo.notes || 'Photo du Dépôt'
+        const newImageItem: DevisItem = {
+            id: `new_${Date.now()}`,
+            description: photo.title || `Photo ${photo.category}`,
+            quantity: 0,
+            unit: '',
+            unit_price: 0,
+            tva: 0,
+            item_type: 'image',
+            image_url: photo.image_url,
+            caption: caption,
+            details: {
+                is_image: true,
+                image_url: photo.image_url,
+                caption: caption,
+                depot_photo_id: photo.id,
+                devis_reference: photo.devis_reference
+            }
+        }
+        setItems(prev => [...prev, newImageItem])
     }
 
     const handleImageFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -865,6 +897,16 @@ export default function DevisEditor({
                                                                         <span className="flex items-center gap-1 text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 rounded border border-indigo-200/60 dark:border-indigo-800/40">
                                                                             <ImageIcon size={10} /> Photo insérée entre les lignes
                                                                         </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setReplacingItemId(item.id)
+                                                                                setIsDepotPickerOpen(true)
+                                                                            }}
+                                                                            className="flex items-center gap-1 text-[10px] font-semibold text-violet-600 dark:text-violet-400 hover:underline cursor-pointer"
+                                                                        >
+                                                                            <FolderArchive size={10} /> Remplacer depuis le Dépôt
+                                                                        </button>
                                                                     </div>
                                                                     <input
                                                                         type="text"
@@ -1390,6 +1432,104 @@ export default function DevisEditor({
                         </div>
                     </div>
                 </div>
+
+
+            {/* Modal de Choix Source Image (Ordinateur ou Dépôt Mobile) */}
+            {isImageChoiceOpen && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="max-w-md w-full bg-[#111726] border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                <ImageIcon size={16} className="text-violet-400" />
+                                Insérer une photo dans le devis
+                            </h3>
+                            <button
+                                onClick={() => setIsImageChoiceOpen(false)}
+                                className="text-slate-400 hover:text-white cursor-pointer"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-slate-400">
+                            Choisissez la provenance du visuel à ajouter entre les prestations de votre devis :
+                        </p>
+
+                        <div className="grid grid-cols-1 gap-2.5 pt-1">
+                            {/* Option 1: Dépôt Photos Chantier */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsImageChoiceOpen(false)
+                                    setReplacingItemId(null)
+                                    setIsDepotPickerOpen(true)
+                                }}
+                                className="p-4 rounded-2xl bg-gradient-to-r from-violet-950/40 to-indigo-950/40 border border-violet-500/40 hover:border-violet-500 text-left transition-all hover:scale-[1.01] cursor-pointer group flex items-start gap-3.5 shadow-xs"
+                            >
+                                <div className="p-2.5 rounded-xl bg-violet-600 text-white shrink-0 group-hover:bg-violet-500 transition-colors">
+                                    <FolderArchive size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-white">Depuis le Dépôt Photos</span>
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-500/20 text-violet-300">
+                                            KOTA Mobile
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                        {reference 
+                                            ? `Sélectionnez un cliché pris avec le smartphone rattaché au devis ${reference}.`
+                                            : 'Accédez aux photos de chantiers prises avec votre smartphone.'}
+                                    </p>
+                                </div>
+                            </button>
+
+                            {/* Option 2: Depuis mon ordinateur */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsImageChoiceOpen(false)
+                                    fileInputRef.current?.click()
+                                }}
+                                className="p-4 rounded-2xl bg-[#141C2E] border border-slate-800 hover:border-slate-700 text-left transition-all hover:scale-[1.01] cursor-pointer group flex items-start gap-3.5"
+                            >
+                                <div className="p-2.5 rounded-xl bg-slate-800 text-slate-300 shrink-0 group-hover:bg-slate-700 transition-colors">
+                                    <Laptop size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className="text-xs font-bold text-white">Importer depuis mon ordinateur</span>
+                                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                        Choisissez un fichier image sur votre disque dur (JPEG, PNG, WebP).
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Sélecteur Dépôt Photos */}
+            <DepotPhotoPickerModal
+                isOpen={isDepotPickerOpen}
+                onClose={() => {
+                    setIsDepotPickerOpen(false)
+                    setReplacingItemId(null)
+                }}
+                currentDevisReference={reference}
+                onSelectPhoto={(photo) => {
+                    if (replacingItemId) {
+                        setItems(prev => prev.map(it => it.id === replacingItemId ? {
+                            ...it,
+                            image_url: photo.image_url,
+                            caption: photo.title || photo.notes || 'Photo du Dépôt',
+                            details: { ...it.details, image_url: photo.image_url, caption: photo.title || photo.notes }
+                        } : it))
+                        setReplacingItemId(null)
+                    } else {
+                        handleSelectDepotPhoto(photo)
+                    }
+                }}
+            />
 
             </div>
         </div>

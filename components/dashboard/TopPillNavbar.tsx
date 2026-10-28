@@ -21,7 +21,8 @@ import {
     ChevronDown,
     LogOut,
     ShieldCheck,
-    UserCheck
+    UserCheck,
+    Camera
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -101,6 +102,12 @@ export default function TopPillNavbar({ user, userRole, displayName }: TopPillNa
             href: "/dashboard/devis",
             icon: <FileText size={14} />,
             active: isLinkActive('/dashboard/devis')
+        },
+        {
+            name: "Dépôt",
+            href: "/dashboard/depot",
+            icon: <Camera size={14} />,
+            active: isLinkActive('/dashboard/depot')
         },
         {
             name: "Factures",
