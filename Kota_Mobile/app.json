@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "KOTA Mobile",
+    "slug": "kota-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "kotamobile",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "KOTA a besoin de l'accès à votre appareil photo pour photographier vos notes manuscrites, métrés et fiches de chantier.",
+        "NSPhotoLibraryUsageDescription": "KOTA a besoin d'accéder à vos photos pour analyser vos prises de cotes et générer vos devis automatiques."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B101B"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "KOTA utilise votre galerie pour analyser vos notes de chantier.",
+          "cameraPermission": "KOTA utilise l'appareil photo pour capturer vos relevés manuscrits."
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
