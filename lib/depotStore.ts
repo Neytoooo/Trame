@@ -344,6 +344,7 @@ export async function addDepotPhoto(params: {
         const supabase = getAppSupabaseClient()
         const session = getCachedServerSession()
 
+        const cloudImageUrl = (params.imageUrl && params.imageUrl.startsWith('data:')) ? params.imageUrl : newPhoto.image_url
         await supabase.from('depot_photos').insert({
             title: newPhoto.title,
             devis_id: newPhoto.devis_id,
@@ -352,8 +353,8 @@ export async function addDepotPhoto(params: {
             chantier_name: newPhoto.chantier_name,
             client_name: newPhoto.client_name,
             category: newPhoto.category,
-            image_url: newPhoto.image_url,
-            thumbnail_url: newPhoto.thumbnail_url,
+            image_url: cloudImageUrl,
+            thumbnail_url: cloudImageUrl,
             notes: newPhoto.notes,
             device_info: newPhoto.device_info,
             company_id: '00000000-0000-0000-0000-000000000001',
