@@ -344,12 +344,16 @@ export async function addDepotPhoto(params: {
         const supabase = getAppSupabaseClient()
         const session = getCachedServerSession()
 
+        const isValidUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+        const safeDevisId = isValidUuid(newPhoto.devis_id) ? newPhoto.devis_id : null
+        const safeChantierId = isValidUuid(newPhoto.chantier_id) ? newPhoto.chantier_id : null
+
         const cloudImageUrl = (params.imageUrl && params.imageUrl.startsWith('data:')) ? params.imageUrl : newPhoto.image_url
-        await supabase.from('depot_photos').insert({
+        const { error: sbInsertError } = await supabase.from('depot_photos').insert({
             title: newPhoto.title,
-            devis_id: newPhoto.devis_id,
+            devis_id: safeDevisId,
             devis_reference: newPhoto.devis_reference,
-            chantier_id: newPhoto.chantier_id,
+            chantier_id: safeChantierId,
             chantier_name: newPhoto.chantier_name,
             client_name: newPhoto.client_name,
             category: newPhoto.category,
@@ -360,6 +364,9 @@ export async function addDepotPhoto(params: {
             company_id: '00000000-0000-0000-0000-000000000001',
             created_by: session?.userId || null
         })
+        if (sbInsertError) {
+            console.error('Erreur insertion Supabase depot_photos:', sbInsertError)
+        }
     } catch (sbErr) {
         console.warn('Sync Supabase depot_photos différée:', sbErr)
     }
