@@ -1,5 +1,31 @@
 [
   {
+    "id": "notif-depot-1793279510774",
+    "type": "new_depot_photo",
+    "title": "Nouvelle photo au Dépôt (DEV-MOB-47606)",
+    "message": "Une photo de chantier a été envoyée depuis le smartphone et rattachée au devis DEV-MOB-47606 (Rénovation Façade Pierre de Taille).",
+    "status": "unread",
+    "created_at": "2026-10-29T13:11:50.607Z",
+    "data": {
+      "devis_reference": "DEV-MOB-47606",
+      "photo_id": "photo-1793279510607-txr3",
+      "url": "/dashboard/depot?devis=DEV-MOB-47606"
+    }
+  },
+  {
+    "id": "notif-depot-1793201795863",
+    "type": "new_depot_photo",
+    "title": "Nouvelle photo au Dépôt (DEV-MOB-47606)",
+    "message": "Une photo de chantier a été envoyée depuis le smartphone et rattachée au devis DEV-MOB-47606 (Rénovation Façade Pierre de Taille).",
+    "status": "unread",
+    "created_at": "2026-10-28T15:36:35.580Z",
+    "data": {
+      "devis_reference": "DEV-MOB-47606",
+      "photo_id": "photo-1793201795580-66dz",
+      "url": "/dashboard/depot?devis=DEV-MOB-47606"
+    }
+  },
+  {
     "id": "notif-depot-1793200965520",
     "type": "new_depot_photo",
     "title": "Nouvelle photo au Dépôt (DEV-MOB-47606)",
