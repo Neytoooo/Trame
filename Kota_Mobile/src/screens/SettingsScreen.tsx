@@ -13,9 +13,13 @@ import { colors } from '../theme/colors'
 import {
   getKotaApiUrl,
   setKotaApiUrl,
+  fetchLatestCloudTunnelUrl,
   getGeminiApiKey,
   setGeminiApiKey,
   DEFAULT_CONFIG,
+  ACTIVE_TUNNEL_URL,
+  SERVER_LOCAL_IP,
+  SERVER_PORT,
 } from '../config/env'
 import {
   Server,
@@ -27,19 +31,30 @@ import {
   Sparkles,
   Smartphone,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react-native'
 
 export default function SettingsScreen() {
   const [apiUrl, setApiUrl] = useState('')
   const [geminiKey, setGeminiKey] = useState('')
   const [isTesting, setIsTesting] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [testResult, setTestResult] = useState<{
     success: boolean
     message: string
   } | null>(null)
 
   useEffect(() => {
-    getKotaApiUrl().then(setApiUrl)
+    // 1. Initialiser avec l'URL en mémoire
+    getKotaApiUrl().then((initial) => {
+      setApiUrl(initial)
+      // 2. Synchroniser en direct avec le tout dernier tunnel cloud en arrière-plan
+      fetchLatestCloudTunnelUrl().then((cloudUrl) => {
+        if (cloudUrl && cloudUrl !== initial) {
+          setApiUrl(cloudUrl)
+        }
+      })
+    })
     getGeminiApiKey().then(setGeminiKey)
   }, [])
 
@@ -49,35 +64,87 @@ export default function SettingsScreen() {
     Alert.alert('Succès', 'Paramètres enregistrés.')
   }
 
-  const testConnection = async () => {
-    setIsTesting(true)
+  const syncLatestTunnel = async () => {
+    setIsSyncing(true)
     setTestResult(null)
 
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
+      const latestUrl = await fetchLatestCloudTunnelUrl()
+      if (latestUrl) {
+        setApiUrl(latestUrl)
+        await setKotaApiUrl(latestUrl)
+        // Tester immédiatement la nouvelle adresse
+        await testConnection(latestUrl)
+      } else {
+        Alert.alert(
+          'Information',
+          'Aucun nouveau tunnel actif reçu sur le relais. L\'adresse actuelle a été conservée.'
+        )
+      }
+    } catch {
+      Alert.alert('Erreur', 'Impossible de contacter le relais de synchronisation cloud.')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
-      const target = apiUrl.trim() || DEFAULT_CONFIG.KOTA_API_URL
+  const testConnection = async (overrideTarget?: string) => {
+    setIsTesting(true)
+    setTestResult(null)
+
+    const target = (overrideTarget || apiUrl.trim() || ACTIVE_TUNNEL_URL || DEFAULT_CONFIG.KOTA_API_URL).replace(/\/+$/, '')
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
+
       const res = await fetch(`${target}/api/mobile/planning`, {
         signal: controller.signal,
+        headers: {
+          'Bypass-Tunnel-Reminder': 'true',
+          'Accept': 'application/json',
+        },
       })
       clearTimeout(timeout)
 
       if (res.ok) {
         setTestResult({
           success: true,
-          message: 'Connexion réussie au serveur KOTA Web !',
+          message: `Connexion réussie au serveur KOTA Web !\n(${target})`,
         })
+        await setKotaApiUrl(target)
       } else {
         setTestResult({
           success: false,
           message: `Le serveur a répondu avec le statut HTTP ${res.status}`,
         })
       }
-    } catch (err: any) {
+    } catch {
+      // Auto-récupération intelligente : si l'adresse a échoué, on cherche si un nouveau tunnel a été généré
+      try {
+        const freshCloud = await fetchLatestCloudTunnelUrl()
+        if (freshCloud && freshCloud !== target) {
+          const retryRes = await fetch(`${freshCloud}/api/mobile/planning`, {
+            headers: {
+              'Bypass-Tunnel-Reminder': 'true',
+              'Accept': 'application/json',
+            },
+          })
+          if (retryRes.ok) {
+            setApiUrl(freshCloud)
+            await setKotaApiUrl(freshCloud)
+            setTestResult({
+              success: true,
+              message: `Nouveau tunnel détecté et reconnecté automatiquement !\n(${freshCloud})`,
+            })
+            return
+          }
+        }
+      } catch {}
+
       setTestResult({
         success: false,
-        message: 'Serveur KOTA inaccessible. Vérifiez l\'adresse IP et le port 3000.',
+        message: 'Serveur KOTA inaccessible. Cliquez sur "Récupérer le tunnel actif en direct" ci-dessus.',
       })
     } finally {
       setIsTesting(false)
@@ -85,12 +152,13 @@ export default function SettingsScreen() {
   }
 
   const resetDefaults = async () => {
-    setApiUrl(DEFAULT_CONFIG.KOTA_API_URL)
+    const defUrl = ACTIVE_TUNNEL_URL || DEFAULT_CONFIG.KOTA_API_URL
+    setApiUrl(defUrl)
     setGeminiKey(DEFAULT_CONFIG.GEMINI_API_KEY)
-    await setKotaApiUrl(DEFAULT_CONFIG.KOTA_API_URL)
+    await setKotaApiUrl(defUrl)
     await setGeminiApiKey(DEFAULT_CONFIG.GEMINI_API_KEY)
     setTestResult(null)
-    Alert.alert('Réinitialisé', 'Valeurs par défaut restaurées.')
+    Alert.alert('Réinitialisé', 'Valeurs par défaut restaurées avec le tunnel actif.')
   }
 
   return (
@@ -104,7 +172,7 @@ export default function SettingsScreen() {
           <View>
             <Text style={styles.cardTitle}>Serveur KOTA Web</Text>
             <Text style={styles.cardSub}>
-              Synchronisation des devis et du planning en direct
+              Synchronisation des devis, du dépôt et du planning en direct
             </Text>
           </View>
         </View>
@@ -114,34 +182,53 @@ export default function SettingsScreen() {
           style={styles.input}
           value={apiUrl}
           onChangeText={setApiUrl}
-          placeholder="https://ac09407eb53e94.lhr.life"
+          placeholder="https://...lhr.life"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
         />
 
         <View style={styles.quickButtonsCol}>
+          {/* BOUTON CLOUD AUTO-SYNC EN DIRECT */}
+          <TouchableOpacity
+            style={styles.syncCloudBtn}
+            onPress={syncLatestTunnel}
+            disabled={isSyncing}
+            activeOpacity={0.8}
+          >
+            {isSyncing ? (
+              <ActivityIndicator size="small" color={colors.success} />
+            ) : (
+              <>
+                <RefreshCw size={13} color={colors.success} />
+                <Text style={styles.syncCloudBtnText}>
+                  🔄 Récupérer le tunnel actif en direct
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.tunnelBtn}
-            onPress={() => setApiUrl('https://ac09407eb53e94.lhr.life')}
+            onPress={() => setApiUrl(ACTIVE_TUNNEL_URL)}
             activeOpacity={0.8}
           >
             <Sparkles size={13} color={colors.white} />
-            <Text style={styles.tunnelBtnText}>Appliquer Tunnel 5G / Partage S25+</Text>
+            <Text style={styles.tunnelBtnText}>Appliquer Tunnel 5G ({ACTIVE_TUNNEL_URL.split('//')[1] || 'Actif'})</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.wifiBtn}
-            onPress={() => setApiUrl('http://10.70.136.9:3000')}
+            onPress={() => setApiUrl(`http://${SERVER_LOCAL_IP}:${SERVER_PORT}`)}
             activeOpacity={0.8}
           >
-            <Text style={styles.wifiBtnText}>Appliquer IP Wi-Fi Local (10.70.136.9)</Text>
+            <Text style={styles.wifiBtnText}>Appliquer IP Wi-Fi Local ({SERVER_LOCAL_IP})</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.wifiNoticeBox}>
           <Text style={styles.wifiNoticeText}>
-            💡 Vous utilisez le partage de connexion 5G de votre téléphone (S25+). Le bouton &quot;Tunnel 5G&quot; ci-dessus permet de connecter le téléphone directement sans être bloqué par le pare-feu !
+            💡 Le bouton vert &quot;Récupérer le tunnel actif en direct&quot; met à jour automatiquement l&apos;adresse de votre serveur dès que votre PC génère un nouveau tunnel.
           </Text>
         </View>
 
@@ -171,7 +258,7 @@ export default function SettingsScreen() {
         <View style={styles.rowButtons}>
           <TouchableOpacity
             style={styles.testBtn}
-            onPress={testConnection}
+            onPress={() => testConnection()}
             disabled={isTesting}
             activeOpacity={0.7}
           >
@@ -421,6 +508,22 @@ const styles = StyleSheet.create({
   quickButtonsCol: {
     gap: 8,
     marginBottom: 12,
+  },
+  syncCloudBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  syncCloudBtnText: {
+    color: colors.success,
+    fontSize: 12,
+    fontWeight: '700',
   },
   tunnelBtn: {
     flexDirection: 'row',

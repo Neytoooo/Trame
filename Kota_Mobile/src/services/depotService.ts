@@ -142,6 +142,34 @@ export async function uploadPhotoToDepot(params: UploadPhotoParams): Promise<{
     const errData = await res.json().catch(() => ({}))
     throw new Error(errData.error || 'Erreur lors de l\'enregistrement')
   } catch (err: any) {
+    // Tentative de récupération automatique du dernier tunnel cloud en direct (auto-guérison)
+    try {
+      const freshKotaUrl = await getKotaApiUrl(true)
+      if (freshKotaUrl && freshKotaUrl !== kotaApiUrl) {
+        const retryController = new AbortController()
+        const retryTimeout = setTimeout(() => retryController.abort(), 20000)
+        const retryRes = await fetch(`${freshKotaUrl}/api/mobile/depot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true'
+          },
+          body: JSON.stringify(payload),
+          signal: retryController.signal
+        })
+        clearTimeout(retryTimeout)
+        if (retryRes.ok) {
+          const retryData = await retryRes.json()
+          if (retryData.success && retryData.photo) {
+            await saveLocalDepotPhoto(retryData.photo)
+            return { success: true, photo: retryData.photo }
+          }
+        }
+      }
+    } catch {
+      // Ignorer l'échec du retry et basculer en mode hors-ligne
+    }
+
     // Sauvegarde de secours en mode hors-ligne
     const offlinePhoto: DepotPhoto = {
       id: `photo-offline-${Date.now()}`,

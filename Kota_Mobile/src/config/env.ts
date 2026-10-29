@@ -1,18 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
-import { Platform } from 'react-native'
 
-// Tunnel public actif sécurisé (permet de connecter le smartphone en 5G ou partage de connexion)
-export const ACTIVE_TUNNEL_URL = 'https://ac09407eb53e94.lhr.life'
+// Tunnel public actif sécurisé (mis à jour automatiquement par le daemon tunnel-manager)
+export const ACTIVE_TUNNEL_URL = 'https://91b392e5e05f47.lhr.life'
+
+// Topic de synchronisation cloud temps réel (ntfy.sh)
+export const CLOUD_SYNC_TOPIC = 'kota_btp_tunnel_sync_7f8a92'
 
 // IP locale de secours (si sur le même réseau Wi-Fi direct)
-export const SERVER_LOCAL_IP = '10.70.136.9'
+export const SERVER_LOCAL_IP = '10.147.94.9'
 export const SERVER_PORT = '3000'
 
 export function getAutoDetectedHost(): string {
-  // 1. Priorité au tunnel public (fonctionne à 100% sur 5G, partage de connexion S25+, sans blocage pare-feu)
   if (ACTIVE_TUNNEL_URL) {
-    return ACTIVE_TUNNEL_URL
+    return ACTIVE_TUNNEL_URL.replace(/\/+$/, '')
   }
 
   const hostUri = Constants.expoConfig?.hostUri
@@ -44,26 +45,88 @@ const STORAGE_KEYS = {
   GEMINI_KEY: '@kota_gemini_key',
 }
 
-export async function getKotaApiUrl(): Promise<string> {
+let cachedKotaUrl: string | null = null
+let lastCloudCheckTimestamp = 0
+
+/**
+ * Récupère le tout dernier tunnel actif publié sur le canal de synchro cloud (ntfy.sh).
+ * Fonctionne même si l'URL a changé pendant que l'application était ouverte.
+ */
+export async function fetchLatestCloudTunnelUrl(): Promise<string | null> {
   try {
-    const saved = await AsyncStorage.getItem(STORAGE_KEYS.KOTA_API_URL)
-    if (saved && saved.trim() && saved.trim() !== 'http://10.0.2.2:3000') {
-      const clean = saved.trim()
-      // Si c'est un ancien tunnel .lhr.life expiré différent du tunnel actuel, on utilise le tunnel actif
-      if (clean.includes('.lhr.life') && ACTIVE_TUNNEL_URL && clean !== ACTIVE_TUNNEL_URL) {
-        await AsyncStorage.setItem(STORAGE_KEYS.KOTA_API_URL, ACTIVE_TUNNEL_URL)
-        return ACTIVE_TUNNEL_URL
-      }
-      return clean
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3500)
+
+    const res = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1`, {
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+
+    if (!res.ok) return null
+
+    const text = await res.text()
+    const lines = text.trim().split('\n').filter(Boolean)
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const item = JSON.parse(lines[i])
+        if (item.event === 'message' && typeof item.message === 'string' && item.message.startsWith('https://')) {
+          const cloudUrl = item.message.trim().replace(/\/+$/, '')
+          cachedKotaUrl = cloudUrl
+          lastCloudCheckTimestamp = Date.now()
+          await AsyncStorage.setItem(STORAGE_KEYS.KOTA_API_URL, cloudUrl)
+          return cloudUrl
+        }
+      } catch {}
     }
-    return getAutoDetectedHost()
+    return null
   } catch {
-    return getAutoDetectedHost()
+    return null
   }
 }
 
+/**
+ * Retourne l'URL du serveur KOTA Web.
+ * Vérifie automatiquement toutes les 25 secondes si un nouveau tunnel a été généré
+ * sur le PC sans nécessiter d'intervention manuelle.
+ */
+export async function getKotaApiUrl(forceCloudCheck = false): Promise<string> {
+  const now = Date.now()
+  const shouldCheckCloud = forceCloudCheck || now - lastCloudCheckTimestamp > 25000
+
+  // 1. Tenter la récupération du dernier tunnel cloud si nécessaire
+  if (shouldCheckCloud) {
+    lastCloudCheckTimestamp = now
+    const cloudUrl = await fetchLatestCloudTunnelUrl()
+    if (cloudUrl) {
+      cachedKotaUrl = cloudUrl
+      return cloudUrl
+    }
+  }
+
+  if (cachedKotaUrl) {
+    return cachedKotaUrl
+  }
+
+  // 2. Fallback sur AsyncStorage
+  try {
+    const saved = await AsyncStorage.getItem(STORAGE_KEYS.KOTA_API_URL)
+    if (saved && saved.trim() && saved.trim() !== 'http://10.0.2.2:3000') {
+      const clean = saved.trim().replace(/\/+$/, '')
+      cachedKotaUrl = clean
+      return clean
+    }
+  } catch {}
+
+  // 3. Fallback sur le tunnel bundlé ou auto-détecté
+  const fallback = getAutoDetectedHost().replace(/\/+$/, '')
+  cachedKotaUrl = fallback
+  return fallback
+}
+
 export async function setKotaApiUrl(url: string): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEYS.KOTA_API_URL, url)
+  const clean = url.trim().replace(/\/+$/, '')
+  cachedKotaUrl = clean
+  await AsyncStorage.setItem(STORAGE_KEYS.KOTA_API_URL, clean)
 }
 
 export async function getGeminiApiKey(): Promise<string> {

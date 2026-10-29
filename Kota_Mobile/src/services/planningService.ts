@@ -206,10 +206,11 @@ export async function fetchPlanningInterventions(): Promise<{
 
   try {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 4000)
+    const timeout = setTimeout(() => controller.abort(), 8000)
 
     const response = await fetch(`${kotaApiUrl}/api/mobile/planning`, {
       signal: controller.signal,
+      headers: { 'Bypass-Tunnel-Reminder': 'true' },
     })
     clearTimeout(timeout)
 
@@ -229,6 +230,27 @@ export async function fetchPlanningInterventions(): Promise<{
       }
     }
   } catch (e: any) {
+    // Tentative de récupération d'un nouveau tunnel cloud et retry 1 fois
+    try {
+      const freshUrl = await getKotaApiUrl(true)
+      if (freshUrl && freshUrl !== kotaApiUrl) {
+        const retryRes = await fetch(`${freshUrl}/api/mobile/planning`, {
+          headers: { 'Bypass-Tunnel-Reminder': 'true' },
+        })
+        if (retryRes.ok) {
+          const data = await retryRes.json()
+          if (data.success && Array.isArray(data.interventions) && data.interventions.length > 0) {
+            await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data.interventions))
+            return {
+              interventions: data.interventions,
+              chantiers: data.chantiers || DEFAULT_OFFLINE_CHANTIERS,
+              teamMembers: data.teamMembers || [],
+              isOffline: false,
+            }
+          }
+        }
+      }
+    } catch {}
     console.log('Serveur KOTA inaccessible, utilisation des données locales:', e.message)
   }
 
