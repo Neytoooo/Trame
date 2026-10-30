@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
 
 // Tunnel public actif sécurisé (mis à jour automatiquement par le daemon tunnel-manager)
-export const ACTIVE_TUNNEL_URL = 'https://ac32ba279de007.lhr.life'
+export const ACTIVE_TUNNEL_URL = 'https://ebf91edfa5e5ac.lhr.life'
 
 // Topic de synchronisation cloud temps réel (ntfy.sh)
 export const CLOUD_SYNC_TOPIC = 'kota_btp_tunnel_sync_7f8a92'
