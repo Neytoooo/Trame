@@ -9,8 +9,10 @@ import {
     addStoredIntervention,
     updateStoredInterventionStatus,
     deleteStoredIntervention,
+    mapDbRowToIntervention,
     StoredIntervention
 } from '@/lib/planningStore'
+import { getAppSupabaseClient } from '@/lib/serverAuthCache'
 
 export interface PlanningChantierOption {
     id: string
@@ -119,11 +121,33 @@ export async function getPlanningDataAction(): Promise<{
         }))
     }
 
-    // 3. Récupérer les interventions (rendez-vous Supabase + fallback store)
+    // 3. Récupérer les interventions (Supabase planning_interventions + rendez_vous + fallback store)
     let interventions: StoredIntervention[] = []
     try {
-        let rdvQuery = supabase
-            .from('rendez_vous')
+        const client = supabase || getAppSupabaseClient()
+        let planQuery = client
+            .from('planning_interventions')
+            .select('*')
+            .order('date', { ascending: true })
+
+        if (companyId) {
+            planQuery = planQuery.eq('company_id', companyId)
+        }
+
+        const { data: dbInterventions, error: dbPlanError } = await planQuery
+
+        if (!dbPlanError && dbInterventions && dbInterventions.length > 0) {
+            interventions = dbInterventions.map(mapDbRowToIntervention)
+        }
+    } catch (e) {
+        console.warn('Erreur lecture planning_interventions Supabase:', e)
+    }
+
+    // Fallback supplémentaire sur rendez_vous si planning_interventions n'a pas encore de lignes
+    if (interventions.length === 0) {
+        try {
+            let rdvQuery = supabase
+                .from('rendez_vous')
             .select(`
                 id,
                 title,
@@ -189,10 +213,19 @@ export async function getPlanningDataAction(): Promise<{
     } catch (e) {
         console.warn('Erreur lecture rendez_vous Supabase:', e)
     }
+    }
 
-    // Si aucune intervention en base Supabase, utiliser le store persistant calé sur la date du jour
+    // Fusion intelligente sans doublon avec le store persistant
+    const localInterventions = getStoredInterventions()
     if (interventions.length === 0) {
-        interventions = getStoredInterventions()
+        interventions = localInterventions
+    } else {
+        const seenIds = new Set(interventions.map(i => String(i.id)))
+        for (const loc of localInterventions) {
+            if (!seenIds.has(String(loc.id))) {
+                interventions.push(loc)
+            }
+        }
     }
 
     return {
@@ -246,7 +279,36 @@ export async function createPlanningInterventionAction(payload: {
         company_id: companyId || null
     })
 
-    // 2. Tenter l'insertion dans Supabase rendez_vous
+    // 2. Synchronisation prioritaire dans Supabase planning_interventions (pour Vercel & Mobile)
+    try {
+        const client = supabase || getAppSupabaseClient()
+        const { error: sbPlanError } = await client.from('planning_interventions').insert({
+            id: saved.id,
+            title: saved.title,
+            chantier_name: saved.chantierName,
+            client_name: saved.clientName,
+            address: saved.address,
+            technicien: saved.technicien,
+            zone: saved.zone,
+            date: saved.date,
+            start_time: saved.startTime,
+            end_time: saved.endTime,
+            color: saved.color,
+            status: saved.status,
+            notes: saved.notes || '',
+            chantier_id: saved.chantier_id || null,
+            client_id: saved.client_id || null,
+            user_id: saved.user_id || null,
+            company_id: companyId || '00000000-0000-0000-0000-000000000001'
+        })
+        if (sbPlanError) {
+            console.warn('Sync planning_interventions Supabase différée:', sbPlanError)
+        }
+    } catch (e) {
+        console.warn('Erreur insertion planning_interventions:', e)
+    }
+
+    // 3. Tenter l'insertion dans Supabase rendez_vous
     try {
         const startISO = `${payload.date}T${payload.startTime}:00.000Z`
         const endISO = `${payload.date}T${payload.endTime}:00.000Z`
@@ -293,7 +355,21 @@ export async function updatePlanningInterventionStatusAction(
     // 1. Mettre à jour dans le store persistant
     updateStoredInterventionStatus(id, status)
 
-    // 2. Mettre à jour dans Supabase si c'est un UUID
+    // 2. Mettre à jour dans Supabase planning_interventions
+    try {
+        const client = supabase || getAppSupabaseClient()
+        await client
+            .from('planning_interventions')
+            .update({
+                status,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+    } catch (e) {
+        console.warn('Sync update status planning_interventions ignorée:', e)
+    }
+
+    // 3. Mettre à jour dans Supabase rendez_vous si c'est un UUID
     try {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
         if (isUUID) {
@@ -322,7 +398,18 @@ export async function deletePlanningInterventionAction(
     // 1. Supprimer du store persistant
     deleteStoredIntervention(id)
 
-    // 2. Supprimer de Supabase si UUID
+    // 2. Supprimer de Supabase planning_interventions
+    try {
+        const client = supabase || getAppSupabaseClient()
+        await client
+            .from('planning_interventions')
+            .delete()
+            .eq('id', id)
+    } catch (e) {
+        console.warn('Sync delete planning_interventions ignorée:', e)
+    }
+
+    // 3. Supprimer de Supabase rendez_vous si UUID
     try {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
         if (isUUID) {

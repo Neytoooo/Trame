@@ -12,6 +12,31 @@ export { formatDateKey, getMondayOfWeek }
 const DATA_DIR = path.join(process.cwd(), 'data')
 const FILE_PATH = path.join(DATA_DIR, 'planning_interventions.json')
 
+// Helper de conversion entre une ligne de base de données Supabase et StoredIntervention
+export function mapDbRowToIntervention(row: any): StoredIntervention {
+    return {
+        id: String(row.id),
+        title: row.title || 'Intervention',
+        chantierName: row.chantier_name || row.chantierName || 'Chantier',
+        clientName: row.client_name || row.clientName || 'Client',
+        address: row.address || '',
+        technicien: row.technicien || 'Technicien',
+        zone: row.zone || 'Île-de-France',
+        date: row.date,
+        startTime: row.start_time || row.startTime || '08:00',
+        endTime: row.end_time || row.endTime || '12:00',
+        color: row.color || 'blue',
+        status: row.status || 'planifie',
+        notes: row.notes || '',
+        chantier_id: row.chantier_id || null,
+        client_id: row.client_id || null,
+        user_id: row.user_id || null,
+        company_id: row.company_id || '00000000-0000-0000-0000-000000000001',
+        created_at: row.created_at,
+        updated_at: row.updated_at
+    }
+}
+
 // Générer les interventions de démonstration calées sur la semaine actuelle
 function generateDefaultInterventions(refDate: Date = new Date()): StoredIntervention[] {
     const monday = getMondayOfWeek(refDate)
@@ -30,7 +55,7 @@ function generateDefaultInterventions(refDate: Date = new Date()): StoredInterve
     const saturdayStr = addDays(monday, 5)
 
     return [
-        // LUNDI (Aujourd'hui)
+        // LUNDI
         {
             id: 'int-1',
             title: 'Métré & Sondage Acrotères',
@@ -89,24 +114,24 @@ function generateDefaultInterventions(refDate: Date = new Date()): StoredInterve
             date: tuesdayStr,
             startTime: '14:00',
             endTime: '16:30',
-            color: 'rose',
+            color: 'amber',
             status: 'planifie',
-            notes: 'Préparation dossier technique pour arrêté municipal'
+            notes: 'Pose barrières Heras et panneaux d\'information copropriété'
         },
 
         // MERCREDI
         {
             id: 'int-5',
-            title: 'Pose Couvertines Aluminium 15/10ème',
+            title: 'Pose Bavettes & Relevés Étanchéité Zinc',
             chantierName: 'RESIDENCE PLEIN AIR',
             clientName: 'FONCIA Rives de Seine',
             address: '14 Rue de Conflans, 78700 Conflans-Sainte-Honorine',
-            technicien: 'Sophie Martinez (Conducteur)',
+            technicien: 'Thomas Laurent',
             zone: 'Paris Ouest (78)',
             date: wednesdayStr,
             startTime: '08:30',
-            endTime: '12:30',
-            color: 'emerald',
+            endTime: '12:00',
+            color: 'purple',
             status: 'planifie',
             notes: 'Fixation pattes inox et joints néoprène d\'étanchéité'
         },
@@ -214,7 +239,9 @@ function ensureInitialized(): StoredIntervention[] {
 
         if (!fs.existsSync(FILE_PATH)) {
             const defaults = generateDefaultInterventions()
-            fs.writeFileSync(FILE_PATH, JSON.stringify(defaults, null, 2), 'utf-8')
+            try {
+                fs.writeFileSync(FILE_PATH, JSON.stringify(defaults, null, 2), 'utf-8')
+            } catch {}
             return defaults
         }
 
@@ -222,7 +249,9 @@ function ensureInitialized(): StoredIntervention[] {
         const parsed = JSON.parse(data)
         if (!Array.isArray(parsed) || parsed.length === 0) {
             const defaults = generateDefaultInterventions()
-            fs.writeFileSync(FILE_PATH, JSON.stringify(defaults, null, 2), 'utf-8')
+            try {
+                fs.writeFileSync(FILE_PATH, JSON.stringify(defaults, null, 2), 'utf-8')
+            } catch {}
             return defaults
         }
 
@@ -240,7 +269,8 @@ function saveInterventions(items: StoredIntervention[]): void {
         }
         fs.writeFileSync(FILE_PATH, JSON.stringify(items, null, 2), 'utf-8')
     } catch (e) {
-        console.error('Erreur écriture store planning:', e)
+        // Environnement serverless (read-only filesystem)
+        console.warn('Ecriture planning_interventions.json locale ignoree (environnement serverless):', e)
     }
 }
 
